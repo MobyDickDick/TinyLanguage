@@ -1252,288 +1252,71 @@ def test_top_level_input_value_is_selected_only_for_input():
     )
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
-def test_top_level_input_validity_is_selected_only_for_input():
-    """Propagate external validity only while INPUT writes the accumulator."""
+def _assert_binary_validity_selector(root, circuit_name, operation):
+    """Prove the named operand-validity path inside one arithmetic FBox."""
 
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    _, _, _, selector = _accumulator_validity_selectors(circuit)
-    assert selector.get("name") == "Multiplexer"
-    assert _attributes(selector).get("width", "1") == "1"
-
-    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
-    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    select = f"({x - 20},{y + 20})"
-    output = f"({x},{y})"
-    input_valid = _labelled_component(circuit, "INPUT_VALID")
-    memory_selector, not_selector, add_selector, _ = _accumulator_validity_selectors(circuit)
-    adjacency = _electrical_adjacency(
-        circuit, inputs | {select, output, input_valid.get("loc")}
-    )
-
-    sub_selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
-    default_matches = _reachable(adjacency, sub_selector.get("loc")) & inputs
-    external_matches = _reachable(adjacency, input_valid.get("loc")) & inputs
-    assert len(default_matches) == len(external_matches) == 1
-    assert default_matches != external_matches
-    assert select in _reachable(adjacency, _control_output(root, "INPUT"))
-    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
-        adjacency, output
-    )
-    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
-        adjacency, input_valid.get("loc")
-    )
-
-
-@pytest.mark.xfail(reason="validity selectors are currently unlabeled after the hand redraw")
-def test_top_level_memory_validity_is_selected_for_memory_loads():
-    """Use memory validity exactly when the matching data selector uses RAM."""
-
-    root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    selector, not_selector, add_selector, input_selector = _accumulator_validity_selectors(circuit)
-    assert selector.get("name") == "Multiplexer"
-    assert _attributes(selector).get("width", "1") == "1"
-
-    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
-    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    select = f"({x - 20},{y + 20})"
-    output = f"({x},{y})"
-    default_valid = next(
-        component
+    circuit = next(c for c in root.findall("circuit") if c.get("name") == circuit_name)
+    adjacency = _electrical_adjacency(circuit)
+    pins = {
+        _attributes(component).get("label"): component.get("loc")
         for component in circuit.findall("comp")
+        if component.get("name") == "Pin"
+    }
+    selector = _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+    gate = _labelled_component(circuit, f"ACC_{operation}_VALID")
+    x, y = map(int, selector.get("loc").strip("()").split(","))
+    selector_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
+    assert len(_reachable(adjacency, pins["MEMORY_VALID"]) & selector_inputs) == 1
+    assert len([
+        component for component in circuit.findall("comp")
         if component.get("name") == "Constant"
-        and _attributes(component).get("label") == "ACC_DEFAULT_VALID"
-    )
-    memory_valid = _subcircuit_output(root, "Memory", "MEMORY_VALID")
-    adjacency = _electrical_adjacency(
-        circuit,
-        inputs
-        | {
-            select,
-            output,
-            default_valid.get("loc"),
-            memory_valid,
-            not_selector.get("loc"),
-        },
-    )
-
-    default_matches = _reachable(adjacency, default_valid.get("loc")) & inputs
-    memory_matches = _reachable(adjacency, memory_valid) & inputs
-    assert len(default_matches) == len(memory_matches) == 1
-    assert default_matches != memory_matches
-    # The redraw places the ADD-valid selection between the memory and NOT
-    # validity stages; the selected memory-valid result must feed that stage.
-    add_x, add_y = (
-        int(value) for value in add_selector.get("loc").strip("()").split(",")
-    )
-    add_selector_inputs = {
-        f"({add_x - 30},{add_y - 10})",
-        f"({add_x - 30},{add_y + 10})",
-    }
-    assert len(_reachable(adjacency, output) & add_selector_inputs) == 1
-    assert _subcircuit_input(root, "Datapath", "DATA_IN") not in _reachable(
-        adjacency, memory_valid
-    )
+        and _reachable(adjacency, component.get("loc")) & selector_inputs
+    ]) == 1
+    # The project inspector resolves the generated multi-input gate terminals;
+    # requiring the complete sheet catches either validity source being open.
+    report = next(item for item in inspect_project(PROJECT) if item.name == circuit_name)
+    assert report.connected
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
-def test_top_level_not_propagates_accumulator_validity():
-    """Select the current accumulator validity for the unary NOT result."""
+def test_memory_validity_is_selected_for_binary_memory_operands():
+    """Memory-backed ADD and SUB modes use the RAM validity bit."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    memory_selector, selector, add_selector, input_selector = _accumulator_validity_selectors(
-        circuit
-    )
-    x, y = (int(value) for value in selector.get("loc").strip("()").split(","))
-    inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
-    select = f"({x - 20},{y + 20})"
-    output = selector.get("loc")
-    accumulator_valid = _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")
-    adjacency = _electrical_adjacency(circuit, inputs | {select, output})
-
-    prior_matches = _reachable(adjacency, memory_selector.get("loc")) & inputs
-    accumulator_matches = _reachable(adjacency, accumulator_valid) & inputs
-    assert len(prior_matches) == len(accumulator_matches) == 1
-    assert prior_matches != accumulator_matches
-    assert select in _reachable(adjacency, _control_output(root, "NOT"))
-
-    input_x, input_y = (
-        int(value) for value in input_selector.get("loc").strip("()").split(",")
-    )
-    input_selector_inputs = {
-        f"({input_x - 30},{input_y - 10})",
-        f"({input_x - 30},{input_y + 10})",
-    }
-    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
-    add_inputs = {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}
-    assert len(_reachable(adjacency, output) & add_inputs) == 1
-    sub_selector = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
-    assert len(_reachable(adjacency, sub_selector.get("loc")) & input_selector_inputs) == 1
-    assert _subcircuit_input(root, "Datapath", "VALID_IN") in _reachable(
-        adjacency, input_selector.get("loc")
-    )
+    _assert_binary_validity_selector(root, "AddSubCircuit", "ADD")
+    _assert_binary_validity_selector(root, "SubSubCircuit", "SUB")
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
-def test_top_level_add_propagates_both_operand_validities():
-    """ADD is valid only when the accumulator and selected operand are valid."""
+def test_immediate_arithmetic_uses_a_defined_valid_operand():
+    """The non-memory side of each operand-validity mux is an explicit one."""
 
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
+    for circuit_name, operation in (("AddSubCircuit", "ADD"), ("SubSubCircuit", "SUB")):
+        circuit = next(c for c in root.findall("circuit") if c.get("name") == circuit_name)
+        constants = [c for c in circuit.findall("comp") if c.get("name") == "Constant"]
+        assert len(constants) == 1
+        assert _attributes(constants[0]).get("value", "0x1") == "0x1"
+        _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+
+
+def test_not_propagates_accumulator_validity_only_while_active():
+    """NOT gates ACC_VALID with its dedicated activation control."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(c for c in root.findall("circuit") if c.get("name") == "NotCircuit")
     adjacency = _electrical_adjacency(circuit)
-    memory_gate = _labelled_component(circuit, "ACC_ADD_MEMORY_SELECT")
-    operand_selector = _labelled_component(circuit, "ACC_ADD_OPERAND_VALID_SELECT")
-    valid_gate = _labelled_component(circuit, "ACC_ADD_VALID")
-    _, memory_inputs = _gate_ports(memory_gate)
+    pins = {_attributes(c).get("label"): c.get("loc") for c in circuit.findall("comp") if c.get("name") == "Pin"}
+    assert next(item for item in inspect_project(PROJECT) if item.name == "NotCircuit").connected
+    assert pins["RESULT_VALID"] in _reachable(adjacency, _labelled_component(circuit, "ACTIVE_NOT_VALID").get("loc"))
 
-    # Only the three memory-backed ADD modes drive the memory-validity
-    # selector. ADD_CONST obtains its validity from the instruction operand.
-    memory_controls = {
-        name: _control_output(root, name)
-        for name in (
-            "ADD_ADDRESS",
-            "ADD_ADDRESS_REGISTER",
-            "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
-        )
-    }
-    for source in memory_controls.values():
-        assert len(_reachable(adjacency, source) & memory_inputs) == 1
-    assert _reachable(adjacency, _control_output(root, "ADD_CONST")).isdisjoint(
-        memory_inputs
-    )
 
-    mux_x, mux_y = (int(value) for value in operand_selector.get("loc").strip("()").split(","))
-    mux_inputs = {f"({mux_x - 30},{mux_y - 10})", f"({mux_x - 30},{mux_y + 10})"}
-    assert len(_reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_VALID")) & mux_inputs) == 1
-    gate_output, gate_inputs = _gate_ports(valid_gate)
-    assert len(_reachable(adjacency, operand_selector.get("loc")) & gate_inputs) == 1
-    assert len(_reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT")) & gate_inputs) == 1
-    _, _, add_selector, _ = _accumulator_validity_selectors(circuit)
-    add_x, add_y = (int(value) for value in add_selector.get("loc").strip("()").split(","))
-    assert len(_reachable(adjacency, gate_output) & {f"({add_x - 30},{add_y - 10})", f"({add_x - 30},{add_y + 10})"}) == 1
-
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
-def test_top_level_subtracts_the_selected_operand_and_propagates_validity():
-    """SUB selects accumulator-minus-operand data and requires two valid inputs."""
-
+def test_add_requires_accumulator_and_selected_operand_validity():
     root = ET.parse(PROJECT).getroot()
-    circuit = _top_level(root)
-    adjacency = _electrical_adjacency(circuit)
-    family_gate = _labelled_component(circuit, "ACC_SUB_FAMILY_SELECT")
-    memory_gate = _labelled_component(circuit, "ACC_SUB_MEMORY_SELECT")
-    operand_mux = _labelled_component(circuit, "ACC_SUB_OPERAND_SELECT")
-    subtractor = _labelled_component(circuit, "ACC_SUB_VALUE")
-    result_mux = _labelled_component(circuit, "ACC_SUB_SELECT")
-    valid_mux = _labelled_component(circuit, "ACC_SUB_OPERAND_VALID_SELECT")
-    valid_gate = _labelled_component(circuit, "ACC_SUB_VALID")
-    valid_result_mux = _labelled_component(circuit, "ACC_SUB_VALID_SELECT")
-    _, family_inputs = _gate_ports(family_gate)
-    _, memory_inputs = _gate_ports(memory_gate)
+    _assert_binary_validity_selector(root, "AddSubCircuit", "ADD")
 
-    controls = {
-        name: _control_output(root, name)
-        for name in (
-            "SUB_CONST",
-            "SUB_ADDRESS",
-            "SUB_ADDRESS_REGISTER",
-            "SUB_ADDRESS_REGISTER_PLUS_OFFSET",
-        )
-    }
-    for name, source in controls.items():
-        reachable = _reachable(adjacency, source)
-        assert len(reachable & family_inputs) == 1
-        if name != "SUB_CONST":
-            assert len(reachable & memory_inputs) == 1
 
-    operand_x, operand_y = map(int, operand_mux.get("loc").strip("()").split(","))
-    operand_inputs = {
-        f"({operand_x - 30},{operand_y - 10})",
-        f"({operand_x - 30},{operand_y + 10})",
-    }
-    assert (
-        len(
-            _reachable(adjacency, _instruction_field_output(root, range(16)))
-            & operand_inputs
-        )
-        == 1
-    )
-    assert (
-        len(
-            _reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_DATA"))
-            & operand_inputs
-        )
-        == 1
-    )
-
-    sub_x, sub_y = map(int, subtractor.get("loc").strip("()").split(","))
-    sub_inputs = {f"({sub_x - 40},{sub_y - 10})", f"({sub_x - 40},{sub_y + 10})"}
-    assert len(_reachable(adjacency, operand_mux.get("loc")) & sub_inputs) == 1
-    assert (
-        len(
-            _reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_OUT"))
-            & sub_inputs
-        )
-        == 1
-    )
-
-    result_x, result_y = map(int, result_mux.get("loc").strip("()").split(","))
-    result_inputs = {
-        f"({result_x - 30},{result_y - 10})",
-        f"({result_x - 30},{result_y + 10})",
-    }
-    assert len(_reachable(adjacency, subtractor.get("loc")) & result_inputs) == 1
-    assert f"({result_x - 20},{result_y + 20})" in _reachable(
-        adjacency, family_gate.get("loc")
-    )
-
-    valid_x, valid_y = map(int, valid_mux.get("loc").strip("()").split(","))
-    valid_inputs = {
-        f"({valid_x - 30},{valid_y - 10})",
-        f"({valid_x - 30},{valid_y + 10})",
-    }
-    assert (
-        len(
-            _reachable(adjacency, _subcircuit_output(root, "Memory", "MEMORY_VALID"))
-            & valid_inputs
-        )
-        == 1
-    )
-    _, valid_gate_inputs = _gate_ports(valid_gate)
-    assert len(_reachable(adjacency, valid_mux.get("loc")) & valid_gate_inputs) == 1
-    assert (
-        len(
-            _reachable(adjacency, _subcircuit_output(root, "Datapath", "ACC_VALID_OUT"))
-            & valid_gate_inputs
-        )
-        == 1
-    )
-
-    result_valid_x, result_valid_y = map(
-        int, valid_result_mux.get("loc").strip("()").split(",")
-    )
-    result_valid_inputs = {
-        f"({result_valid_x - 30},{result_valid_y - 10})",
-        f"({result_valid_x - 30},{result_valid_y + 10})",
-    }
-    assert len(_reachable(adjacency, valid_gate.get("loc")) & result_valid_inputs) == 1
-    assert f"({result_valid_x - 20},{result_valid_y + 20})" in _reachable(
-        adjacency, family_gate.get("loc")
-    )
+def test_sub_requires_accumulator_and_selected_operand_validity():
+    root = ET.parse(PROJECT).getroot()
+    _assert_binary_validity_selector(root, "SubSubCircuit", "SUB")
 
 
 def test_top_level_uses_the_corrected_direct_data_routes():

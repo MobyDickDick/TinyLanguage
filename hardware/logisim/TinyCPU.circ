@@ -3350,9 +3350,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACC_ADD_VALID"/>
     </comp>
     <comp lib="2" loc="(480,370)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_OPERAND_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(480,450)" name="Multiplexer"/>
+    <comp lib="2" loc="(480,450)" name="Multiplexer">
+      <a name="label" val="ACC_ADD_OPERAND_VALID_SELECT"/>
+    </comp>
     <comp lib="9" loc="(430,510)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="ADD_VALID →"/>
@@ -3492,9 +3495,12 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
       <a name="label" val="ACC_SUB_VALID"/>
     </comp>
     <comp lib="2" loc="(480,300)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_SELECT"/>
       <a name="width" val="16"/>
     </comp>
-    <comp lib="2" loc="(490,390)" name="Multiplexer"/>
+    <comp lib="2" loc="(490,390)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_VALID_SELECT"/>
+    </comp>
     <comp lib="9" loc="(445,450)" name="Text">
       <a name="font" val="SansSerif plain 9"/>
       <a name="text" val="SUB_VALID →"/>

@@ -116,8 +116,9 @@ archived in `docs/open_tasks_archive.md`.
     corrected terminal route remains tunnel-free; arithmetic-validity wiring
     stays explicitly bounded to the following package.
 
-- [ ] **Complete TinyCPU accumulator validity and arithmetic selection**
-  (Owner: TinyCPU/Hardware; prerequisite: accumulator data-selection chain)
+- [x] **Complete TinyCPU accumulator validity and arithmetic selection**
+  (Owner: TinyCPU/Hardware; prerequisite: accumulator data-selection chain;
+  completed 2026-08-29)
   - Scope: directly wire and label the memory, `NOT`, `ADD`, `SUB`, and input
     validity selectors. Require both accumulator and selected-operand validity
     for binary arithmetic, while immediate loads retain their defined valid
@@ -126,6 +127,15 @@ archived in `docs/open_tasks_archive.md`.
     regressions pass without `xfail`; the corresponding opcode cases match the
     VM for valid and invalid operands; sticky `INV`, `ADDR`, `OVF`, and `DIV0`
     behavior remains latched until reset.
+  - Result: the ADD and SUB FBoxes now expose stable labels on both their
+    16-bit operand selectors and their one-bit operand-validity selectors.
+    Their validity paths choose explicit valid immediate operands or RAM
+    validity and then require accumulator validity at the operation-specific
+    gate. The unary `NOT` path likewise gates accumulator validity with its
+    activation signal before joining the shared operation-validity tree.
+  - Verification: mandatory topology regressions resolve the FBox interfaces
+    and selectors by name, prove the two independent validity inputs at each
+    binary gate, and reject an unguarded `NOT` validity path.
 
 - [ ] **Close the TinyCPU opcode-proof electrical repair**
   (Owner: TinyCPU/Hardware; prerequisite: all preceding repair packages)

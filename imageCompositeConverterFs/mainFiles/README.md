@@ -1,6 +1,6 @@
 # mainFiles
 
-Dieser Ordner wurde nach `imageCompositeConverterFs/mainFiles` verschoben.
+This folder was moved to `imageCompositeConverterFs/mainFiles`.
 
-Hinweis: Im aktuellen Repository gab es keinen bestehenden Ordner `mainFiles`,
-daher wurde die Zielstruktur angelegt, ohne bestehende Laufzeitpfade zu brechen.
+Note: The current repository did not contain an existing `mainFiles` folder,
+so the target structure was created without breaking existing runtime paths.

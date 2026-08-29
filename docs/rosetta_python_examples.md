@@ -140,7 +140,7 @@ while (i < len(keys)) {
 }
 ```
 
-## Automatisches Kopieren und Transpilieren neuer Rosetta-Skripts
+## Automatically copy and transpile new Rosetta scripts
 
 - Use `examples/rosetta/copy_rosetta_samples.py` to copy missing Rosetta Code Python files into a target directory. Example with filter and dry-run: `python examples/rosetta/copy_rosetta_samples.py ~/rosetta_import --include fib --include fizz --limit 5 --delay 0 --dry-run`. The script compares filenames in the default source folder `examples/rosetta/python` with the destination, offers prefix filters for subsets, and optionally waits between copy operations.
 - With `--transpile`, the script automatically kicks off translation after copying. Destination and source can be customized, e.g.: `python examples/rosetta/copy_rosetta_samples.py examples/rosetta/python --transpile --transpile-dest examples/rosetta/expected`.

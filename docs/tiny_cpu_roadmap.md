@@ -54,6 +54,36 @@ weder einen anderen Commit noch nachträglich veränderte Bundles veröffentlich
 
 ## Stand
 
+### Funktionsstatus und weitere Planung
+
+TinyCPU ist im eingefrorenen 1.0-Zielprofil **voll funktionsfähig**: Die
+16-Bit-Daten-/12-Bit-Adress-Schaltung implementiert alle 50 Opcodes, wird im
+realen, gepinnten Logisim-evolution elektrisch gegen die Python-VM geprüft und
+besitzt eine reproduzierbar qualifizierte Distribution. „Voll funktionsfähig“
+bezieht sich dabei auf den veröffentlichten 1.0-Vertrag, nicht auf jede denkbare
+Erweiterung einer Lehr-CPU. Insbesondere verspricht die Hardware keine anderen
+Busbreiten, keine Drittanbieter-Schaltungsvarianten und keine Stabilität der als
+intern gekennzeichneten Diagnoseartefakte.
+
+Damit gibt es aktuell **kein notwendiges nächstes Arbeitspaket**, um TinyCPU
+betriebsfähig zu machen. Sinnvolle neue Pakete wären Produktentscheidungen für
+eine spätere Version und keine Restarbeiten an 1.0. Bevor dafür
+Implementierungsarbeit beginnt, soll ein eigener Vorschlag genau eine der
+folgenden Entwicklungsrichtungen auswählen, Kompatibilitätsfolgen benennen und
+messbare Abnahmekriterien festlegen:
+
+1. **Weitere Hardwareprofile:** Encoder, Schaltung und elektrische Matrix für
+   mindestens ein zusätzliches Daten-/Adressbreitenprofil qualifizieren.
+2. **Entwicklungswerkzeuge:** symbolisches Debugging, Breakpoints und
+   Zustandsinspektion auf dem versionierten Maschinenformat aufbauen.
+3. **Peripherie und Integration:** ein versioniertes Bus-/Interrupt-Modell und
+   klar abgegrenzte Geräte ergänzen, ohne die 1.x-Schnittstellen stillschweigend
+   zu verändern.
+
+Diese Richtungen sind bewusst **Kandidaten und keine offenen Checklistenpunkte**.
+Priorität, Versionsziel und Ressourcen sind noch nicht beschlossen; die
+abgeschlossenen AP 1 bis AP 15 werden dadurch nicht wieder geöffnet.
+
 - [x] **AP 1: Hardwarevertrag einfrieren:** Das Profil
   `hardware/logisim/tinycpu-16-12.json` beschreibt den Vertrag;
   `tiny_cpu_circuit.py --profile … --contract-only` prüft ihn unabhängig von

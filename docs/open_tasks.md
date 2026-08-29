@@ -55,8 +55,9 @@ archived in `docs/open_tasks_archive.md`.
     rather than treating a missing Constant value as one, and the maintained
     diagnostic sheet mirrors the integrated fetch/decode circuit.
 
-- [ ] **Wire the TinyCPU accumulator write-enable controls directly**
-  (Owner: TinyCPU/Hardware; prerequisite: reset/fetch repair)
+- [x] **Wire the TinyCPU accumulator write-enable controls directly**
+  (Owner: TinyCPU/Hardware; prerequisite: reset/fetch repair;
+  completed 2026-08-29)
   - Scope: connect every value-producing decoder family to the labelled
     `ACC_LOAD_REQUEST` aggregation and connect that request, `NOT`, and `INPUT`
     independently to `ACC_WRITE_REQUEST`. Store and address-register-only
@@ -65,6 +66,15 @@ archived in `docs/open_tasks_archive.md`.
     `xfail`; every control reaches exactly one gate input without shorting
     another decoder output; `LOAD_CONST`, the three memory-load modes, `NOT`,
     and `INPUT` update the accumulator in isolated simulator cases.
+  - Result: `DecodeSignals` now keeps the 28 value-producing family controls
+    on separate inputs of `ACC_LOAD_REQUEST`, combines that result with `NOT`
+    and `INPUT` on the three independent `ACC_WRITE_AGGREGATOR` inputs, and
+    exports only the canonical `ACC_WRITE_REQUEST` to `Datapath.ACC_LOAD`.
+    Store and address-register-only controls remain outside both aggregators.
+  - Verification: the formerly expected-failure family-control regression now
+    resolves the decoder pins by name, proves pairwise net isolation through
+    both aggregation stages, and follows the exported request across the
+    top-level subcircuit boundary to the accumulator load terminal.
 
 - [ ] **Complete the TinyCPU accumulator data-selection chain**
   (Owner: TinyCPU/Hardware; prerequisite: accumulator write-enable wiring)

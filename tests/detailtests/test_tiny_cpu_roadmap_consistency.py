@@ -271,7 +271,8 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [x] **Re-confirm the closed TinyCPU boundary after the latest request**"
+        "- [x] **Re-confirm the repository-wide work-package boundary after "
+        "the latest request**"
     )
 
 
@@ -331,10 +332,12 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
         encoding="utf-8"
     )
 
-    first_content_line = next(
-        line for line in current_tasks.splitlines() if line.strip()
+    first_tinycpu_entry = next(
+        line
+        for line in current_tasks.splitlines()
+        if line.startswith("- [x]") and "TinyCPU" in line
     )
-    assert first_content_line == (
+    assert first_tinycpu_entry == (
         "- [x] **Re-confirm the closed TinyCPU boundary after the latest request**"
     )
     assert "AP 1 through AP 15 remain complete" in latest_package
@@ -347,6 +350,52 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
         detailed
     )
     assert "No successor package is\n  currently scoped" in expansion
+
+
+def test_repeated_repository_request_does_not_create_implementation_scope():
+    """The newest generic request must not invent an undocumented package."""
+
+    active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
+        encoding="utf-8"
+    )
+    current_tasks = active_tasks.split("## Current tasks", maxsplit=1)[1]
+    latest_package = current_tasks.split(
+        "- [x] **Re-confirm the closed TinyCPU boundary after the latest request**",
+        maxsplit=1,
+    )[0]
+
+    planning_files = (
+        REPOSITORY_ROOT / relative_path
+        for relative_path in subprocess.check_output(
+            ["git", "ls-files", "*.md", "*.rst", "*.txt"],
+            cwd=REPOSITORY_ROOT,
+            text=True,
+        ).splitlines()
+    )
+    unchecked_entries = [
+        f"{planning_file.relative_to(REPOSITORY_ROOT)}:{line_number}"
+        for planning_file in planning_files
+        for line_number, line in enumerate(
+            planning_file.read_text(encoding="utf-8").splitlines(), start=1
+        )
+        if re.match(r"^\s*[-*] \[ \]", line)
+    ]
+
+    first_content_line = next(
+        line for line in current_tasks.splitlines() if line.strip()
+    )
+    assert first_content_line == (
+        "- [x] **Re-confirm the repository-wide work-package boundary after "
+        "the latest request**"
+    )
+    assert unchecked_entries == []
+    assert "no unchecked work package is documented" in latest_package
+    assert "AP 1 through AP 15 remain\n    complete" in latest_package
+    assert "no authorized package to implement" in latest_package
+    assert "bounded, unchecked item with explicit acceptance criteria" in (
+        latest_package
+    )
+    assert "does not create that scope" in latest_package
 
 
 def test_detailed_hardware_docs_do_not_advertise_completed_follow_ups():

@@ -90,7 +90,9 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
-    <comp lib="0" loc="(540,240)" name="Constant"/>
+    <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
       <a name="appear" val="right"/>
       <a name="bit1" val="0"/>
@@ -111,6 +113,7 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="value" val="0x1"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">

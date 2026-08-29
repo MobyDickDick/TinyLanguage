@@ -28,8 +28,9 @@ archived in `docs/open_tasks_archive.md`.
     oracle; contract regressions remove each opcode's cases in turn and require
     rejection, while dedicated jump checks freeze both branch outcomes.
 
-- [ ] **Restore TinyCPU reset, fetch, and program-counter progress**
-  (Owner: TinyCPU/Hardware; prerequisite: completed opcode-proof package)
+- [x] **Restore TinyCPU reset, fetch, and program-counter progress**
+  (Owner: TinyCPU/Hardware; prerequisite: completed opcode-proof package;
+  completed 2026-08-29)
   - Evidence: the isolated `LOAD_CONST` proof currently reaches the pinned
     simulator but does not halt before the launcher's 120-second timeout. Its
     retained table contains more than two million clock rows with the program
@@ -43,6 +44,16 @@ archived in `docs/open_tasks_archive.md`.
     followed by a second run produces the same trace; the inspector reports no
     open ports, wired-OR conflicts, or bus-width conflicts on the affected
     sheets.
+  - Result: both constants that control the PC register now explicitly drive
+    one: the one-bit register enable is asserted and the 16-bit adder receives
+    `0x0001`. The isolated simulator trace consequently fetches `LOAD_CONST`,
+    `PRINT`, and `HALT` in order instead of retaining PC zero; reset continues
+    to reach only the PC reset terminal. The still-unasserted external halt and
+    accumulator result are downstream control-path gaps retained by the
+    following bounded packages.
+  - Verification: the topology regression requires explicit `0x1` values
+    rather than treating a missing Constant value as one, and the maintained
+    diagnostic sheet mirrors the integrated fetch/decode circuit.
 
 - [ ] **Wire the TinyCPU accumulator write-enable controls directly**
   (Owner: TinyCPU/Hardware; prerequisite: reset/fetch repair)

@@ -271,8 +271,7 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [x] **Re-audit the closed TinyCPU boundary after "
-        "the latest request**"
+        "- [x] **Re-check the closed TinyCPU boundary for the latest request**"
     )
 
 
@@ -300,7 +299,7 @@ def test_latest_tinycpu_request_preserves_the_closed_roadmap_boundary():
         if line.startswith("- [x]") and "TinyCPU" in line
     )
     assert first_tinycpu_entry == (
-        "- [x] **Re-audit the closed TinyCPU boundary after the latest request**"
+        "- [x] **Re-check the closed TinyCPU boundary for the latest request**"
     )
     assert "AP 1 through AP 15 remain complete" in latest_package
     assert "no TinyCPU implementation package\n    to execute" in latest_package
@@ -338,7 +337,7 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
         if line.startswith("- [x]") and "TinyCPU" in line
     )
     assert first_tinycpu_entry == (
-        "- [x] **Re-audit the closed TinyCPU boundary after the latest request**"
+        "- [x] **Re-check the closed TinyCPU boundary for the latest request**"
     )
     assert "no successor package is scoped" in latest_package
     assert "no\n    documented TinyCPU work package to execute" in latest_package
@@ -390,8 +389,7 @@ def test_repeated_repository_request_does_not_create_implementation_scope():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [x] **Re-audit the closed TinyCPU boundary after "
-        "the latest request**"
+        "- [x] **Re-check the closed TinyCPU boundary for the latest request**"
     )
     assert unchecked_entries == []
     assert "no unchecked work package is documented" in latest_package

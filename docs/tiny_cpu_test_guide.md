@@ -93,3 +93,24 @@ Falls das große Projekt nicht lädt, öffne zuerst der Reihe nach
 | Download der JAR scheitert | JAR manuell herunterladen und `scripts/test-logisim-local.sh /pfad/zur/JAR` ausführen. |
 | Mehrere JAR-Dateien gefunden | Den gewünschten vollständigen Pfad an `scripts/test-logisim-local.sh` übergeben. |
 | Test schlägt fehl | Die erste Fehlermeldung sowie `artifacts/tinycpu-ap12-acceptance/acceptance.json` prüfen; ein abgebrochener Lauf gilt nicht als bestanden. |
+
+# Topologische Schaltungstests
+
+`hardware/logisim/TinyCPU.circ` ist eine handgepflegte Zeichnung. Ihre
+elektrische Schnittstelle, nicht ihre Anordnung auf der Zeichenfläche, ist der
+Testvertrag. Schaltungstests benennen daher immer das Schemablatt, den Baustein
+sowie Quell- und Zielport. Ein Test darf weder feste `loc`-Koordinaten
+vergleichen noch Anschlusskoordinaten eines automatisch erzeugten
+Unterbausteins aus dessen Position berechnen.
+
+Diese Regel gilt für **jedes** Schemablatt und ebenso für sprachliche
+Akzeptanztests: Namen, Docstrings und Fehlermeldungen beschreiben zum Beispiel
+„`FetchDecode.PC_OUT` erreicht `Datapath`“ statt „Leitung `(x1,y1)` erreicht
+`(x2,y2)`“. Absolute Punkte sind ausschließlich in künstlichen, lokalen
+XML-Fixtures erlaubt, mit denen der Netlist-Parser selbst geprüft wird.
+
+Beim Korrigieren gilt stets die neueste vom Benutzer gepflegte Schaltung als
+Baseline. Ein fehlgeschlagener historischer Layouttest rechtfertigt niemals,
+eine ältere Zeichnung zurückzukopieren. Zuerst wird der elektrische Fehler an
+benannten Ports reproduziert; anschließend werden Schaltung und Test gemeinsam
+gegen diesen topologischen Vertrag korrigiert.

@@ -1132,10 +1132,6 @@ def test_decode_write_request_causes_use_separate_gate_connections():
     assert write_request in _reachable(adjacency, write_output)
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     """Select memory for three load modes without shorting data or controls."""
 
@@ -1219,10 +1215,6 @@ def test_top_level_accumulator_data_selector_keeps_sources_isolated():
     assert data_nets.isdisjoint(address_outputs)
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_input_value_is_selected_only_for_input():
     """Route the external 16-bit value through a dedicated final selector."""
 
@@ -1550,10 +1542,6 @@ def test_top_level_uses_the_corrected_direct_data_routes():
     assert actual.isdisjoint(obsolete_labels)
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_accumulator_data_bus_reaches_the_corrected_terminal():
     """Follow the hand-corrected direct route to the visible data terminal."""
 
@@ -1565,10 +1553,6 @@ def test_top_level_accumulator_data_bus_reaches_the_corrected_terminal():
     assert data_input in _reachable(adjacency, input_mux.get("loc"))
 
 
-@pytest.mark.xfail(
-    reason="hand-redrawn accumulator logic is intentionally pending direct-wire integration",
-    strict=False,
-)
 def test_top_level_not_data_selector_uses_inverted_accumulator():
     """Select an isolated, bitwise-inverted accumulator only for ``NOT``."""
 

@@ -697,6 +697,137 @@
     <wire from="(990,190)" to="(3120,190)"/>
     <wire from="(990,190)" to="(990,370)"/>
     <wire from="(990,370)" to="(1030,370)"/>
+    <!-- Direct, labelled accumulator data-selection chain. -->
+    <comp lib="0" loc="(200,2500)" name="Pin">
+      <a name="appearance" val="classic"/>
+      <a name="label" val="INPUT_VALUE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(4050,2300)" name="OR Gate">
+      <a name="inputs" val="3"/>
+      <a name="label" val="ACC_MEMORY_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(2400,2500)" name="Multiplexer">
+      <a name="label" val="ACC_MEMORY_DATA_SELECT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(2400,2570)" name="NOT Gate">
+      <a name="label" val="ACC_NOT_VALUE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(2500,2500)" name="Multiplexer">
+      <a name="label" val="ACC_NOT_DATA_SELECT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="1" loc="(2400,2700)" name="OR Gate">
+      <a name="inputs" val="4"/>
+      <a name="label" val="ACC_SUB_FAMILY_SELECT"/>
+    </comp>
+    <comp lib="1" loc="(2400,2800)" name="OR Gate">
+      <a name="inputs" val="3"/>
+      <a name="label" val="ACC_SUB_MEMORY_SELECT"/>
+    </comp>
+    <comp lib="2" loc="(2500,2600)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_OPERAND_SELECT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="3" loc="(2600,2600)" name="Subtractor">
+      <a name="label" val="ACC_SUB_VALUE"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(2700,2500)" name="Multiplexer">
+      <a name="label" val="ACC_SUB_SELECT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <comp lib="2" loc="(2800,2500)" name="Multiplexer">
+      <a name="label" val="ACC_INPUT_DATA_SELECT"/>
+      <a name="width" val="16"/>
+    </comp>
+    <wire from="(930,390)" to="(940,390)"/>
+    <wire from="(940,390)" to="(940,2450)"/>
+    <wire from="(940,2450)" to="(2350,2450)"/>
+    <wire from="(2350,2450)" to="(2350,2490)"/>
+    <wire from="(2350,2490)" to="(2370,2490)"/>
+    <wire from="(2350,2450)" to="(2450,2450)"/>
+    <wire from="(2450,2450)" to="(2450,2590)"/>
+    <wire from="(2450,2590)" to="(2470,2590)"/>
+    <wire from="(890,570)" to="(890,2470)"/>
+    <wire from="(890,2470)" to="(2330,2470)"/>
+    <wire from="(2330,2470)" to="(2330,2510)"/>
+    <wire from="(2330,2510)" to="(2370,2510)"/>
+    <wire from="(2330,2470)" to="(2430,2470)"/>
+    <wire from="(2430,2470)" to="(2430,2610)"/>
+    <wire from="(2430,2610)" to="(2470,2610)"/>
+    <wire from="(2400,2500)" to="(2440,2500)"/>
+    <wire from="(2440,2500)" to="(2440,2490)"/>
+    <wire from="(2440,2490)" to="(2470,2490)"/>
+    <wire from="(1950,350)" to="(1950,2570)"/>
+    <wire from="(1950,2570)" to="(2370,2570)"/>
+    <wire from="(1950,2570)" to="(2520,2570)"/>
+    <wire from="(2520,2570)" to="(2520,2590)"/>
+    <wire from="(2520,2590)" to="(2560,2590)"/>
+    <wire from="(2400,2570)" to="(2420,2570)"/>
+    <wire from="(2420,2570)" to="(2420,2510)"/>
+    <wire from="(2420,2510)" to="(2470,2510)"/>
+    <wire from="(2500,2600)" to="(2540,2600)"/>
+    <wire from="(2540,2600)" to="(2540,2610)"/>
+    <wire from="(2540,2610)" to="(2560,2610)"/>
+    <wire from="(2500,2500)" to="(2670,2490)"/>
+    <wire from="(2600,2600)" to="(2640,2600)"/>
+    <wire from="(2640,2600)" to="(2640,2510)"/>
+    <wire from="(2640,2510)" to="(2670,2510)"/>
+    <wire from="(2700,2500)" to="(2740,2500)"/>
+    <wire from="(2740,2500)" to="(2740,2490)"/>
+    <wire from="(2740,2490)" to="(2770,2490)"/>
+    <wire from="(200,2500)" to="(200,2530)"/>
+    <wire from="(200,2530)" to="(2740,2530)"/>
+    <wire from="(2740,2530)" to="(2740,2510)"/>
+    <wire from="(2740,2510)" to="(2770,2510)"/>
+    <wire from="(2800,2500)" to="(2850,2500)"/>
+    <wire from="(2850,2500)" to="(2850,2400)"/>
+    <wire from="(1730,350)" to="(1730,2400)"/>
+    <wire from="(1730,2400)" to="(2850,2400)"/>
+    <wire from="(1260,790)" to="(3900,790)"/>
+    <wire from="(3900,790)" to="(3900,2280)"/>
+    <wire from="(3900,2280)" to="(4000,2280)"/>
+    <wire from="(1260,810)" to="(3920,810)"/>
+    <wire from="(3920,810)" to="(3920,2300)"/>
+    <wire from="(3920,2300)" to="(4000,2300)"/>
+    <wire from="(1260,830)" to="(3940,830)"/>
+    <wire from="(3940,830)" to="(3940,2320)"/>
+    <wire from="(3940,2320)" to="(4000,2320)"/>
+    <wire from="(4050,2300)" to="(4070,2300)"/>
+    <wire from="(4070,2300)" to="(4070,2350)"/>
+    <wire from="(4070,2350)" to="(2380,2350)"/>
+    <wire from="(2380,2350)" to="(2380,2520)"/>
+    <wire from="(1260,1430)" to="(100,1430)"/>
+    <wire from="(100,1430)" to="(100,2550)"/>
+    <wire from="(100,2550)" to="(2480,2550)"/>
+    <wire from="(2480,2550)" to="(2480,2520)"/>
+    <wire from="(1260,1590)" to="(2780,1590)"/>
+    <wire from="(2780,1590)" to="(2780,2520)"/>
+    <wire from="(1260,930)" to="(2210,930)"/>
+    <wire from="(2210,930)" to="(2210,2670)"/>
+    <wire from="(2210,2670)" to="(2350,2670)"/>
+    <wire from="(1260,950)" to="(2230,950)"/>
+    <wire from="(2230,950)" to="(2230,2690)"/>
+    <wire from="(2230,2690)" to="(2350,2690)"/>
+    <wire from="(1260,970)" to="(2250,970)"/>
+    <wire from="(2250,970)" to="(2250,2710)"/>
+    <wire from="(2250,2710)" to="(2350,2710)"/>
+    <wire from="(1260,990)" to="(2270,990)"/>
+    <wire from="(2270,990)" to="(2270,2730)"/>
+    <wire from="(2270,2730)" to="(2350,2730)"/>
+    <wire from="(2400,2700)" to="(2680,2700)"/>
+    <wire from="(2680,2700)" to="(2680,2520)"/>
+    <wire from="(2140,2280)" to="(2140,2780)"/>
+    <wire from="(2140,2780)" to="(2350,2780)"/>
+    <wire from="(2160,2300)" to="(2160,2800)"/>
+    <wire from="(2160,2800)" to="(2350,2800)"/>
+    <wire from="(2180,2320)" to="(2180,2820)"/>
+    <wire from="(2180,2820)" to="(2350,2820)"/>
+    <wire from="(2400,2800)" to="(2480,2800)"/>
+    <wire from="(2480,2800)" to="(2480,2620)"/>
   </circuit>
   <circuit name="EffectiveAddress">
     <a name="appearance" val="logisim_evolution"/>

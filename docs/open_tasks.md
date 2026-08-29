@@ -154,6 +154,14 @@ archived in `docs/open_tasks_archive.md`.
     passing tests). The real 61-fixture electrical run remains outstanding
     because the pinned simulator download is unavailable in this environment;
     keep this package unchecked until that acceptance run succeeds.
+  - Progress (2026-08-29, latest redraw audit): restored the accepted named
+    opcode route, explicit program-counter constants, accumulator-selector
+    labels, and 12-/16-bit monitor widths after the newest schematic edit had
+    removed them. The inspector and focused topology regressions are connected
+    again. A repository-local pinned simulator was discovered and reached the
+    electrical gate, but the reset/start trace still did not halt; the complete
+    61-fixture acceptance therefore remains open rather than being recorded as
+    passed.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

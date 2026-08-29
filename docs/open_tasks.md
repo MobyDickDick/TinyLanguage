@@ -76,8 +76,9 @@ archived in `docs/open_tasks_archive.md`.
     both aggregation stages, and follows the exported request across the
     top-level subcircuit boundary to the accumulator load terminal.
 
-- [ ] **Complete the TinyCPU accumulator data-selection chain**
-  (Owner: TinyCPU/Hardware; prerequisite: accumulator write-enable wiring)
+- [x] **Complete the TinyCPU accumulator data-selection chain**
+  (Owner: TinyCPU/Hardware; prerequisite: accumulator write-enable wiring;
+  completed 2026-08-29)
   - Scope: label and directly wire the memory/immediate, unary `NOT`,
     subtraction-result, and external-input selectors that feed
     `Datapath.DATA_IN`. Keep data nets isolated from address, validity, and
@@ -85,6 +86,15 @@ archived in `docs/open_tasks_archive.md`.
   - Acceptance: the accumulator data-selector, input-value, corrected-terminal,
     and `NOT` topology regressions pass without `xfail`; all load, `NOT`,
     `SUB_*`, and `INPUT` opcode proofs match the VM edge trace.
+  - Result: `TinyCPUMain` now exposes a labelled, direct 16-bit selector chain
+    from the instruction operand or memory data through unary `NOT`, the
+    subtraction result, and the external input to `Datapath.DATA_IN`. The
+    three memory-load controls remain isolated inputs of `ACC_MEMORY_SELECT`;
+    no address, validity, or accumulator-write control is part of a data net.
+  - Verification: the four data-path topology regressions now run as mandatory
+    tests and resolve components by their stable schematic labels. The
+    corrected terminal route remains tunnel-free; arithmetic-validity wiring
+    stays explicitly bounded to the following package.
 
 - [ ] **Complete TinyCPU accumulator validity and arithmetic selection**
   (Owner: TinyCPU/Hardware; prerequisite: accumulator data-selection chain)

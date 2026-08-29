@@ -64,7 +64,7 @@ routing the status through it joins existing top-level signals and produces
 Logisim error values. The topology regression therefore rejects that former
 three-segment route as well as any additional top-level tunnel.
 These independent runs are the reset/restart and multi-cycle reproducibility
-check. Finally, the same invocation runs every AP-11 opcode-family and
+check. Finally, the same invocation runs every isolated opcode proof and
 sticky-error fixture; none of
 these simulator checks is optional in CI.
 
@@ -1096,15 +1096,18 @@ the hardware contract; this package only adds the new OR sheets.
 
 ## AP-11-Abdeckungsvertrag
 
-`tinycpu-electrical-matrix-v1.json` ist die maschinenlesbare Soll-Matrix für
-die nächste elektrische Abnahmestufe. Sie ordnet jeden Opcode des stabilen
-Maschinenformats einer Testfamilie zu und benennt für jedes Sticky-Fehlerbit
-eine Fehler-Fixture. Der gepinnte Launcher validiert die Matrix vor Java- und
-Logisim-Start gegen `tinycpu-machine-v1.json`; fehlende, doppelte, zusätzliche
-oder umnummerierte Opcodes sowie unvollständige Fehlerabdeckung brechen den Lauf
-ab. Die Matrix allein ist kein Simulationsnachweis; der Launcher führt deshalb
-jede Familie mit ausgetauschtem ROM elektrisch aus und vergleicht ihre
-Flankentabelle gegen die VM.
+`tinycpu-electrical-matrix-v1.json` ist die maschinenlesbare Soll-Matrix. Ihre
+Schema-Version 2 enthält für jeden Opcode einen eigenständig ausführbaren
+Verhaltensfall. Bedingte Sprünge besitzen getrennte Fälle für den genommenen
+und nicht genommenen Pfad; Sprungziele und Fehlersentinels machen beide Pfade
+vom gewöhnlichen `PC + 1` unterscheidbar. `JUMP_ADDRESS`, `HALT_ERROR` und alle
+anderen Befehle werden tatsächlich erreicht. Zusätzlich benennt die Matrix für
+jedes Sticky-Fehlerbit eine Fehler-Fixture. Der gepinnte Launcher validiert die
+Fälle vor Java- und Logisim-Start gegen `tinycpu-machine-v1.json`; fehlende oder
+doppelte Fälle, unvollständige Sprungvarianten und unvollständige
+Fehlerabdeckung brechen den Lauf ab. Anschließend führt er jeden Fall mit
+ausgetauschtem ROM elektrisch aus und vergleicht seine Flankentabelle gegen die
+VM.
 
 Der CI-Aufruf übergibt zusätzlich
 `--matrix-output artifacts/ci/tinycpu-ap11-matrix`. Der Launcher assembliert

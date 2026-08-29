@@ -113,9 +113,9 @@ def test_active_backlog_exposes_the_scoped_tinycpu_coverage_packages():
         active_tasks,
         re.IGNORECASE | re.MULTILINE,
     )
-    assert len(unchecked_tinycpu) == 2
-    assert "Prove every TinyCPU opcode behavior electrically" in unchecked_tinycpu[0]
-    assert "Correct TinyCPU behaviors exposed by opcode proofs" in unchecked_tinycpu[1]
+    assert len(unchecked_tinycpu) == 1
+    assert "Correct TinyCPU behaviors exposed by opcode proofs" in unchecked_tinycpu[0]
+    assert "[x] **Prove every TinyCPU opcode behavior electrically**" in active_tasks
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "No successor package is\n  currently scoped" in tinycpu_section
@@ -260,7 +260,7 @@ def test_historical_repository_audit_precedes_new_opcode_packages():
                     f"{planning_file.relative_to(REPOSITORY_ROOT)}:{line_number}"
                 )
 
-    assert len(unchecked_entries) == 2
+    assert len(unchecked_entries) == 1
     assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 complete" in latest_package
@@ -274,7 +274,7 @@ def test_historical_repository_audit_precedes_new_opcode_packages():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [ ] **Prove every TinyCPU opcode behavior electrically**"
+        "- [x] **Prove every TinyCPU opcode behavior electrically**"
     )
 
 
@@ -302,7 +302,7 @@ def test_latest_tinycpu_request_preserves_the_closed_roadmap_boundary():
         if line.startswith("- [x]") and "TinyCPU" in line
     )
     assert first_tinycpu_entry == (
-        "- [x] **Confirm the closed TinyCPU boundary for the current request**"
+        "- [x] **Prove every TinyCPU opcode behavior electrically**"
     )
     assert "AP 1 through AP 15 remain complete" in latest_package
     assert "no TinyCPU implementation package\n    to execute" in latest_package
@@ -340,7 +340,7 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
         if line.startswith("- [x]") and "TinyCPU" in line
     )
     assert first_tinycpu_entry == (
-        "- [x] **Confirm the closed TinyCPU boundary for the current request**"
+        "- [x] **Prove every TinyCPU opcode behavior electrically**"
     )
     assert "no successor package is scoped" in latest_package
     assert "no\n    documented TinyCPU work package to execute" in latest_package
@@ -392,9 +392,9 @@ def test_new_opcode_audit_creates_only_the_documented_packages():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [ ] **Prove every TinyCPU opcode behavior electrically**"
+        "- [x] **Prove every TinyCPU opcode behavior electrically**"
     )
-    assert len(unchecked_entries) == 2
+    assert len(unchecked_entries) == 1
     assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 remain\n    complete" in latest_package

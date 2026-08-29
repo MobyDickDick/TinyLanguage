@@ -5,8 +5,8 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-- [ ] **Prove every TinyCPU opcode behavior electrically**
-  (Owner: TinyCPU/Testing)
+- [x] **Prove every TinyCPU opcode behavior electrically**
+  (Owner: TinyCPU/Testing; completed 2026-08-29)
   - Scope: replace the family-level AP-11 programs with isolated, executable
     cases for every one of the 50 listed opcodes, including taken and non-taken
     variants for every conditional jump.
@@ -19,6 +19,14 @@ archived in `docs/open_tasks_archive.md`.
     edge traces for every case; a mutation that disables any opcode causes its
     dedicated case to fail; the matrix contract rejects listed opcodes without
     an executable behavioral case.
+  - Result: schema 2 replaces the six family programs with 55 isolated opcode
+    cases (all 50 opcodes plus the five non-taken conditional-jump variants)
+    and retains the six sticky-error fixtures. Jump programs place observable
+    failure sentinels on the wrong path, and both halt instructions are now
+    reached as the first tested instruction.
+  - Verification: the launcher executes every case against the same VM edge
+    oracle; contract regressions remove each opcode's cases in turn and require
+    rejection, while dedicated jump checks freeze both branch outcomes.
 
 - [ ] **Correct TinyCPU behaviors exposed by opcode proofs**
   (Owner: TinyCPU/Hardware; blocked by the opcode-proof package)

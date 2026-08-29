@@ -595,22 +595,25 @@ def test_ap11_matrix_contract_covers_every_opcode_and_sticky_error():
     runner.verify_matrix_contract(runner.DEFAULT_MATRIX, runner.DEFAULT_MACHINE_FORMAT)
 
 
-def test_ap11_matrix_supplies_runnable_family_and_error_fixtures():
+def test_opcode_proof_matrix_supplies_dedicated_cases_and_error_fixtures():
     import json
 
     matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
-    expected = {family["id"] for family in matrix["opcode_families"]}
+    expected = {case["id"] for case in matrix["opcode_cases"]}
     expected.update(row["fixture"] for row in matrix["sticky_errors"])
 
-    assert {fixture["id"] for fixture in matrix["fixtures"]} == expected
-    assert all(fixture["program"].strip() for fixture in matrix["fixtures"])
+    fixtures = [*matrix["opcode_cases"], *matrix["fixtures"]]
+    assert {fixture["id"] for fixture in fixtures} == expected
+    assert all(fixture["program"].strip() for fixture in fixtures)
 
 
 def test_ap11_matrix_contract_rejects_missing_opcode(tmp_path):
     import json
 
     matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
-    matrix["opcode_families"][0]["opcodes"].pop()
+    matrix["opcode_cases"] = [
+        case for case in matrix["opcode_cases"] if case["opcode"] != "LOAD_CONST"
+    ]
     incomplete = tmp_path / "matrix.json"
     incomplete.write_text(json.dumps(matrix), encoding="utf-8")
 
@@ -620,6 +623,41 @@ def test_ap11_matrix_contract_rejects_missing_opcode(tmp_path):
         assert "missing:" in str(exc)
     else:
         raise AssertionError("an incomplete electrical opcode matrix was accepted")
+
+
+def test_opcode_proof_contract_rejects_disabling_each_dedicated_case(tmp_path):
+    """Every opcode must own a case whose removal invalidates the matrix."""
+    import json
+
+    matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+    opcodes = {case["opcode"] for case in matrix["opcode_cases"]}
+    for opcode in opcodes:
+        mutated = dict(matrix)
+        mutated["opcode_cases"] = [
+            case for case in matrix["opcode_cases"] if case["opcode"] != opcode
+        ]
+        path = tmp_path / f"without-{opcode}.json"
+        path.write_text(json.dumps(mutated), encoding="utf-8")
+        try:
+            runner.verify_matrix_contract(path, runner.DEFAULT_MACHINE_FORMAT)
+        except runner.SmokeTestError as exc:
+            assert f"missing: {opcode}" in str(exc)
+        else:
+            raise AssertionError(f"matrix accepted without {opcode}")
+
+
+def test_opcode_proof_jump_cases_make_taken_and_fallthrough_paths_observable():
+    import json
+
+    matrix = json.loads(runner.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+    jumps = [case for case in matrix["opcode_cases"] if case["opcode"].startswith("JUMP_")]
+    unconditional = next(case for case in jumps if case["opcode"] == "JUMP_ADDRESS")
+    assert unconditional["program"].splitlines()[1] == "HALT_ERROR()"
+    for opcode in ("JUMP_ZERO", "JUMP_NOT_ZERO", "JUMP_NEGATIVE", "JUMP_ERROR", "JUMP_NOT_ERROR"):
+        variants = {case["variant"]: case for case in jumps if case["opcode"] == opcode}
+        assert set(variants) == {"taken", "not-taken"}
+        assert "HALT_ERROR()" in variants["taken"]["program"]
+        assert variants["not-taken"]["program"].splitlines()[-1] == "HALT_ERROR()"
 
 
 def test_ap11_matrix_contract_rejects_duplicate_error_fixture(tmp_path):

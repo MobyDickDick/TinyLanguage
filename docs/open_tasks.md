@@ -28,14 +28,63 @@ archived in `docs/open_tasks_archive.md`.
     oracle; contract regressions remove each opcode's cases in turn and require
     rejection, while dedicated jump checks freeze both branch outcomes.
 
-- [ ] **Correct TinyCPU behaviors exposed by opcode proofs**
-  (Owner: TinyCPU/Hardware; blocked by the opcode-proof package)
-  - Scope: repair current `TinyCPU.circ` datapath, next-PC, status, memory, I/O,
-    or halt behavior wherever the opcode-specific electrical cases disagree
-    with the VM contract. Preserve the accepted opcode-ordered
-    `JUMP_NOT_ZERO` drawing instead of restoring its former final port slot.
-  - Acceptance: all opcode-specific simulator cases pass, all 50 decoder
-    outputs remain isolated and reachable, and the inspector reports no open
+- [ ] **Restore TinyCPU reset, fetch, and program-counter progress**
+  (Owner: TinyCPU/Hardware; prerequisite: completed opcode-proof package)
+  - Evidence: the isolated `LOAD_CONST` proof currently reaches the pinned
+    simulator but does not halt before the launcher's 120-second timeout. Its
+    retained table contains more than two million clock rows with the program
+    counter held at zero, so later opcode behavior cannot yet be diagnosed.
+  - Scope: trace the power-on reset through `TinyCPUMain`, `FetchDecode`, and
+    the next-PC path; restore exactly one initialization pulse and one program-
+    counter update per rising edge. Preserve the accepted opcode-ordered
+    `JUMP_NOT_ZERO` port position and direct visible route.
+  - Acceptance: the dedicated `LOAD_CONST` case executes `LOAD_CONST(7)`,
+    `PRINT()`, and `HALT()` in three VM-matching rising-edge rows; a reset
+    followed by a second run produces the same trace; the inspector reports no
+    open ports, wired-OR conflicts, or bus-width conflicts on the affected
+    sheets.
+
+- [ ] **Wire the TinyCPU accumulator write-enable controls directly**
+  (Owner: TinyCPU/Hardware; prerequisite: reset/fetch repair)
+  - Scope: connect every value-producing decoder family to the labelled
+    `ACC_LOAD_REQUEST` aggregation and connect that request, `NOT`, and `INPUT`
+    independently to `ACC_WRITE_REQUEST`. Store and address-register-only
+    instructions must remain excluded.
+  - Acceptance: the two accumulator-request topology regressions pass without
+    `xfail`; every control reaches exactly one gate input without shorting
+    another decoder output; `LOAD_CONST`, the three memory-load modes, `NOT`,
+    and `INPUT` update the accumulator in isolated simulator cases.
+
+- [ ] **Complete the TinyCPU accumulator data-selection chain**
+  (Owner: TinyCPU/Hardware; prerequisite: accumulator write-enable wiring)
+  - Scope: label and directly wire the memory/immediate, unary `NOT`,
+    subtraction-result, and external-input selectors that feed
+    `Datapath.DATA_IN`. Keep data nets isolated from address, validity, and
+    control nets and do not restore the obsolete accumulator tunnels.
+  - Acceptance: the accumulator data-selector, input-value, corrected-terminal,
+    and `NOT` topology regressions pass without `xfail`; all load, `NOT`,
+    `SUB_*`, and `INPUT` opcode proofs match the VM edge trace.
+
+- [ ] **Complete TinyCPU accumulator validity and arithmetic selection**
+  (Owner: TinyCPU/Hardware; prerequisite: accumulator data-selection chain)
+  - Scope: directly wire and label the memory, `NOT`, `ADD`, `SUB`, and input
+    validity selectors. Require both accumulator and selected-operand validity
+    for binary arithmetic, while immediate loads retain their defined valid
+    operand source.
+  - Acceptance: the memory-, input-, `NOT`-, `ADD`-, and `SUB`-validity topology
+    regressions pass without `xfail`; the corresponding opcode cases match the
+    VM for valid and invalid operands; sticky `INV`, `ADDR`, `OVF`, and `DIV0`
+    behavior remains latched until reset.
+
+- [ ] **Close the TinyCPU opcode-proof electrical repair**
+  (Owner: TinyCPU/Hardware; prerequisite: all preceding repair packages)
+  - Scope: run all 55 opcode cases and six sticky-error fixtures, repair any
+    remaining next-PC, status, memory, I/O, or halt mismatch, and remove the
+    resolved accumulator-topology `xfail` markers. Do not change opcode
+    encodings or the accepted `JUMP_NOT_ZERO` drawing.
+  - Acceptance: every matrix case matches the Python VM edge oracle; all 50
+    decoder outputs remain isolated and reachable; the complete TinyCPU test
+    suite has no unexpected skip or `xfail`; and the inspector reports no open
     ports, wired-OR conflicts, or bus-width conflicts.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**

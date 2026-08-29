@@ -327,9 +327,9 @@ def test_fetch_decode_program_counter_is_enabled_and_incremented():
     assert fetch is not None
     enable = fetch.find("comp[@name='Constant'][@loc='(540,240)']")
     increment = fetch.find("comp[@name='Constant'][@loc='(710,240)']")
-    assert _attributes(enable).get("value", "0x1") == "0x1"
+    assert _attributes(enable).get("value") == "0x1"
     assert _attributes(enable).get("width", "1") == "1"
-    assert _attributes(increment).get("value", "0x1") == "0x1"
+    assert _attributes(increment).get("value") == "0x1"
     assert _attributes(increment).get("width") == "16"
     adjacency = _electrical_adjacency(fetch, {"(710,240)", "(730,240)", "(770,230)"})
     assert "(730,240)" in _reachable(adjacency, increment.get("loc"))

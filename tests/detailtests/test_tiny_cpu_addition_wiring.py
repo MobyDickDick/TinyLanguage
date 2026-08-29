@@ -58,31 +58,26 @@ def test_extracted_addition_has_the_restored_operation_interface():
         for circuit in root.findall("circuit")
         if circuit.get("name") == "AddSubCircuit"
     )
-    instance = next(
-        component
+    assert any(
+        component.get("name") == "AddSubCircuit"
         for component in operations.findall("comp")
-        if component.get("name") == "AddSubCircuit"
     )
 
-    inputs = sorted(
-        (
-            component
-            for component in addition.findall("comp")
-            if component.get("name") == "Pin"
-            and _attributes(component).get("type", "input") == "input"
-            and _attributes(component).get("width", "1") == "1"
-        ),
-        key=lambda component: _point(component.get("loc"))[::-1],
-    )
-    instance_x, instance_y = _point(instance.get("loc"))
+    # The contract is the set of named ports.  Deliberately do not derive the
+    # generated symbol terminals from pin order or drawing coordinates: moving
+    # a pin in Logisim must not turn an electrically equivalent redraw into a
+    # regression.
     terminals = {
-        _attributes(pin)["label"]: f"({instance_x - 220},{instance_y + 20 * index})"
-        for index, pin in enumerate(inputs)
+        _attributes(pin)["label"]
+        for pin in addition.findall("comp")
+        if pin.get("name") == "Pin"
+        and _attributes(pin).get("type", "input") == "input"
+        and _attributes(pin).get("width", "1") == "1"
     }
     # This is the interface of the restored, hand-maintained operation box.
     # Older tests described the subsequently reverted validity-helper layout
     # and therefore required ports which no longer exist in this schematic.
-    assert set(terminals) == {
+    assert terminals == {
         "ADD_CONST",
         "ADD_ADDRESS",
         "ADD_ADDRESS_REGISTER",

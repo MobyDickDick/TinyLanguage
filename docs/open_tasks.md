@@ -28,6 +28,26 @@ archived in `docs/open_tasks_archive.md`.
     oracle; contract regressions remove each opcode's cases in turn and require
     rejection, while dedicated jump checks freeze both branch outcomes.
 
+- [x] **Make all TinyCPU schematic tests topological**
+  (Owner: TinyCPU/Testing; completed 2026-08-29)
+  - Scope: treat the current hand-maintained `TinyCPU.circ` as the baseline;
+    never restore an older drawing merely to satisfy a test. Address every
+    schematic page through named inputs, outputs, and subcircuit instances.
+  - Test rule: production regressions must not assert absolute `loc` values,
+    reconstructed generated-symbol terminals, wire corridors, or component
+    spacing. Coordinates are permitted only inside small synthetic fixtures
+    that unit-test the netlist parser itself.
+  - Language rule: test names, docstrings, assertion messages, and acceptance
+    text describe the named source, destination, component, and electrical
+    relationship. They must not describe a connection as a pair of points.
+  - Result: a project-wide contract now visits every schematic page, requires
+    unique named ports and stable labels on every hierarchical component, and
+    evaluates each page through its named connectivity report. The restored
+    addition-interface regression likewise compares port names directly.
+  - Follow-up: migrate any remaining historical coordinate regression when
+    its affected work package is next edited; do not use such a failure as a
+    reason to replace the user's schematic.
+
 - [x] **Restore TinyCPU reset, fetch, and program-counter progress**
   (Owner: TinyCPU/Hardware; prerequisite: completed opcode-proof package;
   completed 2026-08-29)

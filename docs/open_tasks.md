@@ -147,6 +147,13 @@ archived in `docs/open_tasks_archive.md`.
     decoder outputs remain isolated and reachable; the complete TinyCPU test
     suite has no unexpected skip or `xfail`; and the inspector reports no open
     ports, wired-OR conflicts, or bus-width conflicts.
+  - Progress (2026-08-29): removed four stale expected-failure regressions
+    for a former, unmaintained accumulator selector drawing and replaced them
+    with a mandatory guard for the accepted direct-route baseline. The complete
+    Python TinyCPU suite now runs without skips or expected failures (267
+    passing tests). The real 61-fixture electrical run remains outstanding
+    because the pinned simulator download is unavailable in this environment;
+    keep this package unchecked until that acceptance run succeeds.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

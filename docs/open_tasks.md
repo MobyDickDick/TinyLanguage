@@ -5,6 +5,20 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Re-check the closed TinyCPU boundary for the latest request**
+  (Owner: TinyCPU/Documentation; completed 2026-08-29)
+  - Scope: handle the latest request for the next documented TinyCPU work
+    package by checking the active backlog, all 15 completed packages, and both
+    maintained roadmaps before modifying accepted hardware or release scope.
+  - Result: AP 1 through AP 15 remain complete, no unchecked TinyCPU package is
+    present, and both roadmaps continue to close the successor boundary. There
+    is therefore no documented TinyCPU work package to execute.
+  - Follow-up contract: implementation can resume only after a bounded,
+    unchecked successor with explicit scope and acceptance criteria is added to
+    the maintained backlog; the request itself does not define such a package.
+  - Verification: the roadmap-consistency regression requires this decision to
+    be the newest TinyCPU entry and cross-checks the two closed roadmaps.
+
 - [x] **Re-audit the closed TinyCPU boundary after the latest request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)
   - Scope: process the latest request for the next documented TinyCPU package

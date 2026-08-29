@@ -1,6 +1,6 @@
 # TinyCPU 1.0.0 release notes
 
-TinyCPU 1.0.0 is the first qualified release of the 12-bit-data/16-bit-address
+TinyCPU 1.0.0 is the first qualified release of the 16-bit-data/12-bit-address
 Logisim CPU, its versioned 22-bit machine format, assembler, reference simulator,
 and offline verification tools. The release tag is `tinycpu-v1.0.0`.
 

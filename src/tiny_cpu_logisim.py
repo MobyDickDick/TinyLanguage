@@ -158,25 +158,35 @@ def verify_matrix_contract(matrix_path: Path, machine_format_path: Path) -> None
         machine = json.loads(machine_format_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SmokeTestError(f"could not read TinyCPU electrical matrix: {exc}") from exc
-    if matrix.get("schema_version") != 1:
-        raise SmokeTestError("TinyCPU electrical matrix must use schema version 1")
+    if matrix.get("schema_version") != 2:
+        raise SmokeTestError("TinyCPU electrical matrix must use schema version 2")
     expected = {row["mnemonic"]: row["code"] for row in machine.get("opcodes", ())}
-    covered: dict[str, int] = {}
-    duplicates: set[str] = set()
-    for family in matrix.get("opcode_families", ()):
-        for row in family.get("opcodes", ()):
-            mnemonic = row.get("mnemonic")
-            if mnemonic in covered:
-                duplicates.add(mnemonic)
-            covered[mnemonic] = row.get("code")
-    missing = sorted(set(expected) - set(covered))
-    extra = sorted(set(covered) - set(expected))
-    wrong = sorted(name for name in expected.keys() & covered.keys() if covered[name] != expected[name])
-    if missing or extra or wrong or duplicates:
+    cases = matrix.get("opcode_cases", ())
+    covered = {case.get("opcode") for case in cases}
+    missing = sorted(set(expected) - covered)
+    extra = sorted(covered - set(expected), key=str)
+    duplicate_ids = len({case.get("id") for case in cases}) != len(cases)
+    malformed = []
+    for case in cases:
+        opcode = case.get("opcode")
+        try:
+            instructions = assemble(case.get("program", ""))
+        except (TypeError, ValueError) as exc:
+            raise SmokeTestError(f"invalid behavioral case {case.get('id')}: {exc}") from exc
+        if opcode not in {instruction.opcode for instruction in instructions.instructions}:
+            malformed.append(str(case.get("id")))
+    variants = {
+        opcode: {case.get("variant") for case in cases if case.get("opcode") == opcode}
+        for opcode in ("JUMP_ZERO", "JUMP_NOT_ZERO", "JUMP_NEGATIVE", "JUMP_ERROR", "JUMP_NOT_ERROR")
+    }
+    wrong_variants = sorted(opcode for opcode, values in variants.items() if values != {"taken", "not-taken"})
+    if missing or extra or duplicate_ids or malformed or wrong_variants:
         details = []
-        for label, values in (("missing", missing), ("extra", extra), ("wrong code", wrong), ("duplicate", sorted(duplicates))):
+        for label, values in (("missing", missing), ("extra", extra), ("case does not execute opcode", malformed), ("missing branch variant", wrong_variants)):
             if values:
                 details.append(f"{label}: {', '.join(values)}")
+        if duplicate_ids:
+            details.append("duplicate case id")
         raise SmokeTestError("invalid electrical opcode coverage (" + "; ".join(details) + ")")
     errors = [row.get("flag") for row in matrix.get("sticky_errors", ())]
     if set(errors) != EXPECTED_STICKY_ERRORS or len(errors) != len(EXPECTED_STICKY_ERRORS):
@@ -470,8 +480,8 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
 def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: Path) -> None:
     """Execute every declared AP-11 fixture with a replaced ROM and VM oracle."""
     matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
-    fixtures = matrix.get("fixtures", [])
-    declared = {family["id"] for family in matrix.get("opcode_families", [])}
+    fixtures = [*matrix.get("opcode_cases", []), *matrix.get("fixtures", [])]
+    declared = {case["id"] for case in matrix.get("opcode_cases", [])}
     declared.update(row["fixture"] for row in matrix.get("sticky_errors", []))
     supplied = {fixture.get("id") for fixture in fixtures}
     if supplied != declared or len(supplied) != len(fixtures):
@@ -573,7 +583,8 @@ def acceptance_test(
         raise SmokeTestError("AP-12 reset/restart traces are not reproducible")
     matrix_output = output / "isa-matrix"
     matrix_test(java, jar, project, matrix_path, matrix_output)
-    fixture_count = len(json.loads(matrix_path.read_text(encoding="utf-8"))["fixtures"])
+    matrix = json.loads(matrix_path.read_text(encoding="utf-8"))
+    fixture_count = len(matrix["opcode_cases"]) + len(matrix["fixtures"])
     evidence = []
     for evidence_path in sorted(path for path in output.rglob("*") if path.is_file()):
         if evidence_path == report_path:

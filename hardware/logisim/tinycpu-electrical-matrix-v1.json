@@ -1,239 +1,7 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "machine_format": "tinycpu-machine-v1",
-  "description": "Mandatory electrical VM-parity coverage contract for TinyCPU AP 11.",
-  "opcode_families": [
-    {
-      "id": "data",
-      "opcodes": [
-        {
-          "code": 0,
-          "mnemonic": "LOAD_CONST"
-        },
-        {
-          "code": 1,
-          "mnemonic": "LOAD_ADDRESS"
-        },
-        {
-          "code": 2,
-          "mnemonic": "LOAD_ADDRESS_REGISTER"
-        },
-        {
-          "code": 3,
-          "mnemonic": "LOAD_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 28,
-          "mnemonic": "STORE_ADDRESS"
-        },
-        {
-          "code": 29,
-          "mnemonic": "STORE_ADDRESS_REGISTER"
-        },
-        {
-          "code": 30,
-          "mnemonic": "STORE_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 31,
-          "mnemonic": "LOAD_ADDRESS_REGISTER_CONST"
-        },
-        {
-          "code": 32,
-          "mnemonic": "LOAD_ADDRESS_REGISTER_ADDRESS"
-        }
-      ]
-    },
-    {
-      "id": "alu",
-      "opcodes": [
-        {
-          "code": 4,
-          "mnemonic": "ADD_CONST"
-        },
-        {
-          "code": 5,
-          "mnemonic": "ADD_ADDRESS"
-        },
-        {
-          "code": 6,
-          "mnemonic": "ADD_ADDRESS_REGISTER"
-        },
-        {
-          "code": 7,
-          "mnemonic": "ADD_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 8,
-          "mnemonic": "SUB_CONST"
-        },
-        {
-          "code": 9,
-          "mnemonic": "SUB_ADDRESS"
-        },
-        {
-          "code": 10,
-          "mnemonic": "SUB_ADDRESS_REGISTER"
-        },
-        {
-          "code": 11,
-          "mnemonic": "SUB_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 12,
-          "mnemonic": "MUL_CONST"
-        },
-        {
-          "code": 13,
-          "mnemonic": "MUL_ADDRESS"
-        },
-        {
-          "code": 14,
-          "mnemonic": "MUL_ADDRESS_REGISTER"
-        },
-        {
-          "code": 15,
-          "mnemonic": "MUL_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 16,
-          "mnemonic": "DIV_CONST"
-        },
-        {
-          "code": 17,
-          "mnemonic": "DIV_ADDRESS"
-        },
-        {
-          "code": 18,
-          "mnemonic": "DIV_ADDRESS_REGISTER"
-        },
-        {
-          "code": 19,
-          "mnemonic": "DIV_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 20,
-          "mnemonic": "AND_CONST"
-        },
-        {
-          "code": 21,
-          "mnemonic": "AND_ADDRESS"
-        },
-        {
-          "code": 22,
-          "mnemonic": "AND_ADDRESS_REGISTER"
-        },
-        {
-          "code": 23,
-          "mnemonic": "AND_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 24,
-          "mnemonic": "OR_CONST"
-        },
-        {
-          "code": 25,
-          "mnemonic": "OR_ADDRESS"
-        },
-        {
-          "code": 26,
-          "mnemonic": "OR_ADDRESS_REGISTER"
-        },
-        {
-          "code": 27,
-          "mnemonic": "OR_ADDRESS_REGISTER_PLUS_OFFSET"
-        },
-        {
-          "code": 33,
-          "mnemonic": "NOT"
-        },
-        {
-          "code": 46,
-          "mnemonic": "XOR_CONST"
-        },
-        {
-          "code": 47,
-          "mnemonic": "XOR_ADDRESS"
-        },
-        {
-          "code": 48,
-          "mnemonic": "XOR_ADDRESS_REGISTER"
-        },
-        {
-          "code": 49,
-          "mnemonic": "XOR_ADDRESS_REGISTER_PLUS_OFFSET"
-        }
-      ]
-    },
-    {
-      "id": "branch",
-      "opcodes": [
-        {
-          "code": 34,
-          "mnemonic": "JUMP_ADDRESS"
-        },
-        {
-          "code": 35,
-          "mnemonic": "JUMP_ZERO"
-        },
-        {
-          "code": 36,
-          "mnemonic": "JUMP_NOT_ZERO"
-        },
-        {
-          "code": 37,
-          "mnemonic": "JUMP_NEGATIVE"
-        },
-        {
-          "code": 38,
-          "mnemonic": "JUMP_ERROR"
-        },
-        {
-          "code": 39,
-          "mnemonic": "JUMP_NOT_ERROR"
-        }
-      ]
-    },
-    {
-      "id": "error-control",
-      "opcodes": [
-        {
-          "code": 40,
-          "mnemonic": "CLEAR_ERROR"
-        }
-      ]
-    },
-    {
-      "id": "io",
-      "opcodes": [
-        {
-          "code": 41,
-          "mnemonic": "INPUT"
-        },
-        {
-          "code": 42,
-          "mnemonic": "PRINT"
-        },
-        {
-          "code": 43,
-          "mnemonic": "PRINT_ADDRESS"
-        }
-      ]
-    },
-    {
-      "id": "halt",
-      "opcodes": [
-        {
-          "code": 44,
-          "mnemonic": "HALT"
-        },
-        {
-          "code": 45,
-          "mnemonic": "HALT_ERROR"
-        }
-      ]
-    }
-  ],
+  "description": "Mandatory isolated electrical VM-parity proofs for every TinyCPU opcode.",
   "sticky_errors": [
     {
       "flag": "OVF",
@@ -264,33 +32,11 @@
     "compare": "vm-edge-trace",
     "simulator": "logisim-evolution-4.1.0",
     "all_opcodes_required": true,
-    "all_sticky_errors_required": true
+    "all_sticky_errors_required": true,
+    "isolated_behavioral_case_per_opcode": true,
+    "conditional_jump_taken_and_not_taken": true
   },
   "fixtures": [
-    {
-      "id": "data",
-      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(10)\nLOAD_ADDRESS(10)\nLOAD_ADDRESS_REGISTER_CONST(10)\nLOAD_ADDRESS_REGISTER()\nLOAD_ADDRESS_REGISTER_PLUS_OFFSET(0)\nSTORE_ADDRESS_REGISTER()\nSTORE_ADDRESS_REGISTER_PLUS_OFFSET(1)\nLOAD_ADDRESS_REGISTER_ADDRESS(10)\nHALT()\n"
-    },
-    {
-      "id": "alu",
-      "program": "LOAD_CONST(6)\nSTORE_ADDRESS(10)\nLOAD_ADDRESS_REGISTER_CONST(10)\nADD_CONST(1)\nADD_ADDRESS(10)\nADD_ADDRESS_REGISTER()\nADD_ADDRESS_REGISTER_PLUS_OFFSET(0)\nSUB_CONST(1)\nSUB_ADDRESS(10)\nSUB_ADDRESS_REGISTER()\nSUB_ADDRESS_REGISTER_PLUS_OFFSET(0)\nMUL_CONST(1)\nMUL_ADDRESS(10)\nMUL_ADDRESS_REGISTER()\nMUL_ADDRESS_REGISTER_PLUS_OFFSET(0)\nDIV_CONST(2)\nDIV_ADDRESS(10)\nDIV_ADDRESS_REGISTER()\nDIV_ADDRESS_REGISTER_PLUS_OFFSET(0)\nAND_CONST(7)\nAND_ADDRESS(10)\nAND_ADDRESS_REGISTER()\nAND_ADDRESS_REGISTER_PLUS_OFFSET(0)\nOR_CONST(1)\nOR_ADDRESS(10)\nOR_ADDRESS_REGISTER()\nOR_ADDRESS_REGISTER_PLUS_OFFSET(0)\nNOT()\nXOR_CONST(1)\nXOR_ADDRESS(10)\nXOR_ADDRESS_REGISTER()\nXOR_ADDRESS_REGISTER_PLUS_OFFSET(0)\nHALT()\n"
-    },
-    {
-      "id": "branch",
-      "program": "LOAD_CONST(1)\nJUMP_ZERO(3)\nJUMP_NEGATIVE(3)\nJUMP_ERROR(4)\nJUMP_NOT_ZERO(5)\nJUMP_NOT_ERROR(6)\nJUMP_ADDRESS(7)\nHALT()\n"
-    },
-    {
-      "id": "error-control",
-      "program": "CLEAR_ERROR()\nHALT()\n"
-    },
-    {
-      "id": "io",
-      "program": "INPUT()\nPRINT()\nPRINT_ADDRESS(0)\nHALT()\n"
-    },
-    {
-      "id": "halt",
-      "program": "HALT()\nHALT_ERROR()\n"
-    },
     {
       "id": "overflow",
       "program": "LOAD_CONST(32767)\nADD_CONST(1)\nHALT_ERROR()\n"
@@ -318,6 +64,338 @@
     {
       "id": "missing-input",
       "program": "INPUT()\nHALT_ERROR()\n"
+    }
+  ],
+  "opcode_cases": [
+    {
+      "id": "load-const",
+      "opcode": "LOAD_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "load-address",
+      "opcode": "LOAD_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(20)\nLOAD_CONST(0)\nLOAD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "load-address-register",
+      "opcode": "LOAD_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(0)\nLOAD_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "load-address-register-plus-offset",
+      "opcode": "LOAD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(0)\nLOAD_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "store-address",
+      "opcode": "STORE_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(20)\nLOAD_CONST(0)\nLOAD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "store-address-register",
+      "opcode": "STORE_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(7)\nSTORE_ADDRESS_REGISTER()\nLOAD_CONST(0)\nLOAD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "store-address-register-plus-offset",
+      "opcode": "STORE_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(7)\nSTORE_ADDRESS_REGISTER_PLUS_OFFSET(1)\nLOAD_CONST(0)\nLOAD_ADDRESS(21)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "load-address-register-const",
+      "opcode": "LOAD_ADDRESS_REGISTER_CONST",
+      "variant": "default",
+      "program": "LOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(7)\nSTORE_ADDRESS_REGISTER()\nLOAD_CONST(0)\nLOAD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "load-address-register-address",
+      "opcode": "LOAD_ADDRESS_REGISTER_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(20)\nSTORE_ADDRESS(10)\nLOAD_ADDRESS_REGISTER_ADDRESS(10)\nLOAD_CONST(7)\nSTORE_ADDRESS_REGISTER()\nLOAD_CONST(0)\nLOAD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "add-const",
+      "opcode": "ADD_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nADD_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "add-address",
+      "opcode": "ADD_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nADD_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "add-address-register",
+      "opcode": "ADD_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nADD_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "add-address-register-plus-offset",
+      "opcode": "ADD_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nADD_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "sub-const",
+      "opcode": "SUB_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nSUB_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "sub-address",
+      "opcode": "SUB_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nSUB_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "sub-address-register",
+      "opcode": "SUB_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nSUB_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "sub-address-register-plus-offset",
+      "opcode": "SUB_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nSUB_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "mul-const",
+      "opcode": "MUL_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nMUL_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "mul-address",
+      "opcode": "MUL_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nMUL_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "mul-address-register",
+      "opcode": "MUL_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nMUL_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "mul-address-register-plus-offset",
+      "opcode": "MUL_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nMUL_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "div-const",
+      "opcode": "DIV_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nDIV_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "div-address",
+      "opcode": "DIV_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nDIV_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "div-address-register",
+      "opcode": "DIV_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nDIV_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "div-address-register-plus-offset",
+      "opcode": "DIV_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nDIV_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "and-const",
+      "opcode": "AND_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nAND_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "and-address",
+      "opcode": "AND_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nAND_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "and-address-register",
+      "opcode": "AND_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nAND_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "and-address-register-plus-offset",
+      "opcode": "AND_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nAND_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "or-const",
+      "opcode": "OR_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nOR_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "or-address",
+      "opcode": "OR_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nOR_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "or-address-register",
+      "opcode": "OR_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nOR_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "or-address-register-plus-offset",
+      "opcode": "OR_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nOR_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "not",
+      "opcode": "NOT",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nNOT()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "xor-const",
+      "opcode": "XOR_CONST",
+      "variant": "default",
+      "program": "LOAD_CONST(6)\nXOR_CONST(3)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "xor-address",
+      "opcode": "XOR_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_CONST(6)\nXOR_ADDRESS(20)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "xor-address-register",
+      "opcode": "XOR_ADDRESS_REGISTER",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(20)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nXOR_ADDRESS_REGISTER()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "xor-address-register-plus-offset",
+      "opcode": "XOR_ADDRESS_REGISTER_PLUS_OFFSET",
+      "variant": "default",
+      "program": "LOAD_CONST(3)\nSTORE_ADDRESS(21)\nLOAD_ADDRESS_REGISTER_CONST(20)\nLOAD_CONST(6)\nXOR_ADDRESS_REGISTER_PLUS_OFFSET(1)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-address",
+      "opcode": "JUMP_ADDRESS",
+      "variant": "default",
+      "program": "JUMP_ADDRESS(2)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-zero",
+      "opcode": "JUMP_ZERO",
+      "variant": "taken",
+      "program": "LOAD_CONST(0)\nJUMP_ZERO(3)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-not-zero",
+      "opcode": "JUMP_NOT_ZERO",
+      "variant": "taken",
+      "program": "LOAD_CONST(1)\nJUMP_NOT_ZERO(3)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-negative",
+      "opcode": "JUMP_NEGATIVE",
+      "variant": "taken",
+      "program": "LOAD_CONST(-1)\nJUMP_NEGATIVE(3)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-error",
+      "opcode": "JUMP_ERROR",
+      "variant": "taken",
+      "program": "LOAD_CONST(1)\nDIV_CONST(0)\nJUMP_ERROR(4)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "jump-not-error",
+      "opcode": "JUMP_NOT_ERROR",
+      "variant": "taken",
+      "program": "JUMP_NOT_ERROR(2)\nHALT_ERROR()\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "clear-error",
+      "opcode": "CLEAR_ERROR",
+      "variant": "default",
+      "program": "LOAD_CONST(1)\nDIV_CONST(0)\nCLEAR_ERROR()\nJUMP_ERROR(5)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "input",
+      "opcode": "INPUT",
+      "variant": "default",
+      "program": "INPUT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "print",
+      "opcode": "PRINT",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nPRINT()\nHALT()\n"
+    },
+    {
+      "id": "print-address",
+      "opcode": "PRINT_ADDRESS",
+      "variant": "default",
+      "program": "LOAD_CONST(7)\nSTORE_ADDRESS(20)\nPRINT_ADDRESS(20)\nHALT()\n"
+    },
+    {
+      "id": "halt",
+      "opcode": "HALT",
+      "variant": "default",
+      "program": "HALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "halt-error",
+      "opcode": "HALT_ERROR",
+      "variant": "default",
+      "program": "HALT_ERROR()\nHALT()\n"
+    },
+    {
+      "id": "jump-zero-not-taken",
+      "opcode": "JUMP_ZERO",
+      "variant": "not-taken",
+      "program": "LOAD_CONST(1)\nJUMP_ZERO(4)\nPRINT()\nHALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "jump-not-zero-not-taken",
+      "opcode": "JUMP_NOT_ZERO",
+      "variant": "not-taken",
+      "program": "LOAD_CONST(0)\nJUMP_NOT_ZERO(4)\nPRINT()\nHALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "jump-negative-not-taken",
+      "opcode": "JUMP_NEGATIVE",
+      "variant": "not-taken",
+      "program": "LOAD_CONST(1)\nJUMP_NEGATIVE(4)\nPRINT()\nHALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "jump-error-not-taken",
+      "opcode": "JUMP_ERROR",
+      "variant": "not-taken",
+      "program": "LOAD_CONST(1)\nJUMP_ERROR(4)\nPRINT()\nHALT()\nHALT_ERROR()\n"
+    },
+    {
+      "id": "jump-not-error-not-taken",
+      "opcode": "JUMP_NOT_ERROR",
+      "variant": "not-taken",
+      "program": "LOAD_CONST(1)\nDIV_CONST(0)\nJUMP_NOT_ERROR(5)\nPRINT()\nHALT()\nHALT_ERROR()\n"
     }
   ]
 }

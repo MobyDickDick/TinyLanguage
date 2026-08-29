@@ -38,8 +38,9 @@ wird nicht in Git eingecheckt.
    ```
 
 Das Skript lädt `hardware/logisim/TinyCPU.circ` im echten Simulator, führt den
-17-Takt-Zähltest zweimal aus und prüft anschließend alle Opcode-Familien und
-Fehlerflags. Ein erfolgreicher Lauf endet mit Exitcode 0 und erzeugt den
+17-Takt-Zähltest zweimal aus und prüft anschließend jeden Opcode in einem
+isolierten Verhaltensfall sowie alle Fehlerflags. Bedingte Sprünge werden dabei
+jeweils genommen und nicht genommen. Ein erfolgreicher Lauf endet mit Exitcode 0 und erzeugt den
 Prüfbericht `artifacts/tinycpu-ap12-acceptance/acceptance.json`. Darin muss
 `"status": "passed"` stehen.
 
@@ -92,4 +93,3 @@ Falls das große Projekt nicht lädt, öffne zuerst der Reihe nach
 | Download der JAR scheitert | JAR manuell herunterladen und `scripts/test-logisim-local.sh /pfad/zur/JAR` ausführen. |
 | Mehrere JAR-Dateien gefunden | Den gewünschten vollständigen Pfad an `scripts/test-logisim-local.sh` übergeben. |
 | Test schlägt fehl | Die erste Fehlermeldung sowie `artifacts/tinycpu-ap12-acceptance/acceptance.json` prüfen; ein abgebrochener Lauf gilt nicht als bestanden. |
-

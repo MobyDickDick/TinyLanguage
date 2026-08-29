@@ -5,6 +5,31 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [ ] **Prove every TinyCPU opcode behavior electrically**
+  (Owner: TinyCPU/Testing)
+  - Scope: replace the family-level AP-11 programs with isolated, executable
+    cases for every one of the 50 listed opcodes, including taken and non-taken
+    variants for every conditional jump.
+  - Required correction: each case must make the instruction's effect
+    distinguishable from ordinary `PC + 1` execution and from a no-op. In
+    particular, `JUMP_ADDRESS` must jump over an observable failure sentinel;
+    `HALT_ERROR` and instructions currently placed after an earlier `HALT`
+    must actually be reached.
+  - Acceptance: the pinned Logisim simulator and the Python VM produce equal
+    edge traces for every case; a mutation that disables any opcode causes its
+    dedicated case to fail; the matrix contract rejects listed opcodes without
+    an executable behavioral case.
+
+- [ ] **Correct TinyCPU behaviors exposed by opcode proofs**
+  (Owner: TinyCPU/Hardware; blocked by the opcode-proof package)
+  - Scope: repair current `TinyCPU.circ` datapath, next-PC, status, memory, I/O,
+    or halt behavior wherever the opcode-specific electrical cases disagree
+    with the VM contract. Preserve the accepted opcode-ordered
+    `JUMP_NOT_ZERO` drawing instead of restoring its former final port slot.
+  - Acceptance: all opcode-specific simulator cases pass, all 50 decoder
+    outputs remain isolated and reachable, and the inspector reports no open
+    ports, wired-OR conflicts, or bus-width conflicts.
+
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)
   - Scope: process the current request for the next documented TinyCPU work

@@ -45,6 +45,7 @@
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_PC_OUT"/>
+      <a name="width" val="12"/>
       <a name="labelloc" val="east"/>
     </comp>
     <comp lib="0" loc="(1020,350)" name="Constant">
@@ -166,25 +167,25 @@
       <a name="label" val="ERROR_INPUT"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(3560,1590)" name="Pin">
+    <comp lib="0" loc="(3560,1610)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="PRINT_ENABLE"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(3560,1610)" name="Pin">
+    <comp lib="0" loc="(3560,1630)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="PRINT_ADDRESS_ENABLE"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(3560,1630)" name="Pin">
+    <comp lib="0" loc="(3560,1650)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="HALTED"/>
       <a name="type" val="output"/>
     </comp>
-    <comp lib="0" loc="(3560,1650)" name="Pin">
+    <comp lib="0" loc="(3560,1670)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="HALTED_WITH_ERROR"/>
@@ -200,6 +201,7 @@
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"/>
+      <a name="width" val="16"/>
       <a name="labelloc" val="east"/>
     </comp>
     <comp lib="0" loc="(3580,550)" name="Pin">
@@ -357,7 +359,7 @@
     <wire from="(1260,1590)" to="(1340,1590)"/>
     <wire from="(1260,1610)" to="(3560,1610)"/>
     <wire from="(1260,1630)" to="(3560,1630)"/>
-    <wire from="(1260,1650)" to="(3550,1650)"/>
+    <wire from="(1260,1650)" to="(3560,1650)"/>
     <wire from="(1260,1670)" to="(3560,1670)"/>
     <wire from="(1260,1690)" to="(2180,1690)"/>
     <wire from="(1260,1710)" to="(1340,1710)"/>
@@ -641,12 +643,8 @@
     <wire from="(3500,350)" to="(3500,1490)"/>
     <wire from="(3520,1470)" to="(3560,1470)"/>
     <wire from="(3520,330)" to="(3520,1470)"/>
-    <wire from="(3550,1650)" to="(3550,1680)"/>
-    <wire from="(3550,1650)" to="(3560,1650)"/>
-    <wire from="(3550,1680)" to="(3560,1680)"/>
     <wire from="(3550,610)" to="(3550,630)"/>
     <wire from="(3550,630)" to="(3580,630)"/>
-    <wire from="(3560,1670)" to="(3560,1680)"/>
     <wire from="(3560,730)" to="(3560,750)"/>
     <wire from="(3560,750)" to="(3580,750)"/>
     <wire from="(3570,570)" to="(3570,590)"/>

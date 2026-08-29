@@ -98,8 +98,8 @@ def test_expansion_roadmap_does_not_reopen_completed_hardware_packages():
     assert "[TinyCPU-1.0-Releaseplan]" in active_boundary
 
 
-def test_active_backlog_exposes_the_scoped_tinycpu_release_package():
-    """The active backlog and roadmaps must identify the same next package."""
+def test_active_backlog_exposes_the_scoped_tinycpu_coverage_packages():
+    """The active backlog must expose the newly identified execution gaps."""
 
     active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
         encoding="utf-8"
@@ -113,7 +113,9 @@ def test_active_backlog_exposes_the_scoped_tinycpu_release_package():
         active_tasks,
         re.IGNORECASE | re.MULTILINE,
     )
-    assert unchecked_tinycpu == []
+    assert len(unchecked_tinycpu) == 2
+    assert "Prove every TinyCPU opcode behavior electrically" in unchecked_tinycpu[0]
+    assert "Correct TinyCPU behaviors exposed by opcode proofs" in unchecked_tinycpu[1]
 
     tinycpu_section = expansion.split("## 1) Native compiler", maxsplit=1)[0]
     assert "No successor package is\n  currently scoped" in tinycpu_section
@@ -227,8 +229,8 @@ def test_post_repair_audit_keeps_the_tinycpu_backlog_closed():
 
 
 
-def test_latest_repository_backlog_audit_finds_no_documented_package():
-    """Only unchecked checklist entries may authorize another work package."""
+def test_historical_repository_audit_precedes_new_opcode_packages():
+    """Keep the old audit intact while recognizing the newly scoped work."""
 
     task_log = REPOSITORY_ROOT / "docs" / "open_tasks.md"
     active_tasks = task_log.read_text(encoding="utf-8")
@@ -258,7 +260,8 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
                     f"{planning_file.relative_to(REPOSITORY_ROOT)}:{line_number}"
                 )
 
-    assert unchecked_entries == []
+    assert len(unchecked_entries) == 2
+    assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 complete" in latest_package
     assert "No code,\n    circuit, or release artifact change" in latest_package
@@ -271,7 +274,7 @@ def test_latest_repository_backlog_audit_finds_no_documented_package():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [x] **Confirm the closed TinyCPU boundary for the current request**"
+        "- [ ] **Prove every TinyCPU opcode behavior electrically**"
     )
 
 
@@ -356,8 +359,8 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
     assert "No successor package is\n  currently scoped" in expansion
 
 
-def test_repeated_repository_request_does_not_create_implementation_scope():
-    """The newest generic request must not invent an undocumented package."""
+def test_new_opcode_audit_creates_only_the_documented_packages():
+    """The concrete execution audit supersedes the earlier closed boundary."""
 
     active_tasks = (REPOSITORY_ROOT / "docs" / "open_tasks.md").read_text(
         encoding="utf-8"
@@ -389,9 +392,10 @@ def test_repeated_repository_request_does_not_create_implementation_scope():
         line for line in current_tasks.splitlines() if line.strip()
     )
     assert first_content_line == (
-        "- [x] **Confirm the closed TinyCPU boundary for the current request**"
+        "- [ ] **Prove every TinyCPU opcode behavior electrically**"
     )
-    assert unchecked_entries == []
+    assert len(unchecked_entries) == 2
+    assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)
     assert "no unchecked work package is documented" in latest_package
     assert "AP 1 through AP 15 remain\n    complete" in latest_package
     assert "no authorized package to implement" in latest_package

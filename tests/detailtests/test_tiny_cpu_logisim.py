@@ -41,14 +41,12 @@ def test_fetch_decode_controls_drives_jump_not_zero_lane():
     assert output.get("loc") in _reachable(adjacency, "(520,390)")
 
 
-def test_jump_not_zero_pin_preserves_existing_generated_symbol_ports():
-    """Adding opcode 36 must not renumber every established top-level port.
+def test_jump_not_zero_pin_follows_jump_opcode_order():
+    """Keep the redrawn control symbol's jump outputs together in ISA order.
 
-    Logisim orders generated-symbol ports by their physical pin coordinates,
-    not by opcode number.  JUMP_NOT_ZERO therefore deliberately occupies the
-    final physical slot while its wire still originates at decoder lane 36.
-    Moving it between JUMP_ZERO and JUMP_NEGATIVE would silently move PRINT,
-    HALT, error, and XOR terminals by one grid position.
+    Logisim derives generated-symbol ports from the physical pin coordinates.
+    The top-level routes therefore have to follow this accepted ordering rather
+    than relying on the former final-slot exception for JUMP_NOT_ZERO.
     """
 
     controls = ET.parse(PROJECT).getroot().find(
@@ -70,9 +68,10 @@ def test_jump_not_zero_pin_preserves_existing_generated_symbol_ports():
         )
     ]
 
-    assert output_labels[-1] == "JUMP_NOT_ZERO"
-    assert output_labels[35:39] == [
-        "JUMP_ZERO", "JUMP_NEGATIVE", "JUMP_ERROR", "JUMP_NOT_ERROR"
+    first_jump = output_labels.index("JUMP_ADR")
+    assert output_labels[first_jump : first_jump + 6] == [
+        "JUMP_ADR", "JUMP_ZERO", "JUMP_NOT_ZERO", "JUMP_NEGATIVE",
+        "JUMP_ERROR", "JUMP_NOT_ERROR",
     ]
 
 

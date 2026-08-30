@@ -389,7 +389,28 @@ def _replace_program_rom(
     contents.text = rom_image(raw_words or encode_program(assemble(source)))
 
 
-def _tty_trace_to_tsv(raw: str, execution_map: dict[str, str] | None = None) -> str:
+def _four_state_hex(row: dict[str, str]) -> str:
+    """Encode one observable Logisim state using two bits per electrical cell."""
+    encoded = []
+    symbols = {"0": "00", "1": "01", "U": "10", "E": "11", "X": "11"}
+    for label, width in TTY_OUTPUTS:
+        if label in {"TRACE_PC", "TRACE_CLK"}:
+            continue
+        value = row[label].upper()
+        if width == 16 and value.isdigit():
+            value = f"{int(value):016b}"
+        if len(value) != width or any(cell not in symbols for cell in value):
+            raise SmokeTestError(
+                f"Logisim state cannot be encoded: {label}={row[label]}"
+            )
+        encoded.extend(symbols[cell] for cell in value)
+    bits = "".join(encoded)
+    return f"0x{int(bits, 2):0{(len(bits) + 3) // 4}X}"
+
+
+def _tty_trace_to_tsv(
+    raw: str, execution_map: dict[str, set[str]] | None = None
+) -> str:
     """Convert Logisim's grouped, change-driven tty table into rising-edge rows."""
     decoded_rows: list[dict[str, str]] = []
     expected_tokens = sum((width + 3) // 4 if width > 1 else 1 for _label, width in TTY_OUTPUTS)
@@ -458,20 +479,20 @@ def _tty_trace_to_tsv(raw: str, execution_map: dict[str, str] | None = None) -> 
             if row["PRINT_ADDRESS_VALID"] not in {"0", "1"}:
                 row["PRINT_ADDRESS_VALID"] = "0"
         pc_bits = row["TRACE_PC"]
-        opcode_bits = row["TRACE_OPCODE"]
         if any(cell in pc_bits.upper() for cell in ("U", "E", "X")):
             raise SmokeTestError(
                 f"Logisim program counter is undefined at clock edge {edge_number}: "
                 f"TRACE_PC={pc_bits}"
             )
         pc_hex = f"0x{int(pc_bits, 2):03X}"
-        opcode_hex = f"0x{int(opcode_bits, 2):06X}"
-        if history.get(pc_hex) == opcode_hex:
+        state_hex = _four_state_hex(row)
+        states_at_pc = history.setdefault(pc_hex, set())
+        if state_hex in states_at_pc:
             raise SmokeTestError(
                 f"Logisim execution loop detected at PC {pc_hex}: "
-                f"machine word {opcode_hex} was observed again"
+                f"electrical state {state_hex} was observed again"
             )
-        history[pc_hex] = opcode_hex
+        states_at_pc.add(state_hex)
 
     lines = ["\t".join(INTEGRATION_TABLE_COLUMNS)]
     lines.extend(

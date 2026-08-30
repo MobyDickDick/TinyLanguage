@@ -310,7 +310,7 @@ def test_tty_trace_converter_preserves_error_halt_asserted_on_final_rising_edge(
     assert row["HALTED_WITH_ERROR"] == "1"
 
 
-def test_tty_trace_converter_records_hex_pc_words_and_rejects_loop():
+def test_tty_trace_converter_records_hex_states_and_rejects_loop():
     machine_word = f"{5:06b}" + f"{7:016b}"
     raw = "\n".join(
         [
@@ -325,7 +325,38 @@ def test_tty_trace_converter_records_hex_pc_words_and_rejects_loop():
     with pytest.raises(runner.SmokeTestError, match="execution loop detected"):
         runner._tty_trace_to_tsv(raw, execution_map)
 
-    assert execution_map == {"0x003": "0x050007"}
+    assert execution_map.keys() == {"0x003"}
+    assert len(execution_map["0x003"]) == 1
+    assert next(iter(execution_map["0x003"])).startswith("0x")
+
+
+def test_tty_trace_converter_allows_same_instruction_with_changed_state():
+    machine_word = f"{5:06b}" + f"{7:016b}"
+    raw = "\n".join(
+        [
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=f"{1:016b}",
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=f"{1:016b}",
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=f"{2:016b}",
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=f"{2:016b}",
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1",
+            ),
+        ]
+    )
+    execution_map = {}
+
+    runner._tty_trace_to_tsv(raw, execution_map)
+
+    assert len(execution_map["0x003"]) == 2
 
 
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):

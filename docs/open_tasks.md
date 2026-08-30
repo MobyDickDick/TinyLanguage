@@ -162,6 +162,14 @@ archived in `docs/open_tasks_archive.md`.
     electrical gate, but the reset/start trace still did not halt; the complete
     61-fixture acceptance therefore remains open rather than being recorded as
     passed.
+  - Progress (2026-08-30, electrical rerun): reran the acceptance command with
+    the repository-local Logisim-evolution 4.1.0 JAR and Java 25.0.2. The first
+    reset/start fixture again reached the real simulator, advanced through
+    changing ROM words, asserted `ERROR_INV`, and then emitted zero opcodes
+    indefinitely without asserting either halt output. The simulator timed out
+    after 120 seconds, so no matrix fixture ran and the package deliberately
+    remains unchecked. The generated incomplete evidence directory was removed
+    rather than retaining a misleading `"status": "started"` report.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

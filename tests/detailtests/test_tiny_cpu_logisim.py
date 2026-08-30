@@ -866,7 +866,11 @@ def _instruction_field_output(root, bits):
         if mapped_bits == set(bits)
     )
     x, y = (int(value) for value in splitter.get("loc").strip("()").split(","))
-    return f"({x + 20},{y - 10 * len(branches) + 10 * branch})"
+    if attributes.get("facing") == "south":
+        return f"({x + 10 + 20 * (len(branches) - 1 - branch)},{y + 20})"
+    if attributes.get("appear") == "right":
+        return f"({x + 20},{y + 10 + 40 * branch})"
+    return f"({x + 20},{y + 20 * branch})"
 
 
 def _subcircuit_input(root, circuit_name, pin_label):
@@ -1151,7 +1155,16 @@ def _assert_binary_validity_selector(root, circuit_name, operation):
         for component in circuit.findall("comp")
         if component.get("name") == "Pin"
     }
-    selector = _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+    # The user's repaired drawing intentionally leaves routing primitives
+    # unlabelled.  Identify the validity selector by its electrical role: it is
+    # the only one-bit mux on this page (the operand-data mux is 16-bit).
+    selectors = [
+        component
+        for component in circuit.findall("comp[@name='Multiplexer']")
+        if _attributes(component).get("width", "1") == "1"
+    ]
+    assert len(selectors) == 1, f"{circuit_name} validity selector"
+    selector = selectors[0]
     gate = _labelled_component(circuit, f"ACC_{operation}_VALID")
     x, y = map(int, selector.get("loc").strip("()").split(","))
     selector_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
@@ -1184,7 +1197,12 @@ def test_immediate_arithmetic_uses_a_defined_valid_operand():
         constants = [c for c in circuit.findall("comp") if c.get("name") == "Constant"]
         assert len(constants) == 1
         assert _attributes(constants[0]).get("value", "0x1") == "0x1"
-        _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+        selectors = [
+            component
+            for component in circuit.findall("comp[@name='Multiplexer']")
+            if _attributes(component).get("width", "1") == "1"
+        ]
+        assert len(selectors) == 1, f"{circuit_name} validity selector"
 
 
 def test_not_propagates_accumulator_validity_only_while_active():

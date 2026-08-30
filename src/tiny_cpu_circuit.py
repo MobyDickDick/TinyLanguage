@@ -280,7 +280,15 @@ def _component_terminals(component: ET.Element) -> set[str]:
         return terminals
     if component.get("name") == "Splitter":
         fanout = int(attrs.get("fanout", "2"))
-        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+        if attrs.get("facing") == "south":
+            # A south-facing splitter lays its branches out horizontally below
+            # the anchor.  This is the orientation used by TinyCPUMain's
+            # instruction-field splitter after the hand-maintained redraw.
+            terminals.update(
+                f"({x + 10 + 20 * (fanout - 1 - index)},{y + 20})"
+                for index in range(fanout)
+            )
+        elif attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
             # Logisim's right-hand splitter symbol places branch zero one grid
             # step below its anchor.  Using y-20 here made real wires at y+10
             # look like decorative stubs (notably FetchDecode's operand bus).
@@ -384,7 +392,16 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
             if output >= 0:
                 output_widths[output] = output_widths.get(output, 0) + 1
         result = {location: incoming}
-        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+        if attrs.get("facing") == "south":
+            result.update(
+                {
+                    f"({x + 10 + 20 * (fanout - 1 - index)},{y + 20})": max(
+                        width, 1
+                    )
+                    for index, width in output_widths.items()
+                }
+            )
+        elif attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
             start = y + 10
             result.update(
                 {

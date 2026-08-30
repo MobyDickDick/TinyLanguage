@@ -2169,6 +2169,22 @@ def test_not_result_is_committed_by_the_accumulator_write_request():
     )
 
 
+def test_non_arithmetic_accumulator_results_are_explicitly_valid():
+    """Immediate and selected load data must not inherit a zero default."""
+
+    root = ET.parse(PROJECT).getroot()
+    operations = next(
+        circuit for circuit in root.findall("circuit")
+        if circuit.get("name") == "Operations"
+    )
+    validity = _labelled_component(operations, "IMMEDIATE_RESULT_VALID")
+
+    assert validity.get("name") == "Constant"
+    assert _attributes(validity).get("value") == "0x1"
+    adjacency = _electrical_adjacency(operations)
+    assert "(1780,760)" in _reachable(adjacency, validity.get("loc"))
+
+
 def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     """LOAD_CONST must not receive the inactive operation tree's zero value."""
 

@@ -2463,7 +2463,10 @@ ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
     <a name="circuit" val="Operations"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(1760,760)" name="Constant"/>
+    <comp lib="0" loc="(1760,760)" name="Constant">
+      <a name="label" val="IMMEDIATE_RESULT_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(1780,1390)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>

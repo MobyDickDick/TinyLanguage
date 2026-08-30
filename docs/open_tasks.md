@@ -170,6 +170,16 @@ archived in `docs/open_tasks_archive.md`.
     after 120 seconds, so no matrix fixture ran and the package deliberately
     remains unchecked. The generated incomplete evidence directory was removed
     rather than retaining a misleading `"status": "started"` report.
+  - Progress (2026-08-30, halt-harness repair): the tty harness no longer
+    shorts the adjacent normal- and error-halt outputs while routing them to
+    its stop gate. The real simulator now stops cleanly on the AP-5 `HALT`
+    instead of timing out with two error-valued halt pins. This exposed the
+    next electrical mismatch: the circuit reaches `HALT` after eight edges
+    rather than the VM's 17 because the countdown's accumulator state is not
+    retained through the loop. The default non-arithmetic result-valid source
+    is now an explicit asserted constant and both fixes have mandatory
+    topology regressions. The package remains unchecked until that state-path
+    defect and the complete 61-fixture acceptance run are resolved.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

@@ -58,6 +58,7 @@ TTY_OUTPUTS = (
     ("PRINT_ADDRESS_ENABLE", 1),
     ("HALTED", 1),
     ("HALTED_WITH_ERROR", 1),
+    ("TRACE_PC", 12),
     ("TRACE_OPCODE", 22),
     ("TRACE_CLK", 1),
 )
@@ -285,6 +286,11 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         raise SmokeTestError(
             f"TinyCPUMain opcode splitter terminal {opcode_probe} is not a wire contact"
         )
+    pc_probe = "(890,390)"
+    if pc_probe not in wire_contacts:
+        raise SmokeTestError(
+            f"TinyCPUMain program-counter terminal {pc_probe} is not a wire contact"
+        )
     # A constant-low RESET leaves every validity register in its power-up state.
     # That happened to produce a very large, almost entirely zero tty table: the
     # clock was running, but the processor had never been initialized and could
@@ -313,6 +319,7 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
             ET.SubElement(pin, "a", name=name, val=value)
 
     for location, label, width in (
+        ("(3560,1860)", "TRACE_PC", 12),
         ("(3560,1880)", "TRACE_OPCODE", 22),
         ("(3560,1900)", "TRACE_CLK", 1),
         ("(3560,1920)", "halt", 1),
@@ -328,12 +335,15 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
         if width != 1:
             ET.SubElement(pin, "a", name="width", val=str(width))
     for location, label, width in (
+        (pc_probe, "AP5_TRACE_PC", 12),
+        ("(3480,1860)", "AP5_TRACE_PC", 12),
         (opcode_probe, "AP5_TRACE_OPCODE", 22),
         ("(3480,1880)", "AP5_TRACE_OPCODE", 22),
     ):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
         ET.SubElement(tunnel, "a", name="label", val=label)
         ET.SubElement(tunnel, "a", name="width", val=str(width))
+    ET.SubElement(circuit, "wire", **{"from": "(3480,1860)", "to": "(3560,1860)"})
     ET.SubElement(circuit, "wire", **{"from": "(3480,1880)", "to": "(3560,1880)"})
     for location in (clock_probe, "(3480,1900)"):
         tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
@@ -379,7 +389,7 @@ def _replace_program_rom(
     contents.text = rom_image(raw_words or encode_program(assemble(source)))
 
 
-def _tty_trace_to_tsv(raw: str) -> str:
+def _tty_trace_to_tsv(raw: str, execution_map: dict[str, str] | None = None) -> str:
     """Convert Logisim's grouped, change-driven tty table into rising-edge rows."""
     decoded_rows: list[dict[str, str]] = []
     expected_tokens = sum((width + 3) // 4 if width > 1 else 1 for _label, width in TTY_OUTPUTS)
@@ -421,14 +431,47 @@ def _tty_trace_to_tsv(raw: str) -> str:
             # A halt asserted by this rising edge stops tty mode immediately,
             # so no following low row exists. Preserve the terminal state
             # instead of the pre-edge sample in that one case.
-            edges.append(
-                row
-                if row["HALTED"] == "1" or row["HALTED_WITH_ERROR"] == "1"
-                else last_low
+            terminal = row["HALTED"] == "1" or row["HALTED_WITH_ERROR"] == "1"
+            advanced = (row["TRACE_PC"], row["TRACE_OPCODE"]) != (
+                last_low["TRACE_PC"], last_low["TRACE_OPCODE"]
             )
+            if terminal and not advanced:
+                edges.append(row)
+            else:
+                edges.append(last_low)
+                if terminal:
+                    edges.append(row)
             last_low = None
     if last_low is not None and last_low["HALTED"] == "1":
         edges.append(last_low)
+
+    history = execution_map if execution_map is not None else {}
+    for edge_number, row in enumerate(edges, start=1):
+        if row["PRINT_ENABLE"] == "0":
+            if not row["PRINT_VALUE"].isdigit():
+                row["PRINT_VALUE"] = "0"
+            if row["PRINT_VALID"] not in {"0", "1"}:
+                row["PRINT_VALID"] = "0"
+        if row["PRINT_ADDRESS_ENABLE"] == "0":
+            if not row["PRINT_ADDRESS_VALUE"].isdigit():
+                row["PRINT_ADDRESS_VALUE"] = "0"
+            if row["PRINT_ADDRESS_VALID"] not in {"0", "1"}:
+                row["PRINT_ADDRESS_VALID"] = "0"
+        pc_bits = row["TRACE_PC"]
+        opcode_bits = row["TRACE_OPCODE"]
+        if any(cell in pc_bits.upper() for cell in ("U", "E", "X")):
+            raise SmokeTestError(
+                f"Logisim program counter is undefined at clock edge {edge_number}: "
+                f"TRACE_PC={pc_bits}"
+            )
+        pc_hex = f"0x{int(pc_bits, 2):03X}"
+        opcode_hex = f"0x{int(opcode_bits, 2):06X}"
+        if history.get(pc_hex) == opcode_hex:
+            raise SmokeTestError(
+                f"Logisim execution loop detected at PC {pc_hex}: "
+                f"machine word {opcode_hex} was observed again"
+            )
+        history[pc_hex] = opcode_hex
 
     lines = ["\t".join(INTEGRATION_TABLE_COLUMNS)]
     lines.extend(

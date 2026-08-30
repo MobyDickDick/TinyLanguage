@@ -5,6 +5,8 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
+import pytest
+
 import tiny_cpu_logisim as runner
 
 
@@ -140,6 +142,7 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
         '<comp name="Splitter" loc="(10,40)"><a name="incoming" val="22"/></comp>'
         '<wire from="(0,0)" to="(10,0)"/>'
         '<wire from="(0,40)" to="(10,40)"/>'
+        '<wire from="(890,390)" to="(930,390)"/>'
         '</circuit><circuit name="FetchDecode"><comp name="ROM">'
         '<a name="contents">addr/data: 12 22\n2c0000\n</a>'
         "</comp></circuit></project>",
@@ -264,12 +267,12 @@ def test_tty_trace_converter_samples_last_stable_low_row_per_edge():
     raw = "\n".join(
         [
             "Logisim-evolution v4.1.0",
-            _tty_row(PRINT_VALUE="UUUUUUUUUUUUUUUU", TRACE_CLK="0"),
-            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
-            _tty_row(PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
-            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="0"),
-            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_CLK="1"),
-            _tty_row(TRACE_OPCODE=f"{44:06b}" + "0" * 16, HALTED="1", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="UUUUUUUUUUUUUUUU", TRACE_PC=f"{0:012b}", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_PC=f"{0:012b}", TRACE_CLK="0"),
+            _tty_row(PRINT_VALUE="0000000000000111", TRACE_PC=f"{0:012b}", TRACE_CLK="1"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_PC=f"{1:012b}", TRACE_CLK="0"),
+            _tty_row(PRINT_ENABLE="1", PRINT_VALUE="0000000000000111", TRACE_PC=f"{1:012b}", TRACE_CLK="1"),
+            _tty_row(TRACE_PC=f"{2:012b}", TRACE_OPCODE=f"{44:06b}" + "0" * 16, HALTED="1", TRACE_CLK="0"),
         ]
     )
 
@@ -305,6 +308,24 @@ def test_tty_trace_converter_preserves_error_halt_asserted_on_final_rising_edge(
     row = list(csv.DictReader(converted.splitlines(), delimiter="\t"))[0]
     assert row["ERROR_INV"] == "1"
     assert row["HALTED_WITH_ERROR"] == "1"
+
+
+def test_tty_trace_converter_records_hex_pc_words_and_rejects_loop():
+    machine_word = f"{5:06b}" + f"{7:016b}"
+    raw = "\n".join(
+        [
+            _tty_row(TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0"),
+            _tty_row(TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1"),
+            _tty_row(TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0"),
+            _tty_row(TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1"),
+        ]
+    )
+    execution_map = {}
+
+    with pytest.raises(runner.SmokeTestError, match="execution loop detected"):
+        runner._tty_trace_to_tsv(raw, execution_map)
+
+    assert execution_map == {"0x003": "0x050007"}
 
 
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):

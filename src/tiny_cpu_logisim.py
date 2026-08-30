@@ -539,6 +539,20 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
                 f"AP-5 circuit halted with error after {len(rows)} clock edges "
                 f"({errors}); expected {len(instructions)} edges and a normal HALT"
             ) from exc
+        if rows and rows[-1].get("HALTED") == "1" and len(rows) < len(instructions):
+            partial = integration_trace_from_table(
+                normalized, instructions[: len(rows)]
+            )
+            partial_expected = {
+                **expected,
+                "edges": expected["edges"][: len(rows)],
+            }
+            mismatches = compare_trace(partial_expected, partial)
+            detail = f"; first mismatch: {mismatches[0]}" if mismatches else ""
+            raise SmokeTestError(
+                f"AP-5 circuit halted normally after {len(rows)} clock edges; "
+                f"expected {len(instructions)}{detail}"
+            ) from exc
         raise SmokeTestError(f"invalid Logisim AP-5 table: {exc}") from exc
     mismatches = compare_trace(expected, observed)
     if mismatches:

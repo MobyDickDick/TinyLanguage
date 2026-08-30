@@ -152,7 +152,12 @@ class TinyCPU:
             if operand == 0:
                 self._fail(ErrorFlag.DIVISION_BY_ZERO)
                 return
-            result = int(left / operand)
+            # TinyCPU division truncates toward zero.  Do this with integer
+            # arithmetic: converting the operands to float first overflows for
+            # otherwise valid wide-bus values and can lose precision even for
+            # smaller values.
+            quotient = abs(left) // abs(operand)
+            result = -quotient if (left < 0) != (operand < 0) else quotient
         elif operation == "AND":
             result = left & operand
         elif operation == "OR":

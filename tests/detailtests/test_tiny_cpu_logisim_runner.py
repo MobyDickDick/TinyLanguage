@@ -174,6 +174,44 @@ def test_trace_test_clocks_temporary_main_and_retains_raw_table(tmp_path, monkey
     assert output.read_text(encoding="utf-8") == raw_table
 
 
+def test_trace_test_explains_a_premature_normal_halt(tmp_path, monkeypatch):
+    project = tmp_path / "TinyCPU.circ"
+    project.write_text(
+        '<?xml version="1.0"?><project><main name="TinyCPUMain"/>'
+        '<circuit name="TinyCPUMain">'
+        '<comp name="Pin" loc="(0,0)"><a name="label" val="CLK"/></comp>'
+        '<comp name="Pin" loc="(0,20)"><a name="label" val="RESET"/></comp>'
+        '<comp name="Splitter" loc="(10,40)"><a name="incoming" val="22"/></comp>'
+        '<wire from="(0,0)" to="(10,0)"/>'
+        '<wire from="(0,40)" to="(10,40)"/>'
+        '<wire from="(890,390)" to="(930,390)"/>'
+        '</circuit><circuit name="FetchDecode"><comp name="ROM">'
+        '<a name="contents">addr/data: 12 22\n2c0000\n</a>'
+        "</comp></circuit></project>",
+        encoding="utf-8",
+    )
+    program = tmp_path / "program.tcpu"
+    program.write_text("LOAD_CONST(1)\nHALT()\n", encoding="utf-8")
+    raw_table = _tty_row(
+        TRACE_OPCODE=f"{44:06b}" + "0" * 16,
+        HALTED="1",
+    ) + "\n"
+    monkeypatch.setattr(
+        runner,
+        "_run",
+        lambda command, **kwargs: completed(command, stdout=raw_table),
+    )
+
+    with pytest.raises(runner.SmokeTestError) as caught:
+        runner.trace_test(
+            "java", tmp_path / "logisim.jar", project, program, tmp_path / "trace.tsv"
+        )
+
+    message = str(caught.value)
+    assert "halted normally after 1 clock edges; expected 2" in message
+    assert "first mismatch:" in message
+
+
 def test_autonomous_trace_taps_real_tinycpu_main_nets():
     """Trace probes must not silently sit on empty drawing coordinates."""
 

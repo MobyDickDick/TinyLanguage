@@ -168,6 +168,26 @@ def test_data_width_defines_arithmetic_range(data_bits, largest, smallest):
     assert (cpu.accumulator.value, cpu.accumulator.valid) == (smallest, True)
 
 
+@pytest.mark.parametrize(
+    ("dividend", "divisor", "expected"),
+    [
+        (2**100 + 1, 3, (2**100 + 1) // 3),
+        (-(2**100 + 1), 3, -((2**100 + 1) // 3)),
+        (2**100 + 1, -3, -((2**100 + 1) // 3)),
+    ],
+)
+def test_division_is_exact_for_wide_values_and_truncates_toward_zero(
+    dividend, divisor, expected
+):
+    cpu = run(
+        f"LOAD_CONST({dividend})\nDIV_CONST({divisor})\nHALT()",
+        data_bits=128,
+    )
+
+    assert (cpu.accumulator.value, cpu.accumulator.valid) == (expected, True)
+    assert not cpu.error
+
+
 def test_address_width_is_independent_of_data_width():
     cpu = run(
         """

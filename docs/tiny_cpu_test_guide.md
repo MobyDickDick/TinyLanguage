@@ -44,6 +44,12 @@ jeweils genommen und nicht genommen. Ein erfolgreicher Lauf endet mit Exitcode 0
 Prüfbericht `artifacts/tinycpu-ap12-acceptance/acceptance.json`. Darin muss
 `"status": "passed"` stehen.
 
+Diese elektrische Gesamtprüfung ist außerdem ein fester Bestandteil jedes
+Testlaufs über `python3 run_all.py` (einschließlich `--smoke`) und des
+CI-Testlaufs. Ein fehlender Simulator oder ein Fehler in nur einem Opcode lässt
+den gesamten Testlauf fehlschlagen; es gibt keinen stillen Fallback auf einen
+reinen Projektlade- oder Python-Test.
+
 ### Wenn du die Logisim-JAR schon hast
 
 Lege die exakt benannte Datei `logisim-evolution-4.1.0-all.jar` irgendwo unter

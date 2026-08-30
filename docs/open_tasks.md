@@ -180,6 +180,12 @@ archived in `docs/open_tasks_archive.md`.
     is now an explicit asserted constant and both fixes have mandatory
     topology regressions. The package remains unchecked until that state-path
     defect and the complete 61-fixture acceptance run are resolved.
+  - Progress (2026-08-30, permanent opcode gate): the complete electrical
+    acceptance command is now mandatory in the repository-wide runner,
+    including smoke mode, and in CI. A missing simulator or any opcode mismatch
+    fails the containing test run instead of silently falling back to project
+    loading or Python-only contract tests. The package remains unchecked while
+    the currently exposed accumulator state-path mismatch is being repaired.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

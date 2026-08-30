@@ -347,11 +347,10 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     halt_y = halted.strip("()").split(",")[1]
     error_y = halted_with_error.strip("()").split(",")[1]
     for start, end in (
-        (halted, f"(3490,{halt_y})"),
-        (f"(3490,{halt_y})", "(3490,1910)"),
+        (halted, f"(3470,{halt_y})"),
+        (f"(3470,{halt_y})", "(3470,1900)"),
         (halted_with_error, f"(3470,{error_y})"),
-        (f"(3470,{error_y})", "(3470,1930)"),
-        ("(3470,1930)", "(3490,1930)"),
+        (f"(3470,{error_y})", "(3470,1940)"),
         ("(3520,1920)", "(3560,1920)"),
     ):
         ET.SubElement(circuit, "wire", **{"from": start, "to": end})

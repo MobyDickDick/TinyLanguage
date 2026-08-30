@@ -177,6 +177,19 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     tree = ET.parse(runner.DEFAULT_PROJECT)
     main = tree.getroot().find("circuit[@name='TinyCPUMain']")
     assert main is not None
+    trace_tree = ET.parse(runner.DEFAULT_PROJECT)
+    runner._autonomous_trace_project(trace_tree)
+    trace_main = trace_tree.getroot().find("circuit[@name='TinyCPUMain']")
+    assert trace_main is not None
+    wires = {
+        frozenset((wire.get("from"), wire.get("to")))
+        for wire in trace_main.findall("wire")
+    }
+    # A Logisim gate's west-facing input terminals are 50 pixels behind its
+    # output location.  Keep both halt outcomes on those actual terminals;
+    # the old x=3490 route stopped error halts but let normal HALT clock forever.
+    assert frozenset(("(3470,1900)", "(3470,1650)")) in wires
+    assert frozenset(("(3470,1940)", "(3470,1670)")) in wires
     original_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
@@ -229,7 +242,7 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     halted_with_error = output_locations["HALTED_WITH_ERROR"]
     halt_y = halted.strip("()").split(",")[1]
     error_y = halted_with_error.strip("()").split(",")[1]
-    assert (halted, f"(3490,{halt_y})") in generated_wires
+    assert (halted, f"(3470,{halt_y})") in generated_wires
     assert (halted_with_error, f"(3470,{error_y})") in generated_wires
     assert any(
         component.get("name") == "OR Gate"

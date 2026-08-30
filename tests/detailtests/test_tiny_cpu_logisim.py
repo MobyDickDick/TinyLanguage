@@ -866,7 +866,11 @@ def _instruction_field_output(root, bits):
         if mapped_bits == set(bits)
     )
     x, y = (int(value) for value in splitter.get("loc").strip("()").split(","))
-    return f"({x + 20},{y - 10 * len(branches) + 10 * branch})"
+    if attributes.get("facing") == "south":
+        return f"({x + 10 + 20 * (len(branches) - 1 - branch)},{y + 20})"
+    if attributes.get("appear") == "right":
+        return f"({x + 20},{y + 10 + 40 * branch})"
+    return f"({x + 20},{y + 20 * branch})"
 
 
 def _subcircuit_input(root, circuit_name, pin_label):
@@ -1151,7 +1155,16 @@ def _assert_binary_validity_selector(root, circuit_name, operation):
         for component in circuit.findall("comp")
         if component.get("name") == "Pin"
     }
-    selector = _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+    # The user's repaired drawing intentionally leaves routing primitives
+    # unlabelled.  Identify the validity selector by its electrical role: it is
+    # the only one-bit mux on this page (the operand-data mux is 16-bit).
+    selectors = [
+        component
+        for component in circuit.findall("comp[@name='Multiplexer']")
+        if _attributes(component).get("width", "1") == "1"
+    ]
+    assert len(selectors) == 1, f"{circuit_name} validity selector"
+    selector = selectors[0]
     gate = _labelled_component(circuit, f"ACC_{operation}_VALID")
     x, y = map(int, selector.get("loc").strip("()").split(","))
     selector_inputs = {f"({x - 30},{y - 10})", f"({x - 30},{y + 10})"}
@@ -1184,7 +1197,12 @@ def test_immediate_arithmetic_uses_a_defined_valid_operand():
         constants = [c for c in circuit.findall("comp") if c.get("name") == "Constant"]
         assert len(constants) == 1
         assert _attributes(constants[0]).get("value", "0x1") == "0x1"
-        _labelled_component(circuit, f"ACC_{operation}_OPERAND_VALID_SELECT")
+        selectors = [
+            component
+            for component in circuit.findall("comp[@name='Multiplexer']")
+            if _attributes(component).get("width", "1") == "1"
+        ]
+        assert len(selectors) == 1, f"{circuit_name} validity selector"
 
 
 def test_not_propagates_accumulator_validity_only_while_active():
@@ -1580,6 +1598,7 @@ def test_ap8_fresh_checkout_verification_covers_all_deliverables():
     repository = PROJECT.parents[2]
     assert verify_checkout(repository) == (
         "hardware contract",
+        "named topology",
         "electrical attributes",
         "ROM and listing",
         "embedded ROM",
@@ -1602,15 +1621,15 @@ def test_ap8_verification_reports_a_stale_generated_artifact(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("circuit_name", "component_name", "location", "attribute", "invalid"),
+    ("circuit_name", "component_name", "label", "attribute", "invalid"),
     (
-        ("FetchDecode", "Constant", "(540,240)", "value", "0x0"),
-        ("FetchDecode", "Constant", "(710,240)", "width", "1"),
-        ("Operations", "Multiplexer", "(1730,650)", "width", "1"),
+        ("FetchDecode", "Constant", "PC_INCREMENT_ENABLE", "value", "0x0"),
+        ("FetchDecode", "Constant", "PC_INCREMENT", "width", "1"),
+        ("Operations", "Multiplexer", "RESULT_DATA_SELECT", "width", "1"),
     ),
 )
 def test_ap8_verification_rejects_incorrect_electrical_attributes(
-    tmp_path, circuit_name, component_name, location, attribute, invalid
+    tmp_path, circuit_name, component_name, label, attribute, invalid
 ):
     """The required CI gate must catch effective electrical changes."""
 
@@ -1624,8 +1643,9 @@ def test_ap8_verification_rejects_incorrect_electrical_attributes(
     project = target / "TinyCPU.circ"
     tree = ET.parse(project)
     circuit = tree.getroot().find(f"circuit[@name='{circuit_name}']")
-    component = circuit.find(
-        f"comp[@name='{component_name}'][@loc='{location}']"
+    component = next(
+        item for item in circuit.findall(f"comp[@name='{component_name}']")
+        if _attributes(item).get("label") == label
     )
     item = next((item for item in component if item.get("name") == attribute), None)
     if item is None:

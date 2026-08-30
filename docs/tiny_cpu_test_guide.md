@@ -114,3 +114,10 @@ Baseline. Ein fehlgeschlagener historischer Layouttest rechtfertigt niemals,
 eine ältere Zeichnung zurückzukopieren. Zuerst wird der elektrische Fehler an
 benannten Ports reproduziert; anschließend werden Schaltung und Test gemeinsam
 gegen diesen topologischen Vertrag korrigiert.
+
+Der Checkout-Gate `PYTHONPATH=src python3 src/tiny_cpu_verify.py` setzt diesen
+Vertrag ebenfalls durch. Er verlangt eindeutige Namen für alle Blattports und
+Unterbaustein-Instanzen und prüft danach offene Ports, Mehrfachtreiber und
+Busbreiten auf den tatsächlich verbundenen Netzen. Elektrisch relevante
+Einzelbauteile werden über ihr `label` identifiziert; ihre `loc`-Position ist
+weder Identität noch Sollwert der Prüfung.

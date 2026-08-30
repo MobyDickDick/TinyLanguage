@@ -280,7 +280,15 @@ def _component_terminals(component: ET.Element) -> set[str]:
         return terminals
     if component.get("name") == "Splitter":
         fanout = int(attrs.get("fanout", "2"))
-        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+        if attrs.get("facing") == "south":
+            # A south-facing splitter lays its branches out horizontally below
+            # the anchor.  This is the orientation used by TinyCPUMain's
+            # instruction-field splitter after the hand-maintained redraw.
+            terminals.update(
+                f"({x + 10 + 20 * (fanout - 1 - index)},{y + 20})"
+                for index in range(fanout)
+            )
+        elif attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
             # Logisim's right-hand splitter symbol places branch zero one grid
             # step below its anchor.  Using y-20 here made real wires at y+10
             # look like decorative stubs (notably FetchDecode's operand bus).
@@ -384,7 +392,16 @@ def _component_terminal_widths(component: ET.Element) -> dict[str, int]:
             if output >= 0:
                 output_widths[output] = output_widths.get(output, 0) + 1
         result = {location: incoming}
-        if attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
+        if attrs.get("facing") == "south":
+            result.update(
+                {
+                    f"({x + 10 + 20 * (fanout - 1 - index)},{y + 20})": max(
+                        width, 1
+                    )
+                    for index, width in output_widths.items()
+                }
+            )
+        elif attrs.get("appear") == "right" or attrs.get("label") == "PC_ADDRESS":
             start = y + 10
             result.update(
                 {
@@ -766,6 +783,59 @@ def validate_hardware_contract(
                     f"{circuit_name}.{label}: data width is {data_bits}, "
                     f"expected {dimensions['data_bits']}"
                 )
+    return tuple(violations)
+
+
+def validate_named_topology(project: str | Path) -> tuple[str, ...]:
+    """Validate the schematic hierarchy through stable names and electrical nets.
+
+    Coordinates are necessarily used while reading Logisim's geometric wire
+    format, but they are never part of this contract: circuits, boundary ports,
+    and hierarchical instances are identified exclusively by their names and
+    labels.  Moving a component together with its wires therefore leaves the
+    result unchanged.
+    """
+
+    root = _read_project(project)
+    circuits = {
+        circuit.get("name", ""): circuit for circuit in root.findall("circuit")
+    }
+    violations: list[str] = []
+    for circuit_name, circuit in circuits.items():
+        ports: set[str] = set()
+        instances: set[str] = set()
+        for component in circuit.findall("comp"):
+            attrs = _attributes(component)
+            if component.get("name") == "Pin":
+                label = attrs.get("label", "").strip()
+                if not label:
+                    violations.append(f"{circuit_name}: unnamed boundary port")
+                elif label in ports:
+                    violations.append(
+                        f"{circuit_name}: duplicate boundary port {label!r}"
+                    )
+                ports.add(label)
+            if component.get("name", "") in circuits:
+                label = attrs.get("label", "").strip()
+                if not label:
+                    violations.append(
+                        f"{circuit_name}: unnamed {component.get('name')} instance"
+                    )
+                elif label in instances:
+                    violations.append(
+                        f"{circuit_name}: duplicate instance label {label!r}"
+                    )
+                instances.add(label)
+
+    for report in inspect_project(project):
+        for item in report.unconnected:
+            violations.append(f"{report.name}: unconnected {item}")
+        for item in report.routing_conflicts:
+            violations.append(f"{report.name}: routing conflict: {item}")
+        for item in report.width_conflicts:
+            violations.append(f"{report.name}: width conflict: {item}")
+        if report.wires == 0:
+            violations.append(f"{report.name}: circuit has no electrical nets")
     return tuple(violations)
 
 

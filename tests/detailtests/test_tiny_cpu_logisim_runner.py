@@ -181,15 +181,22 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     runner._autonomous_trace_project(trace_tree)
     trace_main = trace_tree.getroot().find("circuit[@name='TinyCPUMain']")
     assert trace_main is not None
-    wires = {
-        frozenset((wire.get("from"), wire.get("to")))
-        for wire in trace_main.findall("wire")
+    # The harness must tap the gate's real input terminals without drawing a
+    # vertical route across the adjacent public halt outputs.  That former
+    # route shorted normal and error halt together at the crossing endpoint.
+    halt_tunnels = {
+        runner._pin_attributes(component).get("label"): set()
+        for component in trace_main.findall("comp[@name='Tunnel']")
+        if runner._pin_attributes(component).get("label", "").startswith("AP5_HALT_")
     }
-    # A Logisim gate's west-facing input terminals are 50 pixels behind its
-    # output location.  Keep both halt outcomes on those actual terminals;
-    # the old x=3490 route stopped error halts but let normal HALT clock forever.
-    assert frozenset(("(3470,1900)", "(3470,1650)")) in wires
-    assert frozenset(("(3470,1940)", "(3470,1670)")) in wires
+    for component in trace_main.findall("comp[@name='Tunnel']"):
+        label = runner._pin_attributes(component).get("label")
+        if label in halt_tunnels:
+            halt_tunnels[label].add(component.get("loc"))
+    assert halt_tunnels == {
+        "AP5_HALT_NORMAL": {"(3560,1650)", "(3470,1900)"},
+        "AP5_HALT_ERROR": {"(3560,1670)", "(3470,1940)"},
+    }
     original_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }
@@ -240,10 +247,8 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     }
     halted = output_locations["HALTED"]
     halted_with_error = output_locations["HALTED_WITH_ERROR"]
-    halt_y = halted.strip("()").split(",")[1]
-    error_y = halted_with_error.strip("()").split(",")[1]
-    assert (halted, f"(3470,{halt_y})") in generated_wires
-    assert (halted_with_error, f"(3470,{error_y})") in generated_wires
+    assert not any(halted in wire for wire in generated_wires - original_wires)
+    assert not any(halted_with_error in wire for wire in generated_wires - original_wires)
     assert any(
         component.get("name") == "OR Gate"
         and runner._pin_attributes(component).get("label") == "HALT_ANY"

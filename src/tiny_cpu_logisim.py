@@ -344,13 +344,20 @@ def _autonomous_trace_project(tree: ET.ElementTree) -> None:
     # HALTED_WITH_ERROR, hiding the actual electrical mismatch behind a timeout.
     gate = ET.SubElement(circuit, "comp", lib="1", loc="(3520,1920)", name="OR Gate")
     ET.SubElement(gate, "a", name="label", val="HALT_ANY")
-    halt_y = halted.strip("()").split(",")[1]
-    error_y = halted_with_error.strip("()").split(",")[1]
+    # Do not extend the two adjacent output nets down to the OR gate with
+    # vertical wires.  Such a route necessarily crosses the lower halt net at
+    # a wire endpoint and electrically shorts normal and error halt together.
+    # These tunnels exist only in the generated tty harness; the maintained
+    # circuit continues to use direct, visible routes for both public outputs.
+    for location, label in (
+        (halted, "AP5_HALT_NORMAL"),
+        ("(3470,1900)", "AP5_HALT_NORMAL"),
+        (halted_with_error, "AP5_HALT_ERROR"),
+        ("(3470,1940)", "AP5_HALT_ERROR"),
+    ):
+        tunnel = ET.SubElement(circuit, "comp", lib="0", loc=location, name="Tunnel")
+        ET.SubElement(tunnel, "a", name="label", val=label)
     for start, end in (
-        (halted, f"(3470,{halt_y})"),
-        (f"(3470,{halt_y})", "(3470,1900)"),
-        (halted_with_error, f"(3470,{error_y})"),
-        (f"(3470,{error_y})", "(3470,1940)"),
         ("(3520,1920)", "(3560,1920)"),
     ):
         ET.SubElement(circuit, "wire", **{"from": start, "to": end})

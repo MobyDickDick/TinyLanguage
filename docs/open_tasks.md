@@ -197,6 +197,14 @@ archived in `docs/open_tasks_archive.md`.
     observed field values so the next electrical rerun identifies the failing
     boundary rather than only saying that it differs. Both circuit defects and
     the complete 61-fixture run remain open, so this package stays unchecked.
+  - Progress (2026-08-31, accumulator reset repair): made the top-level
+    datapath-reset Constant explicitly inactive instead of relying on
+    Logisim's asserted default. The accumulator now retains `LOAD_CONST`
+    results. An isolated `ADD_ADDRESS` fixture also produces the correct sum,
+    narrowing the remaining AP-5 failure to memory-address state: after stores
+    to addresses 101 and 100, the later read of 101 returns the value last
+    written to 100. The full electrical gate still cannot terminate because
+    that alias makes the countdown grow, so the package remains unchecked.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

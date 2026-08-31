@@ -2185,6 +2185,21 @@ def test_non_arithmetic_accumulator_results_are_explicitly_valid():
     assert "(1780,760)" in _reachable(adjacency, validity.get("loc"))
 
 
+def test_datapath_startup_reset_is_explicitly_inactive():
+    """The accumulator must not be held in reset by a default-valued constant."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = _top_level(root)
+    reset = _labelled_component(circuit, "DATAPATH_RESET_INACTIVE")
+
+    assert reset.get("name") == "Constant"
+    assert _attributes(reset).get("value") == "0x0"
+    adjacency = _electrical_adjacency(circuit)
+    assert _subcircuit_input(
+        root, "Datapath", "DATAPATH_STARTUP_RESET"
+    ) in _reachable(adjacency, reset.get("loc"))
+
+
 def test_operations_preserve_immediate_load_values_outside_alu_cycles():
     """LOAD_CONST must not receive the inactive operation tree's zero value."""
 

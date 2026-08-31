@@ -209,8 +209,12 @@ def compare_trace(expected: dict[str, Any], observed: dict[str, Any]) -> tuple[s
             mismatches.append(f"missing edge {index + 1}")
             continue
         for field, value in expected_edges[index].items():
-            if observed_edges[index].get(field) != value:
-                mismatches.append(f"edge {index + 1}: {field} differs")
+            observed_value = observed_edges[index].get(field)
+            if observed_value != value:
+                mismatches.append(
+                    f"edge {index + 1}: {field} differs "
+                    f"(expected {value!r}, observed {observed_value!r})"
+                )
     return tuple(mismatches)
 
 

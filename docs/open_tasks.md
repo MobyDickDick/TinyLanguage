@@ -212,6 +212,12 @@ archived in `docs/open_tasks_archive.md`.
     that tempting redraw was rejected and not retained. The defect is therefore
     upstream of the RAM-width adapter (in effective-address selection or its
     control), and the 61-fixture gate still remains open.
+  - Progress (2026-08-31, four-state loop-detection audit): verified that the
+    trace fingerprint preserves Logisim's `U` and `E` values as distinct
+    electrical states and that a repeated state containing either value is
+    rejected as an execution loop. Dedicated regressions now freeze both
+    behaviors. No implementation correction was necessary; the outstanding
+    adjacent-address alias and complete 61-fixture run keep this package open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

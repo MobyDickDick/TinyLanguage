@@ -397,6 +397,48 @@ def test_tty_trace_converter_allows_same_instruction_with_changed_state():
     assert len(execution_map["0x003"]) == 2
 
 
+@pytest.mark.parametrize("electrical_value", ["U", "E"])
+def test_tty_trace_converter_rejects_loops_with_four_state_values(electrical_value):
+    """Undefined and error-valued buses must still participate in loop detection."""
+    machine_word = f"{5:06b}" + f"{7:016b}"
+    state = electrical_value * 16
+    raw = "\n".join(
+        [
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=state,
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=state,
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=state,
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="0",
+            ),
+            _tty_row(
+                PRINT_ENABLE="1", PRINT_VALUE=state,
+                TRACE_PC=f"{3:012b}", TRACE_OPCODE=machine_word, TRACE_CLK="1",
+            ),
+        ]
+    )
+
+    with pytest.raises(runner.SmokeTestError, match="execution loop detected"):
+        runner._tty_trace_to_tsv(raw, {})
+
+
+def test_four_state_loop_fingerprint_distinguishes_undefined_from_error():
+    """U and E are separate electrical states rather than one unknown bucket."""
+    base = {
+        label: "0" * width if width > 1 else "0"
+        for label, width in runner.TTY_OUTPUTS
+    }
+    undefined = {**base, "PRINT_ENABLE": "1", "PRINT_VALUE": "U" * 16}
+    error = {**base, "PRINT_ENABLE": "1", "PRINT_VALUE": "E" * 16}
+
+    assert runner._four_state_hex(undefined) != runner._four_state_hex(error)
+
+
 def test_run_retains_simulator_stdout_before_reporting_failure(tmp_path, monkeypatch):
     """A failed electrical comparison must still leave useful CI evidence."""
     output = tmp_path / "artifacts" / "trace.tsv"

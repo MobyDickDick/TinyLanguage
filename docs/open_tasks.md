@@ -205,6 +205,13 @@ archived in `docs/open_tasks_archive.md`.
     to addresses 101 and 100, the later read of 101 returns the value last
     written to 100. The full electrical gate still cannot terminate because
     that alias makes the countdown grow, so the package remains unchecked.
+  - Progress (2026-08-31, address-path rerun): reproduced the adjacent-address
+    alias with the pinned simulator and tested the apparent low-bit splitter
+    boundary directly. The existing upper splitter branch is the 12-bit branch;
+    moving RAM to the other branch produces undefined four-bit addresses, so
+    that tempting redraw was rejected and not retained. The defect is therefore
+    upstream of the RAM-width adapter (in effective-address selection or its
+    control), and the 61-fixture gate still remains open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

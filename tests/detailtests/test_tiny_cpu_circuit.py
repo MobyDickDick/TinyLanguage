@@ -105,6 +105,7 @@ def test_top_level_monitor_probes_preserve_their_bus_widths():
 
     assert probes["MONITOR_PC_OUT"]["width"] == "12"
     assert probes["MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"]["width"] == "16"
+    assert probes["MONITOR_EFFECTIVE_MEMORY_ADDRESS"]["width"] == "16"
 
 
 def test_inspector_accepts_a_minimal_connected_project(tmp_path):

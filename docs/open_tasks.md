@@ -218,6 +218,14 @@ archived in `docs/open_tasks_archive.md`.
     rejected as an execution loop. Dedicated regressions now freeze both
     behaviors. No implementation correction was necessary; the outstanding
     adjacent-address alias and complete 61-fixture run keep this package open.
+  - Progress (2026-08-31, effective-address observation boundary): added a
+    named 16-bit monitor directly to `EffectiveAddress.EFFECTIVE_MEMORY_ADDRESS`
+    at the top-level integration route. This makes the selected address visible
+    independently of the existing address-register monitor and freezes its bus
+    width in the topology regression, so the next simulator diagnosis can
+    distinguish selector failure from corruption inside `Memory`. The AP-5
+    rerun still produced 69 rows instead of 17, so the alias and complete
+    61-fixture acceptance remain open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

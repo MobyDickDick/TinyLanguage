@@ -207,6 +207,13 @@
       <a name="labelloc" val="east"/>
       <a name="width" val="16"/>
     </comp>
+    <comp lib="0" loc="(3570,1800)" name="Probe">
+      <a name="appearance" val="classic"/>
+      <a name="facing" val="west"/>
+      <a name="label" val="MONITOR_EFFECTIVE_MEMORY_ADDRESS"/>
+      <a name="labelloc" val="east"/>
+      <a name="width" val="16"/>
+    </comp>
     <comp lib="0" loc="(3580,550)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -619,6 +626,7 @@
     <wire from="(3010,1760)" to="(3570,1760)"/>
     <wire from="(3010,1780)" to="(3070,1780)"/>
     <wire from="(3010,1800)" to="(3190,1800)"/>
+    <wire from="(3190,1800)" to="(3570,1800)"/>
     <wire from="(3010,1820)" to="(3050,1820)"/>
     <wire from="(3010,1840)" to="(3030,1840)"/>
     <wire from="(3030,1840)" to="(3030,2310)"/>

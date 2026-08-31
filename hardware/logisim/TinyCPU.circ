@@ -122,7 +122,10 @@
       <a name="label" val="MONITOR_SET_INV"/>
       <a name="labelloc" val="east"/>
     </comp>
-    <comp lib="0" loc="(1720,370)" name="Constant"/>
+    <comp lib="0" loc="(1720,370)" name="Constant">
+      <a name="label" val="DATAPATH_RESET_INACTIVE"/>
+      <a name="value" val="0x0"/>
+    </comp>
     <comp lib="0" loc="(200,310)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="label" val="CLK"/>

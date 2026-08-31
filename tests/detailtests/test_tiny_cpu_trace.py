@@ -35,7 +35,9 @@ def test_trace_comparison_identifies_edge_and_field():
     observed = json.loads(json.dumps(expected))
     observed["edges"][0]["pc"] = 99
 
-    assert compare_trace(expected, observed) == ("edge 1: pc differs",)
+    assert compare_trace(expected, observed) == (
+        "edge 1: pc differs (expected 1, observed 99)",
+    )
 
 
 def test_trace_cli_checks_an_observed_fixture(capsys):

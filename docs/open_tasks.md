@@ -186,6 +186,17 @@ archived in `docs/open_tasks_archive.md`.
     fails the containing test run instead of silently falling back to project
     loading or Python-only contract tests. The package remains unchecked while
     the currently exposed accumulator state-path mismatch is being repaired.
+  - Progress (2026-08-31, state-path diagnosis): reran the real gate with the
+    repository-local pinned simulator and confirmed that the accumulator data,
+    validity, and load-request inputs are correct for the first `LOAD_CONST`,
+    while the accumulator output remains zero. The top-level datapath reset is
+    permanently asserted by its default-valued Constant; forcing that reset
+    inactive makes the accumulator retain state and exposes a separate
+    `ADD_ADDRESS` operand-selection defect (the countdown doubles instead of
+    adding the stored `-1`). The trace comparator now prints both expected and
+    observed field values so the next electrical rerun identifies the failing
+    boundary rather than only saying that it differs. Both circuit defects and
+    the complete 61-fixture run remain open, so this package stays unchecked.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

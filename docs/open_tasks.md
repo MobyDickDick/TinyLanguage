@@ -5,6 +5,22 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
+- [x] **Validate the adjusted TinyCPUMain wiring without discarding the redraw**
+  (Owner: TinyCPU/Hardware; completed 2026-08-31)
+  - Scope: use the newly adjusted `TinyCPU.circ` as the starting point, audit
+    its named electrical nets, and correct only regressions introduced by the
+    edit rather than replacing the integration sheet with an older revision.
+  - Cause: three pairs of decoder outputs shared drawing lanes and therefore
+    formed forbidden wired-OR nets. The save also dropped the explicit widths
+    of the PC and effective-address monitors as well as machine-significant
+    labels and asserted constants on the fetch and result-selection sheets.
+  - Result: the adjusted placement and unaffected routes remain in place. The
+    decoder control signals again use electrically independent routes, the
+    multi-bit probes retain their bus widths, and the accepted fetch, datapath
+    reset, immediate-result, and result-selector attributes are explicit.
+  - Verification: the named inspector reports every maintained sheet
+    connected, and the focused circuit, topology, and Logisim regressions pass.
+
 - [x] **Prove every TinyCPU opcode behavior electrically**
   (Owner: TinyCPU/Testing; completed 2026-08-29)
   - Scope: replace the family-level AP-11 programs with isolated, executable

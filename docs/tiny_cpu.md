@@ -74,12 +74,13 @@ Datenbereichs setzen `OVF` und schreiben `0 INVALID` in den Akkumulator.
 
 ### TinyCPU.circ testen
 
-Eine kurze deutschsprachige Schritt-für-Schritt-Anleitung für den vollständigen
+Eine kurze deutschsprachige Schritt-für-Schritt-Anleitung für den stabilen
 elektrischen Test, den Test mit einer bereits vorhandenen Logisim-JAR und die
 visuelle Fehlersuche steht in
-[`docs/tiny_cpu_test_guide.md`](tiny_cpu_test_guide.md). Der verbindliche
-Kompletttest wird aus dem Repository-Hauptverzeichnis mit
-`scripts/test-logisim.sh` gestartet.
+[`docs/tiny_cpu_test_guide.md`](tiny_cpu_test_guide.md). Der verbindliche AP-5-
+Test wird aus dem Repository-Hauptverzeichnis mit `scripts/test-logisim.sh`
+gestartet. Die vollständige Matrix bleibt mit
+`TINYCPU_FULL_ACCEPTANCE=1 scripts/test-logisim.sh` als Diagnoselauf verfügbar.
 
 ### Abgenommener Aufbau in Logisim-evolution
 

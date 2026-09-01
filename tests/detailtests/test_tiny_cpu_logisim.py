@@ -1366,6 +1366,38 @@ def test_logisim_starter_has_parallel_valid_ram_and_all_error_flags():
     assert labels == {"OVF", "DIV0", "ADDR", "INV", "ILL", "INPUT"}
 
 
+def test_accumulator_value_and_validity_registers_share_load_and_clock_controls():
+    """ACC and ACC_VALID must sample together on the processor clock."""
+
+    root = ET.parse(PROJECT).getroot()
+    circuit = next(
+        candidate for candidate in root.findall("circuit")
+        if candidate.get("name") == "Datapath"
+    )
+    components = {
+        _attributes(component).get("label"): component
+        for component in circuit.findall("comp")
+    }
+    adjacency = _electrical_adjacency(circuit)
+
+    def register_terminal(label, terminal):
+        x, y = map(int, components[label].get("loc").strip("()").split(","))
+        offsets = {"write enable": (0, 50), "clock": (0, 70)}
+        dx, dy = offsets[terminal]
+        return f"({x + dx},{y + dy})"
+
+    pins = {
+        _attributes(component).get("label"): component.get("loc")
+        for component in circuit.findall("comp[@name='Pin']")
+    }
+    for register in ("ACC", "ACC_VALID"):
+        assert pins["ACC_LOAD"] in _reachable(
+            adjacency, register_terminal(register, "write enable")
+        )
+        assert pins["CLK"] in _reachable(
+            adjacency, register_terminal(register, "clock")
+        )
+
 def test_ap2_datapaths_are_wired_and_expose_status_and_offset_results():
     root = ET.parse(PROJECT).getroot()
     circuits = {circuit.get("name"): circuit for circuit in root.findall("circuit")}

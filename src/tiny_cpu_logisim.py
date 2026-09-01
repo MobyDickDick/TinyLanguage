@@ -62,6 +62,7 @@ TTY_OUTPUTS = (
     ("TRACE_OPCODE", 22),
     ("TRACE_CLK", 1),
 )
+TTY_OUTPUT_WIDTHS = dict(TTY_OUTPUTS)
 
 
 class SmokeTestError(RuntimeError):
@@ -408,19 +409,67 @@ def _four_state_hex(row: dict[str, str]) -> str:
     return f"0x{int(bits, 2):0{(len(bits) + 3) // 4}X}"
 
 
+def _tty_output_order(circuit: ET.Element) -> tuple[tuple[str, int], ...]:
+    """Return the generated-symbol order used by Logisim's tty logger.
+
+    Logisim orders generated-symbol ports by their physical pin coordinates,
+    not by XML order or label.  Keeping the parser tied to ``TTY_OUTPUTS`` made
+    a harmless compact redraw shift every value into the wrong column.  Resolve
+    the maintained and temporary trace pins by label, then mirror Logisim's
+    top-to-bottom, left-to-right port order.
+    """
+
+    outputs = []
+    for component in circuit.findall("comp[@name='Pin']"):
+        attributes = _pin_attributes(component)
+        label = attributes.get("label")
+        if attributes.get("type") != "output" or label not in TTY_OUTPUT_WIDTHS:
+            continue
+        location = component.get("loc", "").strip("()").split(",")
+        if len(location) != 2:
+            raise SmokeTestError(f"TinyCPUMain {label} has an invalid pin location")
+        x, y = (int(value) for value in location)
+        outputs.append((y, x, label, TTY_OUTPUT_WIDTHS[label]))
+    labels = [item[2] for item in outputs]
+    public_labels = {
+        label for label, _width in TTY_OUTPUTS if not label.startswith("TRACE_")
+    }
+    # Small unit-test projects intentionally omit the maintained public output
+    # pins. Their mocked tty rows use the historical canonical order.
+    if not public_labels.intersection(labels):
+        return TTY_OUTPUTS
+    missing = [label for label, _width in TTY_OUTPUTS if label not in labels]
+    duplicates = sorted({label for label in labels if labels.count(label) > 1})
+    if missing or duplicates:
+        details = []
+        if missing:
+            details.append("missing " + ", ".join(missing))
+        if duplicates:
+            details.append("duplicate " + ", ".join(duplicates))
+        raise SmokeTestError(
+            "TinyCPUMain tty outputs are invalid: " + "; ".join(details)
+        )
+    return tuple((label, width) for _y, _x, label, width in sorted(outputs))
+
+
 def _tty_trace_to_tsv(
-    raw: str, execution_map: dict[str, set[str]] | None = None
+    raw: str,
+    execution_map: dict[str, set[str]] | None = None,
+    *,
+    output_order: tuple[tuple[str, int], ...] = TTY_OUTPUTS,
 ) -> str:
     """Convert Logisim's grouped, change-driven tty table into rising-edge rows."""
     decoded_rows: list[dict[str, str]] = []
-    expected_tokens = sum((width + 3) // 4 if width > 1 else 1 for _label, width in TTY_OUTPUTS)
+    expected_tokens = sum(
+        (width + 3) // 4 if width > 1 else 1 for _label, width in output_order
+    )
     for line in raw.splitlines():
         tokens = line.split()
         if len(tokens) != expected_tokens:
             continue
         row: dict[str, str] = {}
         offset = 0
-        for label, width in TTY_OUTPUTS:
+        for label, width in output_order:
             count = (width + 3) // 4 if width > 1 else 1
             cells = tokens[offset : offset + count]
             offset += count
@@ -523,7 +572,10 @@ def trace_test(java: str, jar: Path, project: Path, program: Path, output: Path)
 
     expected = capture_integration_trace(program.read_text(encoding="utf-8"))
     instructions = [edge["instruction"] for edge in expected["edges"]]
-    normalized = _tty_trace_to_tsv(result.stdout)
+    top = tree.getroot().find("circuit[@name='TinyCPUMain']")
+    if top is None:
+        raise SmokeTestError("TinyCPU project has no TinyCPUMain circuit")
+    normalized = _tty_trace_to_tsv(result.stdout, output_order=_tty_output_order(top))
     try:
         observed = integration_trace_from_table(normalized, instructions)
     except ValueError as exc:
@@ -618,7 +670,13 @@ def matrix_test(java: str, jar: Path, project: Path, matrix_path: Path, output: 
             expected = capture_integration_trace(source)
         instructions = [edge["instruction"] for edge in expected["edges"]]
         try:
-            observed = integration_trace_from_table(_tty_trace_to_tsv(result.stdout), instructions)
+            top = tree.getroot().find("circuit[@name='TinyCPUMain']")
+            if top is None:
+                raise SmokeTestError("TinyCPU project has no TinyCPUMain circuit")
+            observed = integration_trace_from_table(
+                _tty_trace_to_tsv(result.stdout, output_order=_tty_output_order(top)),
+                instructions,
+            )
         except ValueError as exc:
             raise SmokeTestError(f"invalid Logisim table for {fixture_id}: {exc}") from exc
         mismatches = compare_trace(expected, observed)

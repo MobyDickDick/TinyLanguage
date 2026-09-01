@@ -114,9 +114,9 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="width" val="16"/>
       <a name="label" val="PC_INCREMENT"/>
       <a name="value" val="0x1"/>
-      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -132,12 +132,12 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,240)" name="Multiplexer">
-      <a name="label" val="PC_NEXT_SELECT"/>
       <a name="width" val="16"/>
+      <a name="label" val="PC_NEXT_SELECT"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
-      <a name="label" val="PROGRAM_LIMIT_COMPARE"/>
       <a name="width" val="16"/>
+      <a name="label" val="PROGRAM_LIMIT_COMPARE"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
       <a name="width" val="16"/>
@@ -151,8 +151,7 @@
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 12 22
-ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
-2c0000
+00ffff 1c0065 000003 1c0064 2a0000 04ffff 1c0064 240004 2c0000
 </a>
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>

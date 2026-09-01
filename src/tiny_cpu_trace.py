@@ -193,6 +193,19 @@ def capture_integration_trace(source: str) -> dict[str, Any]:
     return {"schema_version": 1, "edges": edges}
 
 
+def _observable_boundary(boundary: dict[str, Any]) -> dict[str, Any]:
+    """Canonicalize output buses whose enables are not asserted."""
+
+    observable = dict(boundary)
+    if not observable.get("print_enable"):
+        observable["print_value"] = 0
+        observable["print_valid"] = False
+    if not observable.get("print_address_enable"):
+        observable["print_address_value"] = 0
+        observable["print_address_valid"] = False
+    return observable
+
+
 def compare_trace(expected: dict[str, Any], observed: dict[str, Any]) -> tuple[str, ...]:
     """Return concise edge/field mismatches between two trace documents."""
 
@@ -210,6 +223,13 @@ def compare_trace(expected: dict[str, Any], observed: dict[str, Any]) -> tuple[s
             continue
         for field, value in expected_edges[index].items():
             observed_value = observed_edges[index].get(field)
+            if (
+                field == "boundary"
+                and isinstance(value, dict)
+                and isinstance(observed_value, dict)
+            ):
+                value = _observable_boundary(value)
+                observed_value = _observable_boundary(observed_value)
             if observed_value != value:
                 mismatches.append(
                     f"edge {index + 1}: {field} differs "

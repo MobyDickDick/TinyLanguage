@@ -80,6 +80,20 @@ def test_logisim_table_converts_flat_pin_rows_to_boundary_trace():
     assert compare_trace(expected, observed) == ()
 
 
+def test_trace_comparison_ignores_disabled_output_bus_values():
+    expected = capture_integration_trace("LOAD_CONST(7)\nHALT()\n")
+    observed = json.loads(json.dumps(expected))
+    boundary = observed["edges"][0]["boundary"]
+    boundary.update(
+        print_value=65535,
+        print_valid=True,
+        print_address_value=123,
+        print_address_valid=True,
+    )
+
+    assert compare_trace(expected, observed) == ()
+
+
 def test_trace_cli_checks_a_logisim_table_export(tmp_path, capsys):
     program = tmp_path / "normal_halt.tcpu"
     table = tmp_path / "normal_halt.tsv"

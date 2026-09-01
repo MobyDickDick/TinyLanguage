@@ -1625,8 +1625,7 @@
       <a name="addrWidth" val="12"/>
       <a name="appearance" val="logisim_evolution"/>
       <a name="contents">addr/data: 12 22
-ffff 1c0065 3 1c0064 2a0000 50065 1c0064 240004
-2c0000
+00ffff 1c0065 000003 1c0064 2a0000 04ffff 1c0064 240004 2c0000
 </a>
       <a name="dataWidth" val="22"/>
       <a name="label" val="INSTRUCTION_ROM"/>

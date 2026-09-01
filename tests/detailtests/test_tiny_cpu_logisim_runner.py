@@ -235,8 +235,8 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         if label in halt_tunnels:
             halt_tunnels[label].add(component.get("loc"))
     assert halt_tunnels == {
-        "AP5_HALT_NORMAL": {"(3560,1650)", "(3470,1900)"},
-        "AP5_HALT_ERROR": {"(3560,1670)", "(3470,1940)"},
+        "AP5_HALT_NORMAL": {"(3330,1650)", "(3470,1900)"},
+        "AP5_HALT_ERROR": {"(3330,1670)", "(3470,1940)"},
     }
     original_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
@@ -299,6 +299,29 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         tree.getroot(), "FetchDecodeControls", "PRINT"
     )
     assert (print_enable, output_locations["PRINT_ENABLE"]) in original_wires
+
+
+def test_tty_output_order_follows_generated_symbol_pin_positions():
+    """A compact redraw must not shift tty values into obsolete columns."""
+
+    tree = ET.parse(runner.DEFAULT_PROJECT)
+    runner._autonomous_trace_project(tree)
+    main = tree.getroot().find("circuit[@name='TinyCPUMain']")
+    assert main is not None
+
+    order = runner._tty_output_order(main)
+
+    assert order[0] == ("PRINT_VALUE", 16)
+    assert order[1:4] == (
+        ("PRINT_ADDRESS_VALID", 1),
+        ("PRINT_ADDRESS_VALUE", 16),
+        ("PRINT_VALID", 1),
+    )
+    assert order[-3:] == (
+        ("TRACE_PC", 12),
+        ("TRACE_OPCODE", 22),
+        ("TRACE_CLK", 1),
+    )
 
 
 def test_tty_trace_converter_samples_last_stable_low_row_per_edge():

@@ -251,6 +251,13 @@ archived in `docs/open_tasks_archive.md`.
     also restored before rerunning the real gate. The AP-5 trace still has 69
     rows, so the fault is now bounded inside the memory sheet and the complete
     61-fixture acceptance remains open.
+  - Progress (2026-09-01, RAM read-mode audit): made asynchronous reads
+    explicit on both the data and validity RAMs, including the maintained
+    diagnostic sheet, so a Logisim save cannot silently change the memory
+    contract to clocked reads. A mandatory regression freezes both settings.
+    The real AP-5 trace still grows from 17 to 69 rows, which rules out an
+    implicit read-mode default as the cause but leaves the memory-data mismatch
+    and the complete 61-fixture acceptance open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

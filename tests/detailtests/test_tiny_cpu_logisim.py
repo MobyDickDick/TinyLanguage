@@ -1340,6 +1340,8 @@ def test_logisim_starter_has_parallel_valid_ram_and_all_error_flags():
     assert rams["DATA_RAM"]["dataWidth"] == "16"
     assert rams["VALID_RAM"]["addrWidth"] == "12"
     assert rams["VALID_RAM"]["dataWidth"] == "1"
+    assert rams["DATA_RAM"]["asyncread"] == "true"
+    assert rams["VALID_RAM"]["asyncread"] == "true"
 
     address_splitter = next(
         component

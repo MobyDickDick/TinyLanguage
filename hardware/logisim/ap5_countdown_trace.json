@@ -134,7 +134,7 @@
     },
     {
       "edge": 6,
-      "instruction": "ADD_ADDRESS",
+      "instruction": "ADD_CONST",
       "pc": 6,
       "accumulator": {
         "value": 2,
@@ -243,7 +243,7 @@
     },
     {
       "edge": 10,
-      "instruction": "ADD_ADDRESS",
+      "instruction": "ADD_CONST",
       "pc": 6,
       "accumulator": {
         "value": 1,
@@ -356,7 +356,7 @@
     },
     {
       "edge": 14,
-      "instruction": "ADD_ADDRESS",
+      "instruction": "ADD_CONST",
       "pc": 6,
       "accumulator": {
         "value": 0,

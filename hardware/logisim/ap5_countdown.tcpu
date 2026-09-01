@@ -8,7 +8,7 @@ LOAD_CONST(3)
 STORE_ADDRESS(counter)
 loop:
 PRINT()
-ADD_ADDRESS(decrement)
+ADD_CONST(-1)
 STORE_ADDRESS(counter)
 JUMP_NOT_ZERO(loop)
 HALT()

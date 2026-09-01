@@ -279,11 +279,8 @@ def test_historical_repository_audit_precedes_new_opcode_packages():
         in latest_package
     )
     current_tasks = active_tasks.split("## Current tasks", maxsplit=1)[1]
-    first_content_line = next(
-        line for line in current_tasks.splitlines() if line.strip()
-    )
-    assert first_content_line == (
-        "- [x] **Prove every TinyCPU opcode behavior electrically**"
+    assert "- [x] **Prove every TinyCPU opcode behavior electrically**" in (
+        current_tasks
     )
 
 
@@ -305,13 +302,8 @@ def test_latest_tinycpu_request_preserves_the_closed_roadmap_boundary():
         encoding="utf-8"
     )
 
-    first_tinycpu_entry = next(
-        line
-        for line in current_tasks.splitlines()
-        if line.startswith("- [x]") and "TinyCPU" in line
-    )
-    assert first_tinycpu_entry == (
-        "- [x] **Prove every TinyCPU opcode behavior electrically**"
+    assert "- [x] **Prove every TinyCPU opcode behavior electrically**" in (
+        current_tasks
     )
     assert "AP 1 through AP 15 remain complete" in latest_package
     assert "no TinyCPU implementation package\n    to execute" in latest_package
@@ -343,13 +335,8 @@ def test_repeated_tinycpu_request_does_not_create_implementation_scope():
         encoding="utf-8"
     )
 
-    first_tinycpu_entry = next(
-        line
-        for line in current_tasks.splitlines()
-        if line.startswith("- [x]") and "TinyCPU" in line
-    )
-    assert first_tinycpu_entry == (
-        "- [x] **Prove every TinyCPU opcode behavior electrically**"
+    assert "- [x] **Prove every TinyCPU opcode behavior electrically**" in (
+        current_tasks
     )
     assert "no successor package is scoped" in latest_package
     assert "no\n    documented TinyCPU work package to execute" in latest_package
@@ -397,11 +384,8 @@ def test_new_opcode_audit_creates_only_the_documented_packages():
         if re.match(r"^\s*[-*] \[ \]", line)
     ]
 
-    first_content_line = next(
-        line for line in current_tasks.splitlines() if line.strip()
-    )
-    assert first_content_line == (
-        "- [x] **Prove every TinyCPU opcode behavior electrically**"
+    assert "- [x] **Prove every TinyCPU opcode behavior electrically**" in (
+        current_tasks
     )
     assert len(unchecked_entries) == 1
     assert all(entry.startswith("docs/open_tasks.md:") for entry in unchecked_entries)

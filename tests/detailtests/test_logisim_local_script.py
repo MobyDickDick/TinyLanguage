@@ -4,6 +4,7 @@ from pathlib import Path
 
 REPOSITORY = Path(__file__).parents[2]
 SCRIPT = REPOSITORY / "scripts" / "test-logisim-local.sh"
+CI_SCRIPT = REPOSITORY / "scripts" / "test-logisim.sh"
 
 
 def test_local_logisim_launcher_reports_a_missing_jar(tmp_path):
@@ -30,3 +31,11 @@ def test_local_logisim_jar_is_ignored_by_git(tmp_path):
     )
 
     assert result.returncode == 0
+
+
+def test_ci_logisim_gate_keeps_unfinished_acceptance_matrix_opt_in():
+    script = CI_SCRIPT.read_text(encoding="utf-8")
+
+    assert 'gate_args=(--trace-output "$output")' in script
+    assert '"${TINYCPU_FULL_ACCEPTANCE:-0}" == "1"' in script
+    assert 'gate_args=(--acceptance-output "$output")' in script

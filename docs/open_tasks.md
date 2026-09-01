@@ -269,6 +269,18 @@ archived in `docs/open_tasks_archive.md`.
     `LOAD_ADDRESS` and exposes the remaining direct-route defect (the operand
     `20` is selected instead of memory value `7`), so the complete package
     deliberately remains unchecked.
+  - Progress (2026-09-01, latest TinyCPUMain redraw audit): preserved the
+    adjusted top-level placement and routes while restoring the three explicit
+    monitor widths and the inactive datapath-reset label removed by the save.
+    The same save had also dropped the accepted PC constants and selector
+    labels, the explicit memory bit-zero mapping, and the asserted immediate
+    validity source from maintained child sheets; those machine-significant
+    attributes and the reproducible diagnostic geometry are restored as well.
+    The inspector and all focused circuit/topology regressions pass. The real
+    matrix again passes AP-5 and `LOAD_CONST`, then reproduces the existing
+    `LOAD_ADDRESS` mismatch (`20` instead of stored value `7`) at edge 5.
+    Consequently the electrical repair package remains unchecked, with its
+    next boundary still the memory/immediate accumulator data selection.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

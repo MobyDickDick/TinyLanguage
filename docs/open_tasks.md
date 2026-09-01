@@ -258,6 +258,17 @@ archived in `docs/open_tasks_archive.md`.
     The real AP-5 trace still grows from 17 to 69 rows, which rules out an
     implicit read-mode default as the cause but leaves the memory-data mismatch
     and the complete 61-fixture acceptance open.
+  - Progress (2026-09-01, accumulator-validity clock repair): the stable AP-5
+    trace now passes in the pinned simulator. The first full-matrix rerun then
+    exposed that `ACC_VALID` had its clock and write-enable inputs crossed: an
+    isolated `LOAD_CONST(7)` stored the value immediately but did not store its
+    valid bit until the following accumulator request. Both datapath sheets now
+    drive `ACC` and `ACC_VALID` from the same named load and clock controls, and
+    a mandatory topology regression freezes that relationship. The repaired
+    `LOAD_CONST` fixture matches all three VM edges. The next fixture now reaches
+    `LOAD_ADDRESS` and exposes the remaining direct-route defect (the operand
+    `20` is selected instead of memory value `7`), so the complete package
+    deliberately remains unchecked.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

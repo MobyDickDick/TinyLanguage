@@ -1341,6 +1341,21 @@ def test_logisim_starter_has_parallel_valid_ram_and_all_error_flags():
     assert rams["VALID_RAM"]["addrWidth"] == "12"
     assert rams["VALID_RAM"]["dataWidth"] == "1"
 
+    address_splitter = next(
+        component
+        for component in circuits["Memory"].findall("comp")
+        if component.get("name") == "Splitter"
+    )
+    splitter_attributes = _attributes(address_splitter)
+    # Keep the low address bit explicit so a Logisim save cannot silently
+    # move it away from the 12-bit RAM-address branch.
+    assert splitter_attributes["bit0"] == "0"
+    assert {
+        bit
+        for bit in range(int(splitter_attributes["incoming"]))
+        if splitter_attributes.get(f"bit{bit}", "0") == "0"
+    } == set(range(12))
+
     labels = {
         _attributes(component).get("label")
         for component in circuits["ErrorFlags"].findall("comp")

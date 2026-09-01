@@ -242,6 +242,15 @@ archived in `docs/open_tasks_archive.md`.
     distinguish selector failure from corruption inside `Memory`. The AP-5
     rerun still produced 69 rows instead of 17, so the alias and complete
     61-fixture acceptance remain open.
+  - Progress (2026-08-31, memory-boundary audit): the new monitor proves that
+    `EffectiveAddress` presents distinct values 101 and 100 to `Memory`, while
+    the later read of 101 still returns the value stored at 100. The 12-bit
+    RAM splitter now maps bit zero explicitly, and a regression prevents that
+    mapping from being lost in later Logisim saves. The latest redraw's
+    machine-significant constants, selector labels, and monitor widths were
+    also restored before rerunning the real gate. The AP-5 trace still has 69
+    rows, so the fault is now bounded inside the memory sheet and the complete
+    61-fixture acceptance remains open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

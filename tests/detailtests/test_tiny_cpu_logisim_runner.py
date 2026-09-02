@@ -298,7 +298,22 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
     print_enable = subcircuit_output(
         tree.getroot(), "FetchDecodeControls", "PRINT"
     )
-    assert (print_enable, output_locations["PRINT_ENABLE"]) in original_wires
+    # The redrawn control block reaches the public output through a visible
+    # dog-leg.  Follow the maintained wire contacts instead of requiring the
+    # obsolete single-segment route from the former symbol position.
+    adjacency: dict[str, set[str]] = {}
+    for start, end in original_wires:
+        adjacency.setdefault(start, set()).add(end)
+        adjacency.setdefault(end, set()).add(start)
+    reachable = {print_enable}
+    pending = [print_enable]
+    while pending:
+        point = pending.pop()
+        for neighbor in adjacency.get(point, ()):
+            if neighbor not in reachable:
+                reachable.add(neighbor)
+                pending.append(neighbor)
+    assert output_locations["PRINT_ENABLE"] in reachable
 
 
 def test_tty_output_order_follows_generated_symbol_pin_positions():

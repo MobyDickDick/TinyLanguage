@@ -66,16 +66,13 @@ def test_inspector_exposes_completed_sheets():
     assert reports["TinyCPUMain"].connected
     unconnected_labels = {item.partition("@")[0] for item in reports["TinyCPUMain"].unconnected}
     # The former result-selection multiplexers were intentionally replaced by
-    # fully wired OR trees.  Conservative placement diagnostics are advisory;
-    # they do not make an electrically complete integration sheet incomplete.
+    # fully wired OR trees.  The redrawn control block also clears the
+    # inspector's conservative placement lane around DecodeSignals.
     assert unconnected_labels == set()
     assert {"CLK", "RESET"}.isdisjoint(unconnected_labels)
     assert reports["TinyCPUMain"].routing_conflicts == ()
     assert reports["TinyCPUMain"].width_conflicts == ()
-    assert reports["TinyCPUMain"].placement_conflicts == (
-        "DecodeSignals@(1260,670) overlaps the reserved lane of "
-        "FetchDecodeControls@(1260,770)",
-    )
+    assert reports["TinyCPUMain"].placement_conflicts == ()
 
     for sheet in (
         "Datapath", "AddressPath", "Memory", "ErrorFlags", "FetchDecode",
@@ -586,7 +583,7 @@ def test_result_merge_has_a_visible_routing_lane():
     assert (result_or_x, result_or_y) == (1570, 660)
 
 
-def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
+def test_processor_implementation_keeps_redrawn_control_anchor_clear():
     report = next(
         item
         for item in inspect_project(PROJECT)
@@ -594,13 +591,9 @@ def test_processor_implementation_keeps_hand_placed_fetch_and_memory_anchors():
     )
 
     assert SUBCIRCUIT_ANCHOR_CLEARANCE == 200
-    # The inspector's deliberately conservative 200-pixel lane reports these
-    # adjacent hand-placed symbols even though their rendered boxes are apart.
-    # Freeze the maintained anchors instead of moving either component merely
-    # to satisfy that heuristic.
-    assert len(report.placement_conflicts) == 1
-    assert any("DecodeSignals@" in conflict and "FetchDecodeControls@" in conflict
-               for conflict in report.placement_conflicts)
+    # The control block moved down and right, so its reserved lane no longer
+    # overlaps the DecodeSignals anchor.
+    assert report.placement_conflicts == ()
 
 
 def test_processor_implementation_does_not_daisy_chain_component_anchors():

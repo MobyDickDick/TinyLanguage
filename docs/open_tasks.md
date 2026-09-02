@@ -258,6 +258,15 @@ archived in `docs/open_tasks_archive.md`.
     The real AP-5 trace still grows from 17 to 69 rows, which rules out an
     implicit read-mode default as the cause but leaves the memory-data mismatch
     and the complete 61-fixture acceptance open.
+  - Progress (2026-09-02, adjusted-circuit recovery and electrical rerun):
+    preserved the latest hand-adjusted drawing while restoring the explicit
+    machine-significant widths, constants, and selector labels removed by its
+    save. The named inspector, 90 focused Logisim regressions, and real AP-5
+    simulator gate pass again. The complete electrical matrix now advances
+    through `load-const` but fails `load-address`: the VM expects the stored
+    value 7 while the circuit prints the address operand 20. This bounds the
+    remaining defect to the memory-load data-selection path; the package stays
+    unchecked until that mismatch and the remaining fixtures pass.
   - Progress (2026-09-01, accumulator-validity clock repair): the stable AP-5
     trace now passes in the pinned simulator. The first full-matrix rerun then
     exposed that `ACC_VALID` had its clock and write-enable inputs crossed: an

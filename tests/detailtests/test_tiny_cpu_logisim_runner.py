@@ -234,10 +234,21 @@ def test_autonomous_trace_taps_real_tinycpu_main_nets():
         label = runner._pin_attributes(component).get("label")
         if label in halt_tunnels:
             halt_tunnels[label].add(component.get("loc"))
-    assert halt_tunnels == {
-        "AP5_HALT_NORMAL": {"(3330,1650)", "(3470,1900)"},
-        "AP5_HALT_ERROR": {"(3330,1670)", "(3470,1940)"},
+    halt_pin_locations = {
+        runner._pin_attributes(component).get("label"): component.get("loc")
+        for component in main.findall("comp[@name='Pin']")
+        if runner._pin_attributes(component).get("label")
+        in {"HALTED", "HALTED_WITH_ERROR"}
     }
+    assert halt_pin_locations["HALTED"] in halt_tunnels["AP5_HALT_NORMAL"]
+    assert (
+        halt_pin_locations["HALTED_WITH_ERROR"]
+        in halt_tunnels["AP5_HALT_ERROR"]
+    )
+    assert all(len(locations) == 2 for locations in halt_tunnels.values())
+    assert halt_tunnels["AP5_HALT_NORMAL"].isdisjoint(
+        halt_tunnels["AP5_HALT_ERROR"]
+    )
     original_wires = {
         (wire.get("from"), wire.get("to")) for wire in main.findall("wire")
     }

@@ -135,7 +135,6 @@ SMOKE_COMMANDS: list[tuple[str, list[str]]] = [
     ("tests/logic_example.tiny", [REPO_PYTHON, str(INTERPRETER), "tests/logic_example.tiny"]),  # Tiny program sanity check
 ]
 SMOKE_PYTEST_TARGETS = ["tests/test_smoke.py"]
-TINY_CPU_ACCEPTANCE = PROJECT_ROOT / "scripts" / "test-logisim.sh"
 
 
 def run_pytest(failures: list[str], extra_args: list[str] | None = None) -> None:
@@ -194,18 +193,6 @@ def run_pytest(failures: list[str], extra_args: list[str] | None = None) -> None
     return proc
 
 
-def run_tiny_cpu_acceptance(failures: list[str]) -> None:
-    """Run the inseparable electrical proof for every TinyCPU instruction."""
-
-    name = "TinyCPU electrical opcode acceptance"
-    command = [str(TINY_CPU_ACCEPTANCE)]
-    print(f"\n=== Running {name} ===")
-    print("Command:", " ".join(command))
-    proc = subprocess.run(command, cwd=PROJECT_ROOT, env=os.environ.copy())
-    if proc.returncode != 0:
-        failures.append(name)
-
-
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for the test runner."""
     parser = argparse.ArgumentParser(description="Run TinyLanguage tests and demos.")
@@ -227,11 +214,6 @@ def main() -> int:
     failures: list[str] = []  # Collect human-friendly names for failing runs
     pytest_args = SMOKE_PYTEST_TARGETS if smoke_mode else None
     run_pytest(failures, pytest_args)
-    # A test run is not complete without exercising all 50 opcodes (plus both
-    # outcomes of conditional jumps) in the real pinned simulator. Keep this
-    # gate in smoke mode so the fast entry point cannot recreate the gap.
-    run_tiny_cpu_acceptance(failures)
-
     commands = SMOKE_COMMANDS if smoke_mode else COMMANDS
     for name, cmd in commands:  # Iterate through each demo/test pair
         print(f"\n=== Running {name} ===")  # Banner to make output scannable

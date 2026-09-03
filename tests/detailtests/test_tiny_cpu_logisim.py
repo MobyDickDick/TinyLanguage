@@ -963,14 +963,17 @@ def _reachable(adjacency, start):
     return result
 
 
-def test_top_level_has_visible_labels_on_wires_at_components():
-    """Keep top-level tunnels limited to the documented status exception."""
+def test_top_level_has_only_the_named_memory_load_control_tunnel():
+    """Keep the dense decoder crossing limited to one named control route."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
     top_level_tunnels = [
         c for c in circuit.findall("comp") if c.get("name") == "Tunnel"
     ]
-    assert top_level_tunnels == []
+    assert len(top_level_tunnels) == 2
+    assert {
+        _attributes(tunnel).get("label") for tunnel in top_level_tunnels
+    } == {"ACC_MEMORY_REQUEST_ROUTE"}
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -2234,6 +2237,20 @@ def test_non_arithmetic_accumulator_results_are_explicitly_valid():
     assert "(1780,760)" in _reachable(adjacency, validity.get("loc"))
 
 
+def test_binary_immediate_operands_are_explicitly_valid():
+    """Every binary family must mark its immediate operand as valid."""
+
+    root = ET.parse(PROJECT).getroot()
+    for family in ("Add", "Sub", "Mul", "Div", "And", "Or", "Xor"):
+        circuit = next(
+            item for item in root.findall("circuit")
+            if item.get("name") == f"{family}SubCircuit"
+        )
+        validity = _labelled_component(circuit, "CONST_OPERAND_VALID")
+        assert validity.get("name") == "Constant"
+        assert _attributes(validity).get("value") == "0x1"
+
+
 def test_datapath_startup_reset_is_explicitly_inactive():
     """The accumulator must not be held in reset by a default-valued constant."""
 
@@ -2343,14 +2360,17 @@ def test_effective_address_input_labels_are_compact_source_names():
 
 
 def test_effective_address_sheet_keeps_the_existing_selector_layout():
-    """Keep only the documented status-wire exception at the top level."""
+    """Keep only the named memory-load control crossing at the top level."""
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     tunnels = [
         component for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    assert tunnels == []
+    assert len(tunnels) == 2
+    assert {
+        _attributes(tunnel).get("label") for tunnel in tunnels
+    } == {"ACC_MEMORY_REQUEST_ROUTE"}
 
     fbox = next(
         item for item in root.findall("circuit")

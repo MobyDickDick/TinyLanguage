@@ -290,6 +290,15 @@ archived in `docs/open_tasks_archive.md`.
     `LOAD_ADDRESS` mismatch (`20` instead of stored value `7`) at edge 5.
     Consequently the electrical repair package remains unchecked, with its
     next boundary still the memory/immediate accumulator data selection.
+  - Progress (2026-09-02, memory-load selector and validity repair): added a
+    dedicated 16-bit selector that chooses `Memory.MEMORY_DATA` for the three
+    memory-backed accumulator loads and otherwise preserves the instruction
+    operand. The real matrix now passes all load and store fixtures. The same
+    rerun exposed implicit zero-valued immediate-validity constants in every
+    binary operation family; those constants and their selected mux inputs are
+    now explicit, and all `ADD_*` and `SUB_*` fixtures pass. The gate next fails
+    at `MUL_ADDRESS_REGISTER`, which leaves the accumulator unchanged instead
+    of multiplying by the addressed value, so this package remains unchecked.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

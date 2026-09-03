@@ -1784,6 +1784,31 @@ def test_mul_box_exports_the_arithmetic_result_and_validity_contract():
     ]
 
 
+def test_mul_addressing_modes_reach_the_shared_operand_selector_independently():
+    """Keep every MUL mode attached to the memory/immediate selector control."""
+
+    root = ET.parse(PROJECT).getroot()
+    multiply = root.find("circuit[@name='MulSubCircuit']")
+    adjacency = _electrical_adjacency(multiply)
+    selector = _labelled_component(multiply, "ACC_MUL_MEMORY_SELECT")
+    # The four-input classic symbol angles its outer leads onto y=120/160;
+    # the two inner leads remain on y=130/150.
+    selector_inputs = {"(500,120)", "(500,130)", "(500,150)", "(500,160)"}
+    mode_pins = {
+        _attributes(component)["label"]: component.get("loc")
+        for component in multiply.findall("comp[@name='Pin']")
+        if _attributes(component).get("label", "").startswith("MUL_")
+    }
+
+    connected_inputs = {}
+    for label, source in mode_pins.items():
+        matches = _reachable(adjacency, source) & selector_inputs
+        assert len(matches) == 1, label
+        connected_inputs[label] = matches.pop()
+
+    assert len(set(connected_inputs.values())) == len(mode_pins)
+
+
 def test_and_box_exports_bitwise_result_and_validity_contract():
     """AND mirrors binary operand selection without inventing arithmetic status."""
 

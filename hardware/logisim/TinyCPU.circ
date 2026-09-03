@@ -301,13 +301,6 @@
       <a name="inputs" val="3"/>
       <a name="label" val="MEMORY_WRITE_REQUEST"/>
     </comp>
-    <comp lib="0" loc="(1400,670)" name="Tunnel">
-      <a name="label" val="ACC_MEMORY_REQUEST_ROUTE"/>
-    </comp>
-    <comp lib="0" loc="(2470,990)" name="Tunnel">
-      <a name="facing" val="north"/>
-      <a name="label" val="ACC_MEMORY_REQUEST_ROUTE"/>
-    </comp>
     <comp lib="2" loc="(2490,970)" name="Multiplexer">
       <a name="label" val="ACC_LOAD_DATA_SELECT"/>
       <a name="width" val="16"/>
@@ -413,6 +406,8 @@
     <wire from="(1300,210)" to="(1300,1590)"/>
     <wire from="(1320,390)" to="(1320,630)"/>
     <wire from="(1320,630)" to="(2830,630)"/>
+    <wire from="(1400,670)" to="(1400,800)"/>
+    <wire from="(1400,800)" to="(2470,800)"/>
     <wire from="(1340,370)" to="(1340,510)"/>
     <wire from="(1340,510)" to="(2280,510)"/>
     <wire from="(1360,350)" to="(1360,490)"/>
@@ -574,6 +569,7 @@
     <wire from="(2400,960)" to="(2400,970)"/>
     <wire from="(2450,950)" to="(2450,980)"/>
     <wire from="(2450,980)" to="(2460,980)"/>
+    <wire from="(2470,800)" to="(2470,990)"/>
     <wire from="(2490,970)" to="(2520,970)"/>
     <wire from="(2340,1230)" to="(2340,1270)"/>
     <wire from="(2340,1270)" to="(2520,1270)"/>

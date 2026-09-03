@@ -963,17 +963,20 @@ def _reachable(adjacency, start):
     return result
 
 
-def test_top_level_has_only_the_named_memory_load_control_tunnel():
-    """Keep the dense decoder crossing limited to one named control route."""
+def test_top_level_physically_routes_memory_load_control():
+    """Keep the memory-load selector connected without opaque tunnels."""
 
     circuit = _top_level(ET.parse(PROJECT).getroot())
     top_level_tunnels = [
         c for c in circuit.findall("comp") if c.get("name") == "Tunnel"
     ]
-    assert len(top_level_tunnels) == 2
+    assert top_level_tunnels == []
+    wires = {(wire.get("from"), wire.get("to")) for wire in circuit.findall("wire")}
     assert {
-        _attributes(tunnel).get("label") for tunnel in top_level_tunnels
-    } == {"ACC_MEMORY_REQUEST_ROUTE"}
+        ("(1400,670)", "(1400,800)"),
+        ("(1400,800)", "(2470,800)"),
+        ("(2470,800)", "(2470,990)"),
+    } <= wires
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -2360,17 +2363,14 @@ def test_effective_address_input_labels_are_compact_source_names():
 
 
 def test_effective_address_sheet_keeps_the_existing_selector_layout():
-    """Keep only the named memory-load control crossing at the top level."""
+    """Keep the effective-address selectors and a tunnel-free top level."""
     root = ET.parse(PROJECT).getroot()
     circuit = _top_level(root)
     tunnels = [
         component for component in circuit.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    assert len(tunnels) == 2
-    assert {
-        _attributes(tunnel).get("label") for tunnel in tunnels
-    } == {"ACC_MEMORY_REQUEST_ROUTE"}
+    assert tunnels == []
 
     fbox = next(
         item for item in root.findall("circuit")

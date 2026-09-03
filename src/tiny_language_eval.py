@@ -158,6 +158,7 @@ def eval_block(self, stmts: List[IR], env: "Environment", namespace: Optional[st
 
 def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) -> Any:
     """Evaluate a single statement node inside the interpreter."""
+    self._raise_if_spawn_cancelled()
     self._maybe_pause(s, env, namespace)
     try:
         if isinstance(s, Let):
@@ -309,7 +310,7 @@ def eval_stmt(self, s: IR, env: "Environment", namespace: Optional[str] = None) 
         else:
             raise RuntimeError(f"unknown statement {s}")
         return None
-    except (ReturnSignal, TinyLangError):
+    except (ReturnSignal, TinyLangError, _SpawnCancelled):
         raise
     except Exception as exc:  # noqa: BLE001
         raise self._error(str(exc), s) from exc

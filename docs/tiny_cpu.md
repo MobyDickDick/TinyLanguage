@@ -1,180 +1,179 @@
-# TinyCPU: Mikrocomputer, Assemblersprache und Simulator
+# TinyCPU: microcomputer, assembly language, and simulator
 
-TinyCPU ist eine bewusst kleine, vollständige Lehrmaschine für TinyLanguage. Sie
-ist standardmäßig eine **16-Bit-Akkumulatormaschine** mit einem 12-Bit-Adressbus
-und 4096 Speicherzellen. Daten- und Adressbreite sind unabhängig konfigurierbar.
-Die Maschine besitzt Adressregister, Programmzähler, Ein-/Ausgabe, bedingte
-Sprünge und eine strikte Fehlersemantik. Der Simulator liegt in
-`src/tiny_cpu_vm.py`, der
-Assembler in `src/tiny_cpu_assembler.py` und die ISA in `src/tiny_cpu_isa.py`.
+TinyCPU is a deliberately small, complete teaching machine for TinyLanguage. By
+default, it is a **16-bit accumulator machine** with a 12-bit address bus and
+4,096 memory cells. Data and address widths can be configured independently.
+The machine has an address register, a program counter, input/output,
+conditional jumps, and strict error semantics. The simulator is in
+`src/tiny_cpu_vm.py`, the assembler is in `src/tiny_cpu_assembler.py`, and the
+ISA is in `src/tiny_cpu_isa.py`.
 
-## Empfehlung für die Schaltungssimulation
+## Circuit-simulation recommendation
 
-Für den Nachbau der TinyCPU wird **[Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution)**
-empfohlen. Es ist plattformübergreifend, für Lehrschaltungen gut nachvollziehbar
-und bietet die für TinyCPU benötigten Register-, RAM/ROM-, ALU-, Splitter- und
-Taktbausteine. Vor allem lässt sich der Prozessor hierarchisch in Datenpfad,
-Steuerwerk und Ein-/Ausgabe zerlegen. Die mitgelieferte Python-VM bleibt dabei
-die Referenz: Ein Logisim-Test gilt als korrekt, wenn Register, Speicher,
-Ausgaben und Fehlerflags nach jedem Takt mit `src/tiny_cpu_vm.py` übereinstimmen.
+**[Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution)**
+is recommended for recreating TinyCPU. It is cross-platform, makes educational
+circuits easy to understand, and provides the registers, RAM/ROM, ALU,
+splitters, and clock components that TinyCPU needs. Most importantly, it allows
+the processor to be divided hierarchically into datapath, control unit, and
+input/output. The included Python VM remains the reference: a Logisim test is
+correct when registers, memory, output, and error flags match
+`src/tiny_cpu_vm.py` after every clock tick.
 
-Als Alternative eignet sich **[Digital](https://github.com/hneemann/Digital)**,
-insbesondere wenn automatische Schaltungstests und eine kompakte
-Java-Anwendung wichtiger sind. Für gemeinsames Arbeiten und eine leicht
-zugängliche Dokumentation wird Logisim-evolution bevorzugt. Browserbasierte
-Werkzeuge sind für eine Demonstration brauchbar, erschweren aber die genaue
-Abbildung der unten beschriebenen Invalid-Bits und Sticky-Fehlerflags.
+**[Digital](https://github.com/hneemann/Digital)** is a suitable alternative,
+particularly when automated circuit tests and a compact Java application are
+more important. Logisim-evolution is preferred for collaboration and easily
+accessible documentation. Browser-based tools are useful for demonstrations,
+but make it more difficult to model precisely the validity bits and sticky
+error flags described below.
 
-Das Maschinenformat ist inzwischen versioniert: Ein Instruktionswort umfasst
-22 Bit aus einem 6-Bit-Opcode und einem 16-Bit-Operanden. `assemble()` liefert
-weiterhin ein `Program` aus symbolischen `Instruction`-Objekten; anschließend
-erzeugt `src/tiny_cpu_machine.py` daraus die Maschinenwörter, ein von
-Logisim-evolution lesbares ROM-Image und eine menschenlesbare Listing-Datei.
-Die Opcode-Tabelle liegt in `hardware/logisim/tinycpu-machine-v1.json`. Das
-AP-5-Programm, sein ROM-Abbild und sein Listing dienen als reproduzierbare
-Referenzartefakte für den Encoder und das eingebettete Logisim-ROM.
+The machine format is now versioned: an instruction word consists of 22 bits,
+with a 6-bit opcode and a 16-bit operand. `assemble()` continues to return a
+`Program` made up of symbolic `Instruction` objects; `src/tiny_cpu_machine.py`
+then converts them into machine words, a ROM image readable by
+Logisim-evolution, and a human-readable listing file. The opcode table is in
+`hardware/logisim/tinycpu-machine-v1.json`. The AP-5 program, its ROM image, and
+its listing serve as reproducible reference artifacts for the encoder and the
+embedded Logisim ROM.
 
-### Hardwarevertrag für den Nachbau
+### Hardware contract for an implementation
 
-Die kleinste kompatible Schaltung besteht aus folgenden Zuständen und Signalen:
+The smallest compatible circuit consists of the following states and signals:
 
-| Teil | Erforderlicher Zustand / Verhalten |
+| Part | Required state / behavior |
 |---|---|
-| Programmsteuerung | vorzeichenloser `address_bits` breiter PC; vor der Ausführung auf die Folgeinstruktion erhöhen |
-| Datenpfad | `data_bits` breiter Akkumulator im Zweierkomplement sowie Zero- und Negative-Status |
-| Adressierung | `address_bits` breites Adressregister mit eigenem Valid-Bit |
-| Datenspeicher | je Zelle ein `data_bits` breiter Wert **und ein Valid-Bit** |
-| Fehlerregister | sticky Bits `OVF`, `DIV0`, `ADDR`, `INV`, `ILL`, `INPUT`; deren OR ist `ERR` |
-| Ein-/Ausgabe | Eingabewarteschlange zum Akkumulator; `PRINT` schreibt einen gültigen Wert auf den Ausgabekanal |
-| Halt | getrennte Zustände für normal angehalten und mit Fehler angehalten |
+| Program control | unsigned, `address_bits`-wide PC; increment to the next instruction before execution |
+| Datapath | `data_bits`-wide two’s-complement accumulator plus zero and negative status |
+| Addressing | `address_bits`-wide address register with its own validity bit |
+| Data memory | one `data_bits`-wide value **and one validity bit** per cell |
+| Error register | sticky bits `OVF`, `DIV0`, `ADDR`, `INV`, `ILL`, `INPUT`; their OR is `ERR` |
+| Input/output | input queue to the accumulator; `PRINT` writes a valid value to the output channel |
+| Halt | separate states for a normal halt and a halt with an error |
 
-Das Valid-Bit ist kein optionales Debugsignal: Ohne ein Valid-Bit für
-Akkumulator, Adressregister und jede Speicherzelle kann die festgelegte
-Fehlerfortpflanzung nicht implementiert werden. `CLEAR_ERROR()` löscht nur das
-Fehlerregister, niemals Valid-Bits. Zero ist genau dann gesetzt, wenn der im
-Akkumulator gespeicherte Wert null ist; bedingte Zero-/Not-Zero-Sprünge werden
-jedoch nur bei gültigem Akkumulator genommen. Negative ist nur für einen
-gültigen negativen Akkumulator gesetzt.
+The validity bit is not an optional debugging signal: the specified error
+propagation cannot be implemented without a validity bit for the accumulator,
+the address register, and every memory cell. `CLEAR_ERROR()` clears only the
+error register, never validity bits. Zero is set exactly when the value stored
+in the accumulator is zero; conditional zero/not-zero jumps are taken only when
+the accumulator is valid. Negative is set only for a valid negative
+accumulator.
 
-Für eine taktsynchrone Implementierung ist folgende Reihenfolge beobachtbar:
+The following sequence is observable in a clock-synchronous implementation:
 
-1. Instruktion an `PC` lesen; eine ungültige Instruktionsadresse setzt `ADDR`
-   und hält mit Fehler an.
-2. `PC` auf die Folgeinstruktion erhöhen.
-3. Operanden lesen, Operation und Gültigkeitsprüfung ausführen.
-4. Ergebnis, Flags, Speicher oder Sprungziel gemeinsam an der Taktflanke
-   übernehmen.
+1. Read the instruction at `PC`; an invalid instruction address sets `ADDR`
+   and halts with an error.
+2. Increment `PC` to the next instruction.
+3. Read operands and perform the operation and validity check.
+4. Commit the result, flags, memory, or jump target together at the clock edge.
 
-Sprungziele sind **Instruktionsindizes**, keine Byteadressen. Ein genommener
-Sprung außerhalb des geladenen Programms setzt `ADDR`; ein nicht genommener
-Sprung validiert sein Ziel nicht. Division ganzer Zahlen schneidet gegen null
-ab. `AND`, `OR` und `NOT` arbeiten bitweise auf der gewählten
-Zweierkomplementbreite. Arithmetische Ergebnisse außerhalb des signierten
-Datenbereichs setzen `OVF` und schreiben `0 INVALID` in den Akkumulator.
+Jump targets are **instruction indices**, not byte addresses. A taken jump
+outside the loaded program sets `ADDR`; a jump that is not taken does not
+validate its target. Integer division truncates toward zero. `AND`, `OR`, and
+`NOT` operate bitwise at the selected two’s-complement width. Arithmetic results
+outside the signed data range set `OVF` and write `0 INVALID` to the
+accumulator.
 
-### TinyCPU.circ testen
+### Testing TinyCPU.circ
 
-Eine kurze deutschsprachige Schritt-für-Schritt-Anleitung für den stabilen
-elektrischen Test, den Test mit einer bereits vorhandenen Logisim-JAR und die
-visuelle Fehlersuche steht in
-[`docs/tiny_cpu_test_guide.md`](tiny_cpu_test_guide.md). Der verbindliche AP-5-
-Test wird aus dem Repository-Hauptverzeichnis mit `scripts/test-logisim.sh`
-gestartet. Die vollständige Matrix bleibt mit
-`TINYCPU_FULL_ACCEPTANCE=1 scripts/test-logisim.sh` als Diagnoselauf verfügbar.
+A short step-by-step guide for the stable electrical test, testing with an
+existing Logisim JAR, and visual troubleshooting is available in
+[`docs/tiny_cpu_test_guide.md`](tiny_cpu_test_guide.md). Run the required AP-5
+test from the repository root with `scripts/test-logisim.sh`. The full matrix
+remains available as a diagnostic run with
+`TINYCPU_FULL_ACCEPTANCE=1 scripts/test-logisim.sh`.
 
-### Abgenommener Aufbau in Logisim-evolution
+### Accepted Logisim-evolution implementation
 
-Das in Logisim-evolution 4.1.x ausführbare Projekt liegt unter
-[`hardware/logisim/TinyCPU.circ`](../hardware/logisim/TinyCPU.circ). Es legt das
-16/12-Bit-Profil, die Subcircuits und die zwingenden Valid-/Fehlerzustände an.
-Architektur und elektrische AP-12-Abnahme sind in
-[`hardware/logisim/README.md`](../hardware/logisim/README.md) festgehalten.
-Die folgende Liste beschreibt die bereits ausgeführte Aufbau- und
-Abnahmereihenfolge, nicht fehlende Verdrahtung: Der Inspector meldet
-`TinyCPUMain: connected`, und die elektrische AP-11-Matrix deckt alle 50
-Opcodes des versionierten Maschinenformats einschließlich ihrer Positiv- und
-Fehlerfälle ab. Damit sind sowohl sämtliche Top-Level-Pins als auch der
-dokumentierte Befehlssatz umgesetzt; sichtbare Leitungskreuzungen ohne
-Abzweigpunkt sind in Logisim bewusst keine elektrischen Verbindungen.
+The project that runs in Logisim-evolution 4.1.x is located at
+[`hardware/logisim/TinyCPU.circ`](../hardware/logisim/TinyCPU.circ). It defines
+the 16/12-bit profile, subcircuits, and mandatory validity/error states. The
+architecture and electrical AP-12 acceptance are documented in
+[`hardware/logisim/README.md`](../hardware/logisim/README.md). The following
+list describes the implementation and acceptance sequence already performed,
+not missing wiring: the inspector reports `TinyCPUMain: connected`, and the
+electrical AP-11 matrix covers all 50 opcodes in the versioned machine format,
+including their success and error cases. Thus, every top-level pin and the
+entire documented instruction set are implemented; visible wire crossings
+without a junction point are deliberately not electrical connections in
+Logisim.
 
-Mit `PYTHONPATH=src python src/tiny_cpu_circuit.py
-hardware/logisim/TinyCPU.circ` lässt sich das Projekt ohne Logisim zunächst
-strukturell prüfen. Der Prüfer liest das `.circ`-XML, meldet fehlende Leitungen
-und endet bei Vertragsverletzungen mit Status 1. Er simuliert bewusst
-nicht die gesamte Logisim-Bauteilbibliothek; für elektrische Simulation bleibt
-Logisim-evolution zuständig, während `tiny_cpu_vm.py` die CPU-Sollsemantik
-liefert. Ein erfolgreicher Strukturcheck ersetzt deshalb nicht den oben
-verlinkten elektrischen Kompletttest.
+The project can first be checked structurally without Logisim by running
+`PYTHONPATH=src python src/tiny_cpu_circuit.py
+hardware/logisim/TinyCPU.circ`. The checker reads the `.circ` XML, reports
+missing connections, and exits with status 1 for contract violations. It
+deliberately does not simulate the complete Logisim component library;
+Logisim-evolution remains responsible for electrical simulation, while
+`tiny_cpu_vm.py` supplies the expected CPU semantics. A successful structural
+check therefore does not replace the full electrical test linked above.
 
-Bei ungewöhnlich hoher CPU- oder Speichernutzung können die fünf eigenständigen
-Projekte unter [`hardware/logisim/diagnostics/`](../hardware/logisim/diagnostics/)
-einzeln geladen werden. So lassen sich Fetch/Decode, Datenpfad, Adresspfad,
-Speicher und Fehlerflags untersuchen, ohne zugleich alle anderen Schaltungsblätter
-zu laden. Erzeugung, Größenvergleich und eine empfohlene Testreihenfolge sind im
-Hardware-[README](../hardware/logisim/README.md#ressourcenverbrauch-eingrenzen)
-dokumentiert.
+If CPU or memory usage is unusually high, the five standalone projects under
+[`hardware/logisim/diagnostics/`](../hardware/logisim/diagnostics/) can be
+loaded individually. This allows fetch/decode, datapath, address path, memory,
+and error flags to be examined without loading all other circuit sheets at the
+same time. Generation, size comparison, and a recommended test sequence are
+documented in the hardware
+[README](../hardware/logisim/README.md#ressourcenverbrauch-eingrenzen).
 
-1. Das Zielprofil wurde auf **16 Datenbits, 12 Adressbits und 4096
-   Speicherzellen** festgelegt.
-2. Datenpfad (Akkumulator, ALU, Status), Adresspfad (Adressregister,
-   Offset-Addierer), Speicher und Steuerwerk wurden als getrennte Subcircuits
-   gebaut.
-3. Das Valid-RAM liegt parallel zum Daten-RAM; beide verwenden dieselbe Adresse
-   und denselben Write-Enable.
-4. Die Fehlerflags sind set-dominante Register; `CLEAR_ERROR` bildet die einzige
-   gemeinsame Clear-Leitung.
-5. `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`, `PRINT` und
-   `HALT` wurden zuerst mit dem Schleifenbeispiel abgenommen.
-6. Anschließend wurden die übrigen Adressierungsarten und gezielten Fehlerfälle
-   ergänzt und in der vollständigen elektrischen Matrix abgenommen.
+1. The target profile was set to **16 data bits, 12 address bits, and 4,096
+   memory cells**.
+2. The datapath (accumulator, ALU, status), address path (address register,
+   offset adder), memory, and control unit were built as separate subcircuits.
+3. The validity RAM is parallel to the data RAM; both use the same address and
+   write-enable signal.
+4. The error flags are set-dominant registers; `CLEAR_ERROR` is the only shared
+   clear line.
+5. `LOAD_CONST`, `STORE_ADDRESS`, `ADD_ADDRESS`, `JUMP_NOT_ZERO`, `PRINT`, and
+   `HALT` were accepted first using the loop example.
+6. The remaining addressing modes and targeted error cases were then added and
+   accepted in the full electrical matrix.
 
-Für reproduzierbare Vergleiche sollte jeder Schaltungstest neben dem
-Logisim-Projekt auch die `.tcpu`-Quelldatei, das verwendete Zielprofil, die
-Eingabefolge sowie erwartete Ausgaben und Fehlerflags enthalten.
+For reproducible comparisons, every circuit test should include the `.tcpu`
+source file, the target profile used, the input sequence, and the expected
+output and error flags in addition to the Logisim project.
 
-## Leitprinzip: Fehler sind keine Modulo-Arithmetik
+## Guiding principle: errors are not modular arithmetic
 
-Jedes Register und jede Speicherzelle besteht logisch aus `(value, valid)`. Eine
-Operation erzeugt nur dann einen gültigen Wert, wenn alle Eingaben gültig sind,
-die Operation erlaubt ist und das Ergebnis im vorzeichenbehafteten Wertebereich
-des konfigurierten Datenbusses liegt (bei 16 Bit: -32768 bis 32767).
-Andernfalls wird das Ziel zu `0 INVALID` und ein spezifisches Fehlerflag gesetzt.
-Invalidität pflanzt sich bei weiterer Verwendung fort.
+Every register and memory cell logically consists of `(value, valid)`. An
+operation produces a valid value only if all inputs are valid, the operation is
+permitted, and the result is within the signed range of the configured data bus
+(for 16 bits: -32768 to 32767). Otherwise, the destination becomes `0 INVALID`
+and a specific error flag is set. Invalidity propagates when the value is used
+again.
 
-## Skaleninvariante Breiten
+## Scale-invariant widths
 
-Die ISA und Assemblersprache enthalten absichtlich keine fest codierte
-Operandenbreite: Zahlen, Adressen, Offsets und Sprungziele werden symbolisch als
-Ganzzahlen dargestellt. Erst eine konkrete `TinyCPU`-Instanz legt mit
-`data_bits` und `address_bits` die Hardwaregrenzen fest. Dadurch bleibt dasselbe
-Assemblerprogramm beispielsweise auf einer 8/8-, 16/12- oder 32/20-Maschine
-verwendbar, sofern seine Werte und Adressen in die gewählten Bereiche passen.
+The ISA and assembly language deliberately contain no hard-coded operand
+width: numbers, addresses, offsets, and jump targets are represented
+symbolically as integers. Only a concrete `TinyCPU` instance defines the
+hardware limits through `data_bits` and `address_bits`. The same assembly
+program can therefore run on an 8/8, 16/12, or 32/20 machine, for example,
+provided that its values and addresses fit the selected ranges.
 
-Der Datenbus verwendet Zweierkomplement und bestimmt Akkumulator,
-Speicherzellen, Ein-/Ausgabewerte und arithmetischen Überlauf. Der Adressbus ist
-vorzeichenlos und bestimmt unabhängig davon Adressregister, effektive Adressen,
-Programmzähler und die maximal adressierbare Speichergröße. `memory_size` darf
-kleiner als der Adressraum sein (teilbestückter Speicher), aber nie größer.
+The data bus uses two’s complement and determines the accumulator, memory
+cells, input/output values, and arithmetic overflow. The address bus is
+unsigned and independently determines the address register, effective
+addresses, program counter, and maximum addressable memory size. `memory_size`
+may be smaller than the address space (partially populated memory), but never
+larger.
 
 ```python
 TinyCPU(data_bits=8, address_bits=8, memory_size=256)
 TinyCPU(data_bits=32, address_bits=20, memory_size=65536)
 ```
 
-Diese Parametrisierung ist semantisch skaleninvariant; ein späteres binäres
-Instruktionsformat muss seine Kodierungsbreite ebenfalls aus dem Zielprofil
-ableiten und darf sie nicht in Opcodes festschreiben.
+This parameterization is semantically scale-invariant; a future binary
+instruction format must likewise derive its encoding width from the target
+profile and must not hard-code it in opcodes.
 
-Fehlerflags sind **sticky**. `CLEAR_ERROR()` löscht sie, repariert aber keine
-invaliden Werte. Beispielsweise macht erst `LOAD_CONST(5)` den Akkumulator wieder
-gültig. Unterstützte Flags sind `OVF`, `DIV0`, `ADDR`, `INV`, `ILL` und `INPUT`;
-`ERR` entspricht „mindestens ein Fehlerflag ist gesetzt“.
+Error flags are **sticky**. `CLEAR_ERROR()` clears them but does not repair
+invalid values. For example, only `LOAD_CONST(5)` makes the accumulator valid
+again. Supported flags are `OVF`, `DIV0`, `ADDR`, `INV`, `ILL`, and `INPUT`;
+`ERR` means “at least one error flag is set.”
 
 ## Syntax
 
-Jede Instruktion verwendet Funktionsschreibweise. Kommentare beginnen mit `;`
-oder `//`. Direkte Operanden sind zwingend; deshalb ist `ADD_ADDRESS()` ein
-Assemblerfehler, während `ADD_ADDRESS_REGISTER()` korrekt ist.
+Every instruction uses function-call syntax. Comments begin with `;` or `//`.
+Direct operands are mandatory; consequently, `ADD_ADDRESS()` is an assembler
+error, while `ADD_ADDRESS_REGISTER()` is correct.
 
 ```text
 sum := 100
@@ -189,15 +188,15 @@ PRINT()
 HALT()
 ```
 
-`name := 100` definiert einen Wertalias, `ADC := ADD_CONST` einen
-Instruktionsalias. Sprungziele werden mit `name:` definiert. Häufige Kurzformen
+`name := 100` defines a value alias, and `ADC := ADD_CONST` defines an
+instruction alias. Jump targets are defined with `name:`. Common abbreviations
 (`LDC`, `LDA`, `STA`, `ADC`, `ADA`, `JMP`, `JZ`, `JNZ`, `JNEG`, `JER`, `CER`,
-`HLT`) sind eingebaut; kanonische Namen bleiben die dokumentierte Schnittstelle.
+`HLT`) are built in; canonical names remain the documented interface.
 
-## Befehlssatz
+## Instruction set
 
-Die Operationen `LOAD`, `ADD`, `SUB`, `MUL`, `DIV`, `AND`, `OR` und `XOR`
-besitzen je vier explizite Quellen:
+The `LOAD`, `ADD`, `SUB`, `MUL`, `DIV`, `AND`, `OR`, and `XOR` operations each
+have four explicit sources:
 
 ```text
 OP_CONST(value)
@@ -206,36 +205,37 @@ OP_ADDRESS_REGISTER()
 OP_ADDRESS_REGISTER_PLUS_OFFSET(offset)
 ```
 
-`STORE` besitzt die drei beschreibbaren Zielvarianten (kein `STORE_CONST`). Das
-Adressregister wird durch `LOAD_ADDRESS_REGISTER_CONST(value)` oder
-`LOAD_ADDRESS_REGISTER_ADDRESS(address)` geladen. Hinzu kommen:
+`STORE` has the three writable destination variants (there is no
+`STORE_CONST`). The address register is loaded by
+`LOAD_ADDRESS_REGISTER_CONST(value)` or
+`LOAD_ADDRESS_REGISTER_ADDRESS(address)`. In addition, there are:
 
-| Gruppe | Instruktionen |
+| Group | Instructions |
 |---|---|
-| Logik | `NOT()` |
-| Sprünge | `JUMP_ADDRESS`, `JUMP_ZERO`, `JUMP_NOT_ZERO`, `JUMP_NEGATIVE`, `JUMP_ERROR`, `JUMP_NOT_ERROR` |
-| Fehler | `CLEAR_ERROR()`, `HALT_ERROR()` |
+| Logic | `NOT()` |
+| Jumps | `JUMP_ADDRESS`, `JUMP_ZERO`, `JUMP_NOT_ZERO`, `JUMP_NEGATIVE`, `JUMP_ERROR`, `JUMP_NOT_ERROR` |
+| Errors | `CLEAR_ERROR()`, `HALT_ERROR()` |
 | I/O | `INPUT()`, `PRINT()`, `PRINT_ADDRESS(address)` |
-| Ablauf | `HALT()` |
+| Control flow | `HALT()` |
 
-Sprunginstruktionen erwarten ein Label oder eine numerische Instruktionsadresse.
-`INPUT()` liest die nächste mit `--input` übergebene Zahl. Eine fehlende oder
-ungültige Eingabe setzt `INPUT` und invalidiert den Akkumulator.
+Jump instructions expect a label or a numeric instruction address. `INPUT()`
+reads the next number passed with `--input`. Missing or invalid input sets
+`INPUT` and invalidates the accumulator.
 
-## Beispiel und Aufruf
+## Example and invocation
 
-Ausführbare Beispielprogramme liegen unter [`examples/tiny_cpu/`](../examples/tiny_cpu/).
-Für jede der unten aufgeführten Operationen gibt es ein eigenes Programm; bei
-Operationen mit mehreren Adressierungsarten führt dieses alle Varianten aus.
-Zu jeder `.tcpu`-Datei gehört eine gleichnamige `.stdout`-Datei mit der
-vollständigen erwarteten Ausgabe. Optional liefern `.args` die CLI-Argumente
-und `.exit` den erwarteten, von null abweichenden Exit-Status. Der Test
-`tests/detailtests/test_tiny_cpu_examples.py` findet alle diese Programme
-automatisch, führt sie über die öffentliche CLI aus und vergleicht Ausgabe,
-Fehlerausgabe und Exit-Status. Ein neues Ausgabebeispiel benötigt daher nur
-die Quelldatei und ihren Output-Snapshot. Ein zusätzlicher Abdeckungstest stellt
-sicher, dass keine Operation oder Adressierungsart fehlt. Die Beispielsuite
-lässt sich gezielt so starten:
+Executable example programs are located under
+[`examples/tiny_cpu/`](../examples/tiny_cpu/). There is a dedicated program for
+each operation listed below; for operations with multiple addressing modes,
+the program exercises all variants. Each `.tcpu` file has a same-named
+`.stdout` file containing the complete expected output. Optional `.args` files
+provide CLI arguments, and `.exit` files provide the expected nonzero exit
+status. The `tests/detailtests/test_tiny_cpu_examples.py` test automatically
+finds all these programs, runs them through the public CLI, and compares
+standard output, standard error, and exit status. A new output example
+therefore needs only its source file and output snapshot. An additional
+coverage test ensures that no operation or addressing mode is missing. Run the
+example suite specifically with:
 
 ```bash
 python -m pytest tests/detailtests/test_tiny_cpu_examples.py
@@ -262,26 +262,26 @@ python src/tiny_cpu_cli.py --input 41 input_program.tcpu
 python src/tiny_cpu_cli.py --data-bits 8 --address-bits 9 --memory-size 512 program.tcpu
 ```
 
-Mit `--data-bits` und `--address-bits` wird das Zielprofil auch beim CLI-Aufruf
-festgelegt. `--memory-size` darf den durch den Adressbus bestimmten Adressraum
-nicht überschreiten; die Standardwerte sind 16, 12 und 4096.
+`--data-bits` and `--address-bits` also select the target profile for a CLI
+invocation. `--memory-size` must not exceed the address space determined by the
+address bus; the defaults are 16, 12, and 4096.
 
-Der Prozess endet mit Status 1, wenn `HALT_ERROR()` ausgeführt wird oder bei
-`HALT()` noch ein Fehlerflag gesetzt ist. Eine Schrittgrenze schützt vor
-unbeabsichtigten Endlosschleifen.
+The process exits with status 1 if `HALT_ERROR()` is executed or if an error
+flag is still set at `HALT()`. A step limit protects against unintended infinite
+loops.
 
-## Crosscompiler-Richtung
+## Cross-compiler direction
 
-Die stabile Grenze für ein künftiges Backend ist das kanonische
-`Instruction`/`Program`-Modell. Vorgesehen ist:
+The stable boundary for a future backend is the canonical
+`Instruction`/`Program` model. The intended direction is:
 
 ```text
 TinyLanguage-Subset -> Native IR -> TinyCPU Program
 TinyCPU Program -> Kontrollflussanalyse -> kanonisches TinyLanguage-Subset
 ```
 
-Die Rückrichtung ist ein Decompiler und kann ursprüngliche Namen oder
-Kontrollstrukturen nicht allgemein rekonstruieren. Daher wird sie bewusst auf
-eine kanonische Teilmenge (Zahlen, Variablen, Arithmetik, `if`, `while`, einfache
-I/O) begrenzt; Simulator und Assembler funktionieren unabhängig davon bereits
-als vollständiger kleiner Mikrocomputer.
+The reverse direction is a decompiler and cannot generally reconstruct the
+original names or control structures. It is therefore deliberately limited to
+a canonical subset (numbers, variables, arithmetic, `if`, `while`, and simple
+I/O); independently of that limitation, the simulator and assembler already
+function as a complete small microcomputer.

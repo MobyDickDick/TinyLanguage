@@ -28,14 +28,14 @@ def test_user_guide_and_roadmap_record_verified_tinycpu_completeness():
     machine_opcodes = {entry["mnemonic"] for entry in machine["opcodes"]}
     assert machine_opcodes == set(INSTRUCTION_SET)
     assert len(machine["opcodes"]) == 50
-    assert "### Abgenommener Aufbau in Logisim-evolution" in user_guide
+    assert "### Accepted Logisim-evolution implementation" in user_guide
     assert "`TinyCPUMain: connected`" in user_guide
-    assert "alle 50\nOpcodes" in user_guide
+    assert "all 50 opcodes" in user_guide
     assert (
-        "beschreibt die bereits ausgeführte Aufbau- und\nAbnahmereihenfolge"
+        "describes the implementation and acceptance sequence already performed"
         in user_guide
     )
-    assert "### Empfohlener Aufbau in Logisim-evolution" not in user_guide
+    assert "### Recommended Logisim-evolution implementation" not in user_guide
     assert "unabhängig von\n  der noch fehlenden Verdrahtung" not in roadmap
     assert (
         "## Abgeschlossener Folgeschritt: elektrische Top-Level-Integration"

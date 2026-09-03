@@ -16,8 +16,8 @@ Java security-patch and newer-feature releases are accepted; requiring one
 exact JDK patch had unnecessarily prevented local reproduction.
 
 The full reset/restart and opcode/error matrix currently remains available as
-an explicit diagnostic, but is not a required CI test while the
-memory/immediate selection mismatch exposed by `LOAD_ADDRESS` is unresolved:
+an explicit diagnostic, but is not a required CI test while the accumulator
+write mismatch exposed by `MUL_ADDRESS_REGISTER` is unresolved:
 
 ```bash
 TINYCPU_FULL_ACCEPTANCE=1 \

@@ -46,6 +46,7 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_PC_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="12"/>
     </comp>
     <comp lib="0" loc="(1020,350)" name="Constant">
       <a name="width" val="16"/>
@@ -122,6 +123,7 @@
       <a name="labelloc" val="east"/>
     </comp>
     <comp lib="0" loc="(1720,370)" name="Constant">
+      <a name="label" val="DATAPATH_RESET_INACTIVE"/>
       <a name="value" val="0x0"/>
     </comp>
     <comp lib="0" loc="(200,310)" name="Pin">
@@ -210,12 +212,14 @@
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_EFFECTIVE_REGISTER_SELECTED_OUT"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(3340,1970)" name="Probe">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
       <a name="label" val="MONITOR_EFFECTIVE_MEMORY_ADDRESS"/>
       <a name="labelloc" val="east"/>
+      <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(3350,550)" name="Pin">
       <a name="appearance" val="classic"/>
@@ -298,6 +302,7 @@
       <a name="label" val="MEMORY_WRITE_REQUEST"/>
     </comp>
     <comp lib="2" loc="(2390,960)" name="Multiplexer">
+      <a name="label" val="ACC_LOAD_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp loc="(1250,350)" name="AddressPath">
@@ -1179,6 +1184,7 @@
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(220,120)" name="Splitter">
+      <a name="bit0" val="0"/>
       <a name="bit1" val="0"/>
       <a name="bit10" val="0"/>
       <a name="bit11" val="0"/>
@@ -1593,7 +1599,10 @@
       <a name="appearance" val="classic"/>
       <a name="label" val="DEC_HALT_ERROR"/>
     </comp>
-    <comp lib="0" loc="(540,240)" name="Constant"/>
+    <comp lib="0" loc="(540,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT_ENABLE"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(700,550)" name="Splitter">
       <a name="appear" val="right"/>
       <a name="bit1" val="0"/>
@@ -1614,6 +1623,8 @@
       <a name="incoming" val="16"/>
     </comp>
     <comp lib="0" loc="(710,240)" name="Constant">
+      <a name="label" val="PC_INCREMENT"/>
+      <a name="value" val="0x1"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="0" loc="(810,560)" name="Pin">
@@ -1630,9 +1641,11 @@
       <a name="label" val="ERROR_HALT"/>
     </comp>
     <comp lib="2" loc="(870,240)" name="Multiplexer">
+      <a name="label" val="PC_NEXT_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(740,420)" name="Comparator">
+      <a name="label" val="PROGRAM_LIMIT_COMPARE"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="3" loc="(770,230)" name="Adder">
@@ -2425,7 +2438,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_AND_MEMORY_SELECT"/>
@@ -2499,7 +2515,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
     <a name="circuit" val="Operations"/>
     <a name="circuitnamedboxfixedsize" val="true"/>
     <a name="simulationFrequency" val="1.0"/>
-    <comp lib="0" loc="(1760,760)" name="Constant"/>
+    <comp lib="0" loc="(1760,760)" name="Constant">
+      <a name="label" val="IMMEDIATE_RESULT_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(1780,1390)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -2692,6 +2711,7 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="label" val="ACTIVE_INVALID_OPERATION"/>
     </comp>
     <comp lib="2" loc="(1730,650)" name="Multiplexer">
+      <a name="label" val="RESULT_DATA_SELECT"/>
       <a name="width" val="16"/>
     </comp>
     <comp lib="2" loc="(1810,770)" name="Multiplexer"/>
@@ -3354,7 +3374,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="MEMORY_VALID"/>
     </comp>
-    <comp lib="0" loc="(430,440)" name="Constant"/>
+    <comp lib="0" loc="(430,440)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="0" loc="(980,440)" name="Pin">
       <a name="appearance" val="classic"/>
       <a name="facing" val="west"/>
@@ -3523,7 +3546,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_SUB_MEMORY_SELECT"/>
@@ -3664,7 +3690,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_MUL_MEMORY_SELECT"/>
@@ -3989,7 +4018,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_DIV_MEMORY_SELECT"/>
@@ -4793,7 +4825,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_OR_MEMORY_SELECT"/>
@@ -5000,7 +5035,10 @@ ffff 1c0065 3 1c0064 2a0000 4ffff 1c0064 240004
       <a name="appearance" val="classic"/>
       <a name="label" val="ACC_VALID"/>
     </comp>
-    <comp lib="0" loc="(440,380)" name="Constant"/>
+    <comp lib="0" loc="(440,380)" name="Constant">
+      <a name="label" val="CONST_OPERAND_VALID"/>
+      <a name="value" val="0x1"/>
+    </comp>
     <comp lib="1" loc="(550,140)" name="OR Gate">
       <a name="inputs" val="4"/>
       <a name="label" val="ACC_XOR_MEMORY_SELECT"/>

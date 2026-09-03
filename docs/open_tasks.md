@@ -299,6 +299,22 @@ archived in `docs/open_tasks_archive.md`.
     now explicit, and all `ADD_*` and `SUB_*` fixtures pass. The gate next fails
     at `MUL_ADDRESS_REGISTER`, which leaves the accumulator unchanged instead
     of multiplying by the addressed value, so this package remains unchecked.
+  - Progress (2026-09-03, MUL selector-boundary audit): reran the real matrix
+    with the repository-local pinned simulator and reproduced the first
+    remaining mismatch at `MUL_ADDRESS_REGISTER` (observed `6`, expected `18`).
+    A focused topology regression now proves that all four MUL mode controls
+    reach distinct inputs of the shared memory/immediate operand-selector
+    control aggregator. This rules out a missing selector-control route and
+    bounds the next diagnosis to the accumulator write/result boundary; the
+    remaining fixtures and complete 61-fixture acceptance are still open.
+  - Progress (2026-09-03, reproducibility-baseline repair): restored the
+    explicit 16-bit program-counter increment, asserted enable and validity
+    constants, selector labels, RAM bit-zero mapping, inactive datapath reset,
+    and multi-bit monitor widths lost in the adjusted Logisim save. The AP-8
+    reproducibility verifier and all focused circuit/topology regressions pass
+    again. The memory-load regression now follows named electrical endpoints
+    instead of obsolete top-level drawing coordinates. The separate
+    `MUL_ADDRESS_REGISTER` behavioral mismatch keeps the full package open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

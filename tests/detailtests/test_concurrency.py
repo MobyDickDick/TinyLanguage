@@ -154,6 +154,27 @@ def test_task_block_timeout_respects_custom_env(run_tiny_source, monkeypatch):
     assert out == "status false true\n"
 
 
+def test_cancelled_task_stops_executing(run_tiny_source, monkeypatch):
+    """Ensure cancellation terminates rather than merely detaching a worker."""
+    monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "0")
+    out = run_tiny_source(
+        """
+        fn forever() {
+            while (true) { def ignored_still_running = 1; }
+        }
+
+        task {
+            def handle = spawn forever();
+        }
+
+        def status = join(handle, 1000);
+        print("status", status.done, status.cancelled);
+        """,
+    )
+
+    assert out == "status true true\n"
+
+
 def test_task_block_keeps_completed_spawns(run_tiny_source, monkeypatch):
     """Ensure completed spawns survive task block cancellation."""
     monkeypatch.setenv("TINYLANG_TASK_SCOPE_TIMEOUT_MS", "50")

@@ -1,6 +1,0 @@
-; Example for JUMP_NOT_ZERO
-LOAD_CONST(1)
-JUMP_NOT_ZERO(target)
-LOAD_CONST(0)
-target: PRINT()
-HALT()

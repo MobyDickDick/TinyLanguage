@@ -1,27 +1,27 @@
-# Prüfung der Logisim-Diagnose-Schaltungen
+# Verification of the Logisim diagnostic circuits
 
-Die Projekte unter `hardware/logisim/diagnostics/` werden mit
-`tiny_cpu_circuit.py --split-output` direkt aus der integrierten Schaltung
-`hardware/logisim/TinyCPU.circ` erzeugt. Damit gelten für die einzelnen Blätter
-dieselben Bauteile, Bitbreiten und Verbindungen wie für die Referenzschaltung.
+The projects under `hardware/logisim/diagnostics/` are generated directly from
+the integrated `hardware/logisim/TinyCPU.circ` circuit using
+`tiny_cpu_circuit.py --split-output`. The individual sheets therefore use the
+same components, bit widths, and connections as the reference circuit.
 
-## Ergebnis der Prüfung
+## Verification result
 
-Die frühere, manuell abweichende `TinyCPU-FetchDecode.circ` verband
-1-Bit-Steuersignale mit einem 16-Bit-Datenpfad. Insbesondere waren
-`JUMP_NOT_ZERO` und `HALT_ERROR` nicht mit ihren vorgesehenen Decoder-Lanes
-verbunden. Diese Fassung wurde durch die beiden aktuellen Referenzblätter
-`TinyCPU-FetchDecode.circ` und `TinyCPU-FetchDecodeControls.circ` ersetzt. Der
-PC-/ROM-Pfad und die Steuersignaldecodierung bleiben dadurch elektrisch
-getrennt und lassen sich unabhängig untersuchen.
+The previous, manually divergent `TinyCPU-FetchDecode.circ` connected 1-bit
+control signals to a 16-bit datapath. In particular, `JUMP_NOT_ZERO` and
+`HALT_ERROR` were not connected to their intended decoder lanes. That version
+was replaced by the two current reference sheets, `TinyCPU-FetchDecode.circ`
+and `TinyCPU-FetchDecodeControls.circ`. This keeps the PC/ROM path and control
+signal decoding electrically separate so that they can be examined
+independently.
 
-Alle sechs Diagnoseprojekte bestehen aus genau einem eigenständig ladbaren
-Blatt und bestehen die strukturelle Verbindungsprüfung. Ein automatischer Test
-vergleicht sie bytegenau mit neu aus `TinyCPU.circ` erzeugten Dateien, damit
-künftige Änderungen der Referenzschaltung nicht unbemerkt von den
-Diagnoseprojekten abweichen.
+Each of the six diagnostic projects consists of exactly one independently
+loadable sheet and passes the structural connectivity check. An automated test
+compares them byte for byte with files newly generated from `TinyCPU.circ`, so
+future changes to the reference circuit cannot diverge unnoticed from the
+diagnostic projects.
 
-## Reproduzierbare Prüfung
+## Reproducible verification
 
 ```bash
 PYTHONPATH=src python src/tiny_cpu_circuit.py \
@@ -33,32 +33,31 @@ for project in hardware/logisim/diagnostics/*.circ; do
 done
 ```
 
-Diese Prüfung bewertet Struktur, Anschlussbelegung und Busbreiten. Die
-elektrische Laufzeitsimulation der Logisim-Bauteilbibliothek bleibt weiterhin
-Aufgabe von Logisim-evolution.
+This check evaluates structure, port assignments, and bus widths. Electrical
+runtime simulation of the Logisim component library remains the responsibility
+of Logisim-evolution.
 
-## Ursachenanalyse der wiederholten Rücksetzung
+## Root-cause analysis of the repeated reversion
 
-Die fehlerhafte Fassung wurde nicht von Logisim selbst wiederhergestellt. Die
-Git-Historie zeigt vielmehr, dass auf die ausdrücklich wiederhergestellte
-Benutzerfassung (`ac06b29` beziehungsweise später `5f4d2ab`) jeweils erneut ein
-älterer, automatisiert erzeugter Reparaturstand (`3e9ea7a`, `c5b8cd2` und
-`de63af2`) angewendet und anschließend über einen Pull Request zusammengeführt
-wurde. Damit wurde bei der Reparatur die falsche Baseline gewählt: statt den
-jeweils neuesten Benutzer-Commit zu korrigieren, dienten frühere
-Agenten-Commits als vermeintlich bekannte, „funktionierende“ Referenz.
+Logisim itself did not restore the faulty version. Instead, the Git history
+shows that an older, automatically generated repair (`3e9ea7a`, `c5b8cd2`, and
+`de63af2`) was reapplied to each explicitly restored user version (`ac06b29`,
+and later `5f4d2ab`) and subsequently merged through a pull request. The repair
+therefore used the wrong baseline: rather than correcting the latest user
+commit each time, earlier agent commits served as a supposedly known “working”
+reference.
 
-Begünstigt wurde das durch Regressionstests, die konkrete Koordinaten und
-Bauteilpositionen der älteren Zeichnung festschrieben. Eine elektrisch anders
-angeordnete Benutzerlösung schlug daher selbst dann fehl, wenn ihr Aufbau
-inhaltlich gleichwertig war. Der scheinbar einfachste Weg zu grünen Tests war
-so das Zurückkopieren der alten Zeichnung – genau das hat die Benutzeränderung
-wiederholt verdrängt.
+Regression tests that fixed specific coordinates and component positions from
+the older drawing contributed to this problem. A user solution with a
+different electrical arrangement therefore failed even when its design was
+functionally equivalent. Copying back the old drawing appeared to be the
+easier way to make the tests pass—and that is precisely what repeatedly
+displaced the user's change.
 
-Für die aktuelle Reparatur gilt deshalb ausdrücklich Commit `28d49cb` als
-Baseline. Bauteile und Layout dieser Fassung bleiben erhalten; korrigiert wurden
-nur fehlerhafte Netze, Busabgriffe und die dazugehörigen Diagnose-Fixtures.
-Die Tests ermitteln verschobene Bauteile nun anhand ihrer Labels oder ihrer
-aktuellen Schnittstelle, statt die alte Zeichnung durch historische
-Koordinaten indirekt wiederherzustellen. Die aus dem Hauptprojekt erzeugten
-Diagnoseblätter bleiben bytegenau reproduzierbar.
+Commit `28d49cb` is therefore explicitly the baseline for the current repair.
+The components and layout of that version remain intact; only faulty networks,
+bus taps, and the corresponding diagnostic fixtures were corrected. Tests now
+locate moved components using their labels or current interface instead of
+indirectly restoring the old drawing through historical coordinates. The
+diagnostic sheets generated from the main project remain reproducible byte for
+byte.

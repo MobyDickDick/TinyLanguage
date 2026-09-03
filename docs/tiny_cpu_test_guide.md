@@ -1,128 +1,127 @@
-# TinyCPU.circ selbst testen
+# Testing TinyCPU.circ yourself
 
-Diese Anleitung ist der kurze, empfohlene Weg für einen vollständigen Test der
-eingecheckten Schaltung. Alle Befehle werden im Hauptverzeichnis des
-TinyLanguage-Checkouts ausgeführt.
+This guide provides the short, recommended procedure for a complete test of
+the committed circuit. Run all commands from the root of the TinyLanguage
+checkout.
 
-## Was du brauchst
+## Prerequisites
 
-- **Java 21 oder neuer** (`java -version`)
+- **Java 21 or newer** (`java -version`)
 - **Python 3** (`python3 --version`)
-- eine Internetverbindung für den ersten Lauf **oder** die Datei
+- an internet connection for the first run **or** the file
   `logisim-evolution-4.1.0-all.jar`
 
-Du brauchst Logisim nicht separat zu installieren. Das Testskript lädt genau
-die unterstützte Logisim-evolution-Version 4.1.0 in den Benutzer-Cache. Die JAR
-wird nicht in Git eingecheckt.
+You do not need to install Logisim separately. The test script downloads the
+exact supported Logisim-evolution version, 4.1.0, to the user cache. The JAR is
+not committed to Git.
 
-## Vollständiger automatischer Test
+## Complete automated test
 
-1. Öffne ein Terminal und wechsle in den Checkout:
+1. Open a terminal and change to the checkout:
 
    ```bash
    cd /pfad/zu/TinyLanguage
    ```
 
-2. Prüfe Java:
+2. Check Java:
 
    ```bash
    java -version
    ```
 
-   Die Ausgabe muss Java 21 oder neuer nennen.
+   The output must report Java 21 or newer.
 
-3. Starte den Test:
+3. Start the test:
 
    ```bash
    scripts/test-logisim.sh
    ```
 
-Das Skript lädt `hardware/logisim/TinyCPU.circ` im echten Simulator und führt
-den stabilen 17-Takt-Zähltest aus. Ein erfolgreicher Lauf endet mit Exitcode 0.
-Die derzeit noch fehlschlagende vollständige Opcode-/Fehlermatrix ist bewusst
-nicht Bestandteil des verpflichtenden Testlaufs. Sie kann zur Diagnose mit
-`TINYCPU_FULL_ACCEPTANCE=1 scripts/test-logisim.sh` gestartet werden und darf
-erst nach einer erfolgreichen Reparatur wieder zur CI-Pflicht werden.
+The script loads `hardware/logisim/TinyCPU.circ` in the real simulator and runs
+the stable 17-tick counter test. A successful run exits with status 0. The full
+opcode/error matrix, which currently still fails, is deliberately not part of
+the required test run. It can be run for diagnostic purposes with
+`TINYCPU_FULL_ACCEPTANCE=1 scripts/test-logisim.sh` and must become a mandatory
+CI check again only after a successful repair.
 
-Der stabile AP-5-Test ist Bestandteil des CI-Testlaufs. Ein fehlender Simulator
-oder ein Fehler in diesem freigegebenen Test lässt den Lauf fehlschlagen; es
-gibt keinen stillen Fallback auf einen
-reinen Projektlade- oder Python-Test.
+The stable AP-5 test is part of the CI test run. A missing simulator or a
+failure in this approved test causes the run to fail; there is no silent
+fallback to a project-loading-only or Python test.
 
-### Wenn du die Logisim-JAR schon hast
+### If you already have the Logisim JAR
 
-Lege die exakt benannte Datei `logisim-evolution-4.1.0-all.jar` irgendwo unter
-dem Checkout ab und führe aus:
+Place the exactly named file `logisim-evolution-4.1.0-all.jar` anywhere under
+the checkout and run:
 
 ```bash
 scripts/test-logisim-local.sh
 ```
 
-Liegt sie außerhalb des Checkouts oder gibt es mehrere Kopien, gib den Pfad
-explizit an:
+If it is outside the checkout or there are multiple copies, specify the path
+explicitly:
 
 ```bash
 scripts/test-logisim-local.sh /pfad/zu/logisim-evolution-4.1.0-all.jar
 ```
 
-## Ergebnis später ohne Simulator nachprüfen
+## Verifying the result later without the simulator
 
-Ein bereits erzeugtes Beweispaket lässt sich nur mit Python auf Vollständigkeit
-und unveränderte Prüfsummen kontrollieren:
+An existing evidence bundle can be checked for completeness and unchanged
+checksums using Python alone:
 
 ```bash
 PYTHONPATH=src python3 src/tiny_cpu_logisim.py \
   --verify-acceptance artifacts/tinycpu-ap12-acceptance
 ```
 
-Diese Prüfung simuliert die CPU nicht erneut. Sie bestätigt, dass das zuvor vom
-echten Simulator erzeugte Paket vollständig und unverändert ist.
+This check does not simulate the CPU again. It confirms that the bundle
+previously produced by the real simulator is complete and unchanged.
 
-## Schaltung zusätzlich ansehen
+## Inspecting the circuit as well
 
-Für die visuelle Kontrolle starte Logisim-evolution 4.1.0 und öffne
-`hardware/logisim/TinyCPU.circ`. Wähle links das Blatt `TinyCPUMain`. Mit dem
-Poke-Werkzeug kannst du Signale untersuchen; Änderungen an der Datei sind für
-den automatischen Test nicht nötig.
+For a visual inspection, start Logisim-evolution 4.1.0 and open
+`hardware/logisim/TinyCPU.circ`. Select the `TinyCPUMain` sheet on the left. You
+can inspect signals with the Poke tool; the automated test does not require
+changes to the file.
 
-Falls das große Projekt nicht lädt, öffne zuerst der Reihe nach
-`hardware/logisim/smoke/PinPair-1bit.circ`, `PinPair-12bit.circ` und
-`PinPair-16bit.circ`. Funktionieren diese, helfen die Einzelprojekte unter
-`hardware/logisim/diagnostics/`, das betroffene Schaltungsblatt einzugrenzen.
+If the large project does not load, first open
+`hardware/logisim/smoke/PinPair-1bit.circ`, `PinPair-12bit.circ`, and
+`PinPair-16bit.circ` in that order. If they work, use the standalone projects
+under `hardware/logisim/diagnostics/` to narrow the problem down to the affected
+circuit sheet.
 
-## Häufige Probleme
+## Common problems
 
-| Meldung oder Symptom | Lösung |
+| Message or symptom | Solution |
 |---|---|
-| `Java 21 or newer is required` | Java 21+ installieren oder `JAVA=/pfad/zu/java scripts/test-logisim.sh` verwenden. |
-| Download der JAR scheitert | JAR manuell herunterladen und `scripts/test-logisim-local.sh /pfad/zur/JAR` ausführen. |
-| Mehrere JAR-Dateien gefunden | Den gewünschten vollständigen Pfad an `scripts/test-logisim-local.sh` übergeben. |
-| Test schlägt fehl | Die erste Fehlermeldung sowie `artifacts/tinycpu-ap12-acceptance/acceptance.json` prüfen; ein abgebrochener Lauf gilt nicht als bestanden. |
+| `Java 21 or newer is required` | Install Java 21+ or use `JAVA=/pfad/zu/java scripts/test-logisim.sh`. |
+| JAR download fails | Download the JAR manually and run `scripts/test-logisim-local.sh /pfad/zur/JAR`. |
+| Multiple JAR files found | Pass the desired full path to `scripts/test-logisim-local.sh`. |
+| Test fails | Check the first error message and `artifacts/tinycpu-ap12-acceptance/acceptance.json`; an aborted run does not count as passing. |
 
-# Topologische Schaltungstests
+# Topological circuit tests
 
-`hardware/logisim/TinyCPU.circ` ist eine handgepflegte Zeichnung. Ihre
-elektrische Schnittstelle, nicht ihre Anordnung auf der Zeichenfläche, ist der
-Testvertrag. Schaltungstests benennen daher immer das Schemablatt, den Baustein
-sowie Quell- und Zielport. Ein Test darf weder feste `loc`-Koordinaten
-vergleichen noch Anschlusskoordinaten eines automatisch erzeugten
-Unterbausteins aus dessen Position berechnen.
+`hardware/logisim/TinyCPU.circ` is a manually maintained drawing. Its electrical
+interface, not its arrangement on the canvas, is the test contract. Circuit
+tests therefore always name the circuit sheet, component, source port, and
+destination port. A test must neither compare fixed `loc` coordinates nor
+calculate the connection coordinates of an automatically generated subcircuit
+component from its position.
 
-Diese Regel gilt für **jedes** Schemablatt und ebenso für sprachliche
-Akzeptanztests: Namen, Docstrings und Fehlermeldungen beschreiben zum Beispiel
-„`FetchDecode.PC_OUT` erreicht `Datapath`“ statt „Leitung `(x1,y1)` erreicht
-`(x2,y2)`“. Absolute Punkte sind ausschließlich in künstlichen, lokalen
-XML-Fixtures erlaubt, mit denen der Netlist-Parser selbst geprüft wird.
+This rule applies to **every** circuit sheet and also to textual acceptance
+tests: names, docstrings, and error messages describe, for example,
+“`FetchDecode.PC_OUT` reaches `Datapath`” rather than “wire `(x1,y1)` reaches
+`(x2,y2)`.” Absolute points are permitted only in synthetic, local XML fixtures
+that test the netlist parser itself.
 
-Beim Korrigieren gilt stets die neueste vom Benutzer gepflegte Schaltung als
-Baseline. Ein fehlgeschlagener historischer Layouttest rechtfertigt niemals,
-eine ältere Zeichnung zurückzukopieren. Zuerst wird der elektrische Fehler an
-benannten Ports reproduziert; anschließend werden Schaltung und Test gemeinsam
-gegen diesen topologischen Vertrag korrigiert.
+When making corrections, always use the latest user-maintained circuit as the
+baseline. A failed historical layout test never justifies copying back an older
+drawing. First reproduce the electrical fault at named ports; then correct the
+circuit and test together against this topological contract.
 
-Der Checkout-Gate `PYTHONPATH=src python3 src/tiny_cpu_verify.py` setzt diesen
-Vertrag ebenfalls durch. Er verlangt eindeutige Namen für alle Blattports und
-Unterbaustein-Instanzen und prüft danach offene Ports, Mehrfachtreiber und
-Busbreiten auf den tatsächlich verbundenen Netzen. Elektrisch relevante
-Einzelbauteile werden über ihr `label` identifiziert; ihre `loc`-Position ist
-weder Identität noch Sollwert der Prüfung.
+The checkout gate `PYTHONPATH=src python3 src/tiny_cpu_verify.py` also enforces
+this contract. It requires unique names for all sheet ports and subcircuit
+instances, then checks open ports, multiple drivers, and bus widths on the
+networks that are actually connected. Electrically relevant individual
+components are identified by their `label`; their `loc` position is neither
+their identity nor an expected value of the check.

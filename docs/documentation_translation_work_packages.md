@@ -43,7 +43,7 @@ Translate the standalone German task list and the isolated fragments found in
 documents that otherwise already use English. Preserve all completed checkbox
 states and file paths.
 
-## WP-2: TinyCPU overview and test documentation — pending
+## WP-2: TinyCPU overview and test documentation — complete
 
 Files:
 
@@ -54,6 +54,11 @@ Files:
 Translate user-facing architecture, testing, and troubleshooting prose. Verify
 that commands and the distinction between static checks and real-simulator
 checks remain unchanged.
+
+Review note: path placeholders inside commands (such as
+`/pfad/zu/TinyLanguage`) remain unchanged because commands are explicitly
+preserved by the acceptance criteria. Commit hashes are likewise technical data
+rather than narrative prose.
 
 ## WP-3: TinyCPU design and integration templates — pending
 

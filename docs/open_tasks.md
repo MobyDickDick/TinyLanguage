@@ -307,6 +307,14 @@ archived in `docs/open_tasks_archive.md`.
     control aggregator. This rules out a missing selector-control route and
     bounds the next diagnosis to the accumulator write/result boundary; the
     remaining fixtures and complete 61-fixture acceptance are still open.
+  - Progress (2026-09-03, reproducibility-baseline repair): restored the
+    explicit 16-bit program-counter increment, asserted enable and validity
+    constants, selector labels, RAM bit-zero mapping, inactive datapath reset,
+    and multi-bit monitor widths lost in the adjusted Logisim save. The AP-8
+    reproducibility verifier and all focused circuit/topology regressions pass
+    again. The memory-load regression now follows named electrical endpoints
+    instead of obsolete top-level drawing coordinates. The separate
+    `MUL_ADDRESS_REGISTER` behavioral mismatch keeps the full package open.
 
 - [x] **Confirm the closed TinyCPU boundary for the current request**
   (Owner: TinyCPU/Documentation; completed 2026-08-29)

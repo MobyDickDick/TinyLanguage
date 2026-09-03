@@ -971,12 +971,24 @@ def test_top_level_physically_routes_memory_load_control():
         c for c in circuit.findall("comp") if c.get("name") == "Tunnel"
     ]
     assert top_level_tunnels == []
-    wires = {(wire.get("from"), wire.get("to")) for wire in circuit.findall("wire")}
-    assert {
-        ("(1400,670)", "(1400,800)"),
-        ("(1400,800)", "(2470,800)"),
-        ("(2470,800)", "(2470,990)"),
-    } <= wires
+    root = ET.parse(PROJECT).getroot()
+    adjacency = _electrical_adjacency(circuit)
+    selector = _labelled_component(circuit, "ACC_LOAD_DATA_SELECT")
+    selector_x, selector_y = map(
+        int, selector.get("loc").strip("()").split(",")
+    )
+    selector_control = f"({selector_x - 20},{selector_y + 30})"
+    selector_memory_input = f"({selector_x - 30},{selector_y + 10})"
+    assert selector_control in _reachable(
+        adjacency,
+        _subcircuit_output(root, "DecodeSignals", "ACC_MEMORY_REQUEST"),
+    )
+    assert selector_memory_input in _reachable(
+        adjacency, _subcircuit_output(root, "Memory", "MEMORY_DATA")
+    )
+    assert _subcircuit_input(root, "Operations", "IMMEDIATE_VALUE") in _reachable(
+        adjacency, selector.get("loc")
+    )
     operations = next(
         c for c in ET.parse(PROJECT).getroot().findall("circuit")
         if c.get("name") == "Operations"
@@ -986,7 +998,6 @@ def test_top_level_physically_routes_memory_load_control():
         for component in operations.findall("comp")
         if component.get("name") == "Tunnel"
     ]
-    root = ET.parse(PROJECT).getroot()
     addition = next(
         item for item in root.findall("circuit")
         if item.get("name") == "AddSubCircuit"
@@ -1791,9 +1802,15 @@ def test_mul_addressing_modes_reach_the_shared_operand_selector_independently():
     multiply = root.find("circuit[@name='MulSubCircuit']")
     adjacency = _electrical_adjacency(multiply)
     selector = _labelled_component(multiply, "ACC_MUL_MEMORY_SELECT")
-    # The four-input classic symbol angles its outer leads onto y=120/160;
-    # the two inner leads remain on y=130/150.
-    selector_inputs = {"(500,120)", "(500,130)", "(500,150)", "(500,160)"}
+    selector_x, selector_y = map(
+        int, selector.get("loc").strip("()").split(",")
+    )
+    # Resolve contacts relative to the checked component rather than freezing
+    # the selector's drawing position.
+    selector_inputs = {
+        f"({selector_x - 50},{selector_y + offset})"
+        for offset in (-20, -10, 10, 20)
+    }
     mode_pins = {
         _attributes(component)["label"]: component.get("loc")
         for component in multiply.findall("comp[@name='Pin']")

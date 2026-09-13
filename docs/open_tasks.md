@@ -5,7 +5,47 @@ archived in `docs/open_tasks_archive.md`.
 
 ## Current tasks
 
-_None._
+The September triage pass promoted the following implementation-ready work in
+priority order. The first unchecked item is the next documented work package.
+
+- [ ] **Add cancellation parity coverage for all runtime entry points**
+  (Owner: Runtime/QA)
+  - Success: a shared regression exercises cancellation and join behavior
+    through the modular Python runtime, the stitched runtime, and the public
+    CLI, asserting that cancelled workers stop cooperatively and cannot mutate
+    shared state after `join` returns.
+  - Scope boundary: this package validates the existing cooperative
+    cancellation contract; it does not introduce preemptive thread
+    termination.
+
+- [ ] **Turn profiling captures into a comparable regression artifact**
+  (Owner: Runtime/Performance)
+  - Success: the documented profiling workflow gains a deterministic summary
+    command and a checked fixture proving that two captures can be compared
+    without embedding host-specific paths or timestamps.
+  - Scope boundary: the comparison reports changes but does not change the
+    existing performance budgets or fail CI on profiling variance.
+
+- [ ] **Specify and test debug-adapter watch-expression behavior**
+  (Owner: Tooling)
+  - Success: document the supported expression subset and add Debug Adapter
+    Protocol acceptance coverage for evaluating locals, nested values, and an
+    invalid expression while stopped at a breakpoint.
+  - Scope boundary: function calls and expressions with side effects remain
+    unsupported in watches.
+
+## Next-cycle triage (completed 2026-09-13)
+
+- [x] **Publish the post-TinyCPU TinyLanguage execution slate**
+  (Owner: Project Lead)
+  - Success: replace the empty active backlog with three ordered, owner-tagged
+    packages that each define an observable acceptance result and explicit
+    scope boundary; align the roadmap milestone with those packages.
+  - Result: the active slate now covers runtime cancellation parity,
+    comparable profiling artifacts, and debug-adapter watch expressions. The
+    dated roadmap checkpoint links each deliverable back to this tracker.
+  - Follow-up: execute the cancellation parity package first, then retain or
+    reprioritize the remaining two items based on its findings.
 
 ## Next documented work package (completed 2026-08-03)
 

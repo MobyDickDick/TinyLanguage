@@ -9,6 +9,37 @@ phases below build on each other but can progress in parallel where practical.
 To make the roadmap actionable, the work is grouped by the major program areas
 tracked in `docs/open_tasks.md`.
 
+## 2026-10 post-TinyCPU execution checkpoint (dated milestone)
+
+**Milestone date:** 2026-10-31
+
+**Purpose:** Refocus the repository roadmap on TinyLanguage runtime reliability
+and developer tooling after the extracted TinyCPU project was removed.
+
+### Ordered deliverables linked to the active backlog
+
+1. **Cancellation behavior parity**
+   - Exercise cooperative cancellation through every supported runtime entry
+     point and prove that a joined cancelled worker performs no later mutation.
+   - Backlog reference: `docs/open_tasks.md` current task 1.
+2. **Comparable profiling summaries**
+   - Add a deterministic, host-independent comparison artifact to the existing
+     profiling capture workflow.
+   - Backlog reference: `docs/open_tasks.md` current task 2.
+3. **Watch-expression acceptance contract**
+   - Specify the side-effect-free expression subset exposed by the debug
+     adapter and cover success and failure responses at a breakpoint.
+   - Backlog reference: `docs/open_tasks.md` current task 3.
+
+### Milestone exit criteria
+
+- Each deliverable has implementation or documentation changes plus focused,
+  automated regression coverage.
+- Completed packages move to the dated history in `docs/open_tasks.md`; any
+  discovered follow-up receives an owner, acceptance criteria, and a scope
+  boundary before promotion.
+- The default smoke suite remains within its documented feedback budget.
+
 ## 2026-05 minor-release planning checkpoint (dated milestone)
 
 **Milestone date:** 2026-05-01

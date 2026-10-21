@@ -18,6 +18,11 @@ items.
 
 ## Checklist (prioritized)
 
+The 2026-10-21 repository review reopened delivery and operational acceptance
+work. The six active work packages and their acceptance criteria are maintained
+in [open_tasks.md](open_tasks.md). Completed design documents and prototypes do
+not by themselves establish release readiness.
+
 ### 1) Core language + semantics
 - [x] Specify a formal versioning + deprecation policy for language changes.
 - [x] Lock down evaluation order, scoping, and error-handling rules with
@@ -44,7 +49,7 @@ items.
   all supported launch modes (see `docs/debug_adapter_integration.md`).
 
 ### 5) Distribution + releases
-- [x] Publish official release artifacts (versioned binaries, pip/npm packages
+- [ ] Publish official release artifacts (versioned binaries, pip/npm packages
   as needed) and a reproducible build pipeline (see
   `docs/release_artifacts_pipeline.md`).
 - [x] Provide upgrade guides and compatibility matrices for each release (see

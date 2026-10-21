@@ -4,26 +4,12 @@ This roadmap collects the high-level work packages that will extend TinyLanguage
 towards compiler, library, and transpiler capabilities. The items are phrased so
 they can be tackled incrementally.
 
-## 0) Finish TinyCPU electrical acceptance
+## Current delivery priorities
 
-- **Completed boundary**: AP 1 through AP 12 are complete. The first eight
-  packages establish the hardware contract, integrated CPU, machine format,
-  tooling, and reproducible baseline verification; AP 9 through AP 12 pin Java
-  and Logisim-evolution, load the maintained project headlessly, capture the
-  AP-5 trace in the real simulator, exercise the complete opcode/error matrix,
-  and retain the reproducible hardware release evidence.
-- **Maintenance contract**: circuit edits must preserve the focused structural
-  and topology regressions and rerun the mandatory AP-12 acceptance command.
-  Retained evidence can be authenticated offline with its versioned inventory;
-  a VM-derived replay alone must never be described as electrical evidence.
-- **Release boundary**: AP 13 froze the 1.0 contract, AP 14 built the
-  reproducible distribution, and AP 15 added signed, clean-room qualification
-  and immutable publication of the exact candidate. No successor package is
-  currently scoped.
-- **Detailed acceptance criteria**: the package table and completed status
-  checklist in `docs/tiny_cpu_roadmap.md` record completed AP 1 through AP 12
-  and the completed AP 13 through AP 15 release sequence; completed maintenance
-  packages are recorded in `docs/open_tasks.md`.
+The six active deployment-readiness packages and their acceptance criteria
+are maintained in [open_tasks.md](open_tasks.md). Installation, supported
+platform verification, stable release scope, and package hardening take
+priority over the expansion ideas below.
 
 ## 1) Native compiler (executables)
 

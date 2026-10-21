@@ -10,8 +10,6 @@ If you want a compact reference first:
 - Demo commands: [docs/demo_run_commands.md](docs/demo_run_commands.md)
 - Python interop (FFI): [docs/python_interop.md](docs/python_interop.md)
 - Backend coverage: [docs/backend_feature_matrix.md](docs/backend_feature_matrix.md)
-- TinyCPU microcomputer and assembly language: [docs/tiny_cpu.md](docs/tiny_cpu.md)
-- TinyCPU circuit self-test (German): [docs/tiny_cpu_test_guide.md](docs/tiny_cpu_test_guide.md)
 
 ---
 
@@ -291,6 +289,11 @@ To keep the README focused, the previously long “Open tasks” checklists have
 
 This section remains the *future-looking* plan. Roughly grouped into frontend/language, type discipline, runtime, tooling, and native backends.
 For a detailed checklist of open items, see [docs/open_tasks.md](docs/open_tasks.md).
+
+The current delivery priorities are installable releases, an installed CLI and
+editor workflow, supported-platform verification, complete package publication,
+evidence-based release status, and package hardening with application acceptance
+tests. Their scope and acceptance criteria are recorded in that task list.
 
 ### Frontend / language
 - Improve error positions and messages (carry line/column through tokens + AST nodes; unify error type with optional `SourceSpan`).

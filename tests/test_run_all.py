@@ -2,6 +2,9 @@
 
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,39 +14,30 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(run_all)
 
 
-def test_tiny_cpu_acceptance_failure_fails_containing_run(monkeypatch):
-    """The real all-opcode gate must not degrade into an optional check."""
+@pytest.mark.parametrize("smoke", [False, True])
+@pytest.mark.parametrize("demo_exit", [0, 1])
+def test_runner_selects_language_suite_and_propagates_demo_failure(monkeypatch, smoke, demo_exit):
+    """Both runner modes execute their demos and retain failure exit status."""
 
     calls = []
-
-    class Result:
-        returncode = 1
+    pytest_targets = []
+    full_commands = [("full demo", [run_all.REPO_PYTHON, "full-demo.tiny"])]
+    smoke_commands = [("smoke demo", [run_all.REPO_PYTHON, "smoke-demo.tiny"])]
 
     def fake_run(command, **kwargs):
         calls.append((command, kwargs))
-        return Result()
+        return SimpleNamespace(returncode=demo_exit)
 
+    monkeypatch.delenv("TINYLANGUAGE_SMOKE", raising=False)
+    monkeypatch.setattr(run_all, "parse_args", lambda: SimpleNamespace(smoke=smoke))
+    monkeypatch.setattr(run_all, "run_pytest", lambda failures, extra_args: pytest_targets.append(extra_args))
+    monkeypatch.setattr(run_all, "COMMANDS", full_commands)
+    monkeypatch.setattr(run_all, "SMOKE_COMMANDS", smoke_commands)
     monkeypatch.setattr(run_all.subprocess, "run", fake_run)
-    failures = []
-    run_all.run_tiny_cpu_acceptance(failures)
 
-    assert calls[0][0] == [str(ROOT / "scripts" / "test-logisim.sh")]
+    assert run_all.main() == demo_exit
+    assert pytest_targets == [run_all.SMOKE_PYTEST_TARGETS if smoke else None]
+    selected_commands = smoke_commands if smoke else full_commands
+    assert [command for command, _ in calls] == [command for _, command in selected_commands]
     assert calls[0][1]["cwd"] == ROOT
-    assert failures == ["TinyCPU electrical opcode acceptance"]
-
-
-def test_smoke_mode_still_runs_electrical_opcode_acceptance(monkeypatch):
-    """The fast runner must not bypass the complete TinyCPU instruction proof."""
-
-    acceptance_calls = []
-    monkeypatch.setattr(run_all, "parse_args", lambda: type("Args", (), {"smoke": True})())
-    monkeypatch.setattr(run_all, "run_pytest", lambda failures, extra_args: None)
-    monkeypatch.setattr(
-        run_all,
-        "run_tiny_cpu_acceptance",
-        lambda failures: acceptance_calls.append(failures),
-    )
-    monkeypatch.setattr(run_all, "SMOKE_COMMANDS", [])
-
-    assert run_all.main() == 0
-    assert len(acceptance_calls) == 1
+    assert str(ROOT / "src") in calls[0][1]["env"]["PYTHONPATH"].split(run_all.os.pathsep)

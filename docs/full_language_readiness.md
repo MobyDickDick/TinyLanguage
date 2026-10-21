@@ -19,9 +19,11 @@ items.
 ## Checklist (prioritized)
 
 The 2026-10-21 repository review reopened delivery and operational acceptance
-work. The six active work packages and their acceptance criteria are maintained
-in [open_tasks.md](open_tasks.md). Completed design documents and prototypes do
-not by themselves establish release readiness.
+work. The active work packages and their acceptance criteria are maintained
+in [open_tasks.md](open_tasks.md), including follow-up tasks for argument
+encapsulation, interval correctness, independent test evidence, module
+boundaries, and evaluation of the project's distinctive ideas. Completed design
+documents and prototypes do not by themselves establish release readiness.
 
 ### 1) Core language + semantics
 - [x] Specify a formal versioning + deprecation policy for language changes.

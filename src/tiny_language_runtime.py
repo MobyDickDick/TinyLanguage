@@ -34,6 +34,10 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class _SpawnCancelled(Exception):
+    """Stop a worker after its spawn handle has been cancelled."""
+
+
 @dataclass
 class ParameterBinding:
     name: str
@@ -150,6 +154,7 @@ class Runtime:
         env_copy_flag = os.environ.get("TINYLANG_COPY_ON_CALL", "").strip().lower()
         self.copy_on_call: bool = env_copy_flag in {"1", "true", "yes", "on"}
         self._parameter_binding_stack: threading.local = threading.local()
+        self._spawn_context: threading.local = threading.local()
         self.trace_log_path: Optional[str] = os.environ.get("TINYLANG_TRACE_LOG")
         self.trace_every_statement: bool = os.environ.get("TINYLANG_TRACE_EVERY_STATEMENT", "0") == "1"
         self.trace_heartbeat_secs: float = float(os.environ.get("TINYLANG_TRACE_HEARTBEAT_SECS", "1.0"))
@@ -171,6 +176,12 @@ class Runtime:
             stack = []
             self._parameter_binding_stack.stack = stack
         return stack
+
+    def _raise_if_spawn_cancelled(self) -> None:
+        """Cooperatively stop the current worker at statement boundaries."""
+        cancelled = getattr(self._spawn_context, "cancelled", None)
+        if cancelled is not None and cancelled.is_set():
+            raise _SpawnCancelled()
 
     def _push_task_scope(self) -> TaskScope:
         scope = TaskScope()
@@ -1752,17 +1763,20 @@ class Runtime:
 
     def _run_spawn(self, fn: Fn, args: List[Any], handle: SpawnHandle) -> None:
         try:
+            self._spawn_context.cancelled = handle.cancelled
             if handle.cancelled.is_set():
-                handle.error = RuntimeError("spawn cancelled")
-                return
+                raise _SpawnCancelled()
             result = self._invoke_function(fn, args)
             if handle.cancelled.is_set():
                 handle.error = RuntimeError("spawn cancelled")
             else:
                 handle.result = result
+        except _SpawnCancelled:
+            handle.error = RuntimeError("spawn cancelled")
         except Exception as exc:  # noqa: BLE001
             handle.error = exc
         finally:
+            self._spawn_context.cancelled = None
             handle.done.set()
 
     def _start_task(self, fn: Fn, args: List[Any]) -> SpawnHandle:
@@ -2081,5 +2095,4 @@ def compile_and_run(*args: Any, **kwargs: Any) -> str:
     from tiny_language_api import compile_and_run as api_compile_and_run
 
     return api_compile_and_run(*args, **kwargs)
-
     

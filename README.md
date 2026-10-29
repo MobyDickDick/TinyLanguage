@@ -29,6 +29,21 @@ If you want a compact reference first:
 
 ## Quick start
 
+### Install the interpreter and commands
+
+With Python 3.11 or newer, install from this checkout (or replace `.` with a
+downloaded wheel or sdist):
+
+```bash
+python -m pip install .
+tiny --help
+```
+
+The installed commands and bundled standard library work outside the checkout.
+Use `tiny path/to/main.tiny` to run a program. Build and qualification details,
+including the remaining release gates, are in
+[release packaging acceptance](docs/release_packaging_acceptance.md).
+
 ### Prepare a development environment
 
 On Debian/Ubuntu, Fedora, Arch Linux, or macOS with Homebrew, the bootstrap

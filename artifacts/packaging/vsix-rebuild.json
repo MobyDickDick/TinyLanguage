@@ -1,0 +1,12 @@
+{
+  "input": "working-tree snapshot (not a tagged release)",
+  "version": "1.0.0",
+  "source_date_epoch": 1793232000,
+  "first": "9fd329dea63e65a802ac5e90a7f0df2ceb7bdc0e32f2113424f46ac24ebaf5e8",
+  "second": "9fd329dea63e65a802ac5e90a7f0df2ceb7bdc0e32f2113424f46ac24ebaf5e8",
+  "equal": true,
+  "node": "24.22.1",
+  "npm": "10.9.2",
+  "isolated_install": "tinylanguage.tinylanguage-vscode@1.0.0",
+  "editor_workflows_verified": false
+}

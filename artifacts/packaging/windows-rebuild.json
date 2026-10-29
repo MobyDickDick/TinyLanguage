@@ -1,0 +1,15 @@
+{
+  "input": "working-tree snapshot (not a tagged release)",
+  "source_date_epoch": 1793232000,
+  "first": {
+    "tiny-language-windows-x86_64.exe": "4adaee5c134acf1955c67d5214311f586eee2768802213cf9fc8374e9b1ba49c",
+    "tinylanguage-1.0.0-py3-none-any.whl": "f3026945ae3d1ec8054def8960cda8b277df8bf405d903b32ae686176ff2969e",
+    "tinylanguage-1.0.0.tar.gz": "07fac406fd0176ea0da97e2cc4a347c13f00ee2692999f6c13e4bb26647d88ef"
+  },
+  "second": {
+    "tiny-language-windows-x86_64.exe": "4adaee5c134acf1955c67d5214311f586eee2768802213cf9fc8374e9b1ba49c",
+    "tinylanguage-1.0.0-py3-none-any.whl": "f3026945ae3d1ec8054def8960cda8b277df8bf405d903b32ae686176ff2969e",
+    "tinylanguage-1.0.0.tar.gz": "07fac406fd0176ea0da97e2cc4a347c13f00ee2692999f6c13e4bb26647d88ef"
+  },
+  "equal": true
+}

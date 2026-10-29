@@ -1,0 +1,6 @@
+include VERSION README.md CHANGELOG.md pyproject.toml setup.py
+include tools/packaging_backend.py
+recursive-include src *.py
+exclude src/tiny_language_stitched.py
+recursive-include src_tiny *.tiny
+recursive-include stdlib *.tiny

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==84.1.0", "wheel==0.48.0"]
+build-backend = "packaging_backend"
+backend-path = ["tools"]
+
+[project]
+name = "tinylanguage"
+dynamic = ["version"]
+description = "TinyLanguage interpreter and experimental language tooling"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.scripts]
+tiny = "tiny_language_cli:main"
+tiny-project = "tiny_project_cli:main"
+tiny-pkg = "tiny_pkg_cli:main"
+tinyc = "tinyc_cli:main"
+tiny-lsp = "language_server_cli:main"

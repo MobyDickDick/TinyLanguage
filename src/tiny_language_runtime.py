@@ -2085,14 +2085,9 @@ class Runtime:
 def compile_and_run(*args: Any, **kwargs: Any) -> str:
     """Proxy to the public API compile helper to preserve legacy imports."""
 
-    import importlib.util
-
-    if importlib.util.find_spec("tiny_language_stitched"):
-        from tiny_language_stitched import compile_and_run as stitched_compile_and_run
-
-        return stitched_compile_and_run(*args, **kwargs)
-
-    from tiny_language_api import compile_and_run as api_compile_and_run
+    # The public loader owns the shared evaluator namespace. A generated source
+    # file is neither present in wheels nor a reliable second runtime instance.
+    from tiny_language import compile_and_run as api_compile_and_run
 
     return api_compile_and_run(*args, **kwargs)
     

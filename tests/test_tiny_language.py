@@ -650,9 +650,10 @@ def test_main_eval_reports_error(capsys):
     assert "expected" in captured.err
 
 
-def test_repl_executes_lines(monkeypatch, capsys):
+def test_repl_executes_lines(monkeypatch, capsys, tmp_path):
     """Test that repl executes lines."""
     monkeypatch.setattr("sys.stdin", io.StringIO("print(2 + 3);\nprint(1);\n"))
+    monkeypatch.setattr(pathlib.Path, "home", lambda: tmp_path)
 
     exit_code = main(["--repl"])
     captured = capsys.readouterr()
@@ -662,9 +663,10 @@ def test_repl_executes_lines(monkeypatch, capsys):
     assert "5\ntiny> 1\n" in captured.out
 
 
-def test_repl_reports_errors(monkeypatch, capsys):
+def test_repl_reports_errors(monkeypatch, capsys, tmp_path):
     """Test that repl reports errors."""
     monkeypatch.setattr("sys.stdin", io.StringIO("def y = ;\n"))
+    monkeypatch.setattr(pathlib.Path, "home", lambda: tmp_path)
 
     exit_code = main(["--repl"])
     captured = capsys.readouterr()
@@ -674,9 +676,10 @@ def test_repl_reports_errors(monkeypatch, capsys):
     assert "expected" in captured.err
 
 
-def test_repl_allows_underscore_binding(monkeypatch, capsys):
+def test_repl_allows_underscore_binding(monkeypatch, capsys, tmp_path):
     """Test that repl allows underscore binding."""
     monkeypatch.setattr("sys.stdin", io.StringIO("def _ = 1;\nprint(0);\n"))
+    monkeypatch.setattr(pathlib.Path, "home", lambda: tmp_path)
 
     exit_code = main(["--repl"])
     captured = capsys.readouterr()

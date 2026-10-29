@@ -1,0 +1,77 @@
+name: Installable release artifacts
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'MANIFEST.in'
+      - 'tools/packaging_backend.py'
+      - 'tools/release/**'
+      - 'src/**'
+      - 'stdlib/**'
+      - 'src_tiny/**'
+      - 'vscode-extension/**'
+      - '.github/workflows/release-artifacts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022, macos-15-intel, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12.14'
+      - run: python -m pip install -r tools/release/requirements.txt
+      - name: Build twice from the committed archive and compare hashes
+        run: python tools/release/build_release_artifacts.py --python --binary --verify-reproducible --output-dir dist/release
+      - name: Install the wheel and the sdist independently outside the checkout
+        shell: bash
+        run: |
+          python tools/release/verify_python_package.py dist/release/*.whl --report dist/wheel-acceptance.json
+          python -m pip wheel --no-deps --no-build-isolation dist/release/tinylanguage-*.tar.gz --wheel-dir dist/from-sdist
+          python tools/release/verify_python_package.py dist/from-sdist/*.whl --report dist/sdist-acceptance.json
+      - name: Execute the standalone interpreter outside the checkout
+        shell: bash
+        run: |
+          binary="$(find "$PWD/dist/release" -maxdepth 1 -type f -name 'tiny-language-*')"
+          version="$(tr -d '\r\n' < VERSION)"
+          cd "$RUNNER_TEMP"
+          test "$("$binary" --version)" = "TinyLanguage $version"
+          printf 'import stdlib.math as math; print(math.sqrt(81));\n' > installed-smoke.tiny
+          result="$("$binary" installed-smoke.tiny)"
+          test "$result" = '9'
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-${{ matrix.os }}
+          path: |
+            dist/release/*
+            dist/*-acceptance.json
+          if-no-files-found: error
+
+  editor:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12.14'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22.14.0'
+      - run: python tools/release/build_release_artifacts.py --vsix --verify-reproducible --output-dir dist/release
+      - uses: actions/upload-artifact@v5
+        with:
+          name: release-editor
+          path: dist/release/*
+          if-no-files-found: error

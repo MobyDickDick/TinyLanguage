@@ -36,7 +36,14 @@ class ModuleResolutionConfig:
         env_paths = os.environ.get("TINYPATH", "")
         configured_paths = [Path(p) for p in env_paths.split(os.pathsep) if p]
         default_roots = [Path.cwd(), Path(__file__).parent]
-        stdlib_root = Path(__file__).resolve().parents[1] / "stdlib"
+        module_root = Path(__file__).resolve().parent
+        # Wheels and frozen bundles put Tiny modules next to the Python registry.
+        # The source checkout keeps them in the sibling top-level stdlib folder.
+        bundled_stdlib = module_root / "stdlib"
+        stdlib_root = (
+            bundled_stdlib if (bundled_stdlib / "math.tiny").is_file()
+            else module_root.parent / "stdlib"
+        )
         roots = search_paths or configured_paths + default_roots
         project_root = _find_project_root(start_path or Path.cwd())
         return cls(roots, stdlib_root, project_root)

@@ -27,6 +27,14 @@ document or prototype alone does not close the package.
   - References: [release_artifacts_pipeline.md](release_artifacts_pipeline.md),
     [building_executables.md](building_executables.md),
     `tools/release/build_release_artifacts.py`.
+  - Implementation checkpoint (2026-10-29): Python package metadata, installed
+    commands, bundled runtime/stdlib/bootstrap sources, in-memory source loading,
+    deterministic sdist metadata, frozen-interpreter spec, normalized VSIX builds,
+    checksum/signature verification, and a four-target artifact workflow are now
+    implemented. See [release_packaging_acceptance.md](release_packaging_acceptance.md)
+    for local evidence and the remaining release qualification gates. This package
+    stays open until actual platform runs, immutable builder inputs, and release-key
+    signature verification provide the complete acceptance evidence.
 
 ### 2. Installed CLI and editor workflow
 

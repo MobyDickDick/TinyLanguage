@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "module": "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\29\\01a18674-8aa1-7312-bf05-608924e4d975\\tiny-installed-jg2pto81\\environment\\Lib\\site-packages\\tiny_language.py",
+  "requires": [],
+  "checks": [
+    "clean-wheel-install",
+    "stdlib-import",
+    "python-module",
+    "console-entry-points",
+    "bootstrap-assets",
+    "no-source-write",
+    "release-version"
+  ],
+  "artifact": {
+    "name": "tinylanguage-1.0.0-py3-none-any.whl",
+    "sha256": "f3026945ae3d1ec8054def8960cda8b277df8bf405d903b32ae686176ff2969e"
+  },
+  "python": "3.12.14"
+}

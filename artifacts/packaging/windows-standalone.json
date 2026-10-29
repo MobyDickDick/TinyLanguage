@@ -1,0 +1,8 @@
+{
+  "artifact": "tiny-language-windows-x86_64.exe",
+  "sha256": "4adaee5c134acf1955c67d5214311f586eee2768802213cf9fc8374e9b1ba49c",
+  "version": "TinyLanguage 1.0.0",
+  "working_directory": "outside checkout",
+  "stdlib_import_output": "9",
+  "returncode": 0
+}

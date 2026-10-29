@@ -97,7 +97,8 @@ if "Runtime" not in globals():
     from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
 
 if "TinyLangError" not in globals():
-    from tiny_language_preamble import BUILTINS, KEYWORDS, TinyLangError, format_error
+    from tiny_language_preamble import TinyLangError, format_error
+    from tiny_language_lexer import BUILTINS, KEYWORDS
 
 if "lint_import_style" not in globals():
     from tiny_language_linter import (

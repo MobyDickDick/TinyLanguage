@@ -30,6 +30,7 @@ from tiny_language import (
     run_with_python_backend,
 )
 from tiny_pkg_cli import main as pkg_main
+from tiny_language_version import runtime_version
 
 
 def _write_error(message: str) -> None:
@@ -124,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     if argv[:1] == ["pkg"]:
         return int(pkg_main(argv[1:]))
     parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
+    parser.add_argument("--version", action="version", version=f"TinyLanguage {runtime_version()}")
     parser.add_argument(
         "path",
         nargs="?",

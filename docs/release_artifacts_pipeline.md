@@ -83,10 +83,25 @@ The release pipeline is designed to make the build deterministic and auditable.
    - Use `gpg --armor --detach-sign` on each artifact and `SHA256SUMS`.
 10. **Emit provenance**:
    - Create `build-info.json` with full metadata.
-11. **Automation helper (recommended)**:
-   - `python tools/release/build_release_artifacts.py --output-dir dist/release`
-     generates the source archive, SBOM, checksums, signatures, and
-     `build-info.json` deterministically.
+11. **Automation helper**:
+   - Install `tools/release/requirements.txt` into a dedicated builder.
+   - `python tools/release/build_release_artifacts.py --python --binary --vsix --verify-reproducible --output-dir dist/release`
+     builds from an archived commit, compares two independent build-directory
+     payload hashes, and emits the source archive, Python distributions,
+     host-platform binary, VSIX, SPDX inventory, checksums and provenance.
+   - Add `--sign` when the release key is available; signatures are verified
+     immediately. The command without build flags retains the source-only mode.
+   - The checked-in spec is `tools/release/tinylanguage.spec`; it bundles the
+     source segments, Tiny stdlib and parser bootstrap. npm inputs use the
+     extension lockfile. Python dependencies use the pinned requirements.
+   - `SOURCE_DATE_EPOCH` comes from the archived commit. Sdist gzip/tar and VSIX
+     ZIP metadata are normalized. SPDX timestamps use the same source epoch.
+     Host provenance and signature timestamps are not reproducible payloads.
+   - The artifact workflow builds four target architectures and retains fresh
+     wheel/sdist installation and standalone-execution reports. Hosted runner
+     labels are mutable; the workflow alone does not fulfill the immutable
+     builder requirement above. See [the acceptance checkpoint](release_packaging_acceptance.md)
+     for demonstrated local results and outstanding release gates.
 
 ### 4) Reproducibility checks
 

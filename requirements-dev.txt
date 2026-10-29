@@ -1,2 +1,4 @@
 # Python dependencies used by the complete test suite.
 pytest>=8.0,<9
+setuptools==84.1.0
+wheel==0.48.0

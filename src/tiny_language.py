@@ -28,6 +28,7 @@ import os
 import sys  # Detect frozen executables (e.g., PyInstaller) so we can locate bundled sources.
 import hashlib
 import tokenize
+import linecache
 
 
 def _load_and_exec_all() -> None:
@@ -69,14 +70,11 @@ def _load_and_exec_all() -> None:
 
     full_source = "\n".join(parts)
     stitched_path = base / "tiny_language_stitched.py"
-    temp_path = stitched_path.with_suffix(".py.tmp")
-    temp_path.write_text(full_source, encoding="utf-8")
-    try:
-        temp_path.replace(stitched_path)
-    except OSError:
-        stitched_path.write_text(full_source, encoding="utf-8")
-        if temp_path.exists():
-            temp_path.unlink()
+    # Installed packages may be read-only and shared by concurrent processes.
+    # Keep traceback source in memory instead of generating files at import time.
+    linecache.cache[str(stitched_path)] = (
+        len(full_source.encode("utf-8")), None, full_source.splitlines(True), str(stitched_path)
+    )
 
     try:
         code = compile(full_source, str(stitched_path), "exec")  # Compile so tracebacks reference the stitched file.
@@ -144,7 +142,7 @@ def _load_and_exec_all() -> None:
 
     if os.getenv("TINYLANG_STITCH_DEBUG"):
         sys.stderr.write(
-            f"[tiny_language stitch] Wrote {stitched_path} with {full_source.count(chr(10)) + 1} lines\n"
+            f"[tiny_language stitch] Loaded {stitched_path} in memory with {full_source.count(chr(10)) + 1} lines\n"
         )
         sys.stderr.write(
             f"[tiny_language stitch] segment names: {', '.join(segment_names)}\n"

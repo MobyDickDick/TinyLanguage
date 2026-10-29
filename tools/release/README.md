@@ -1,13 +1,49 @@
 # Release artifact tooling
 
-This directory contains the release artifact helper used by the documented
-release pipeline.
+This directory contains the artifact builder, frozen-interpreter spec, pinned
+build requirements and clean-install acceptance helper. Qualification status is
+tracked in [release packaging acceptance](../../docs/release_packaging_acceptance.md).
 
 ## Quick start
 
 ```bash
 python tools/release/build_release_artifacts.py --output-dir dist/release
 ```
+
+This compatibility command builds the committed source archive and metadata.
+All builds use `git archive` from the selected tag or HEAD: uncommitted changes
+are excluded. To build installable Python artifacts and the host's standalone
+interpreter twice and compare their hashes:
+
+```bash
+python -m pip install -r tools/release/requirements.txt
+python tools/release/build_release_artifacts.py --python --binary --verify-reproducible --output-dir dist/release
+```
+
+`--vsix` additionally runs `npm ci` and the locked local VSCE, checks extension
+versions against `VERSION`, and normalizes VSIX ZIP metadata. Install Node/npm
+before using this option. The platform workflow selects Python 3.12.14 and
+Node 22.14.0. Supply `BUILDER_IMAGE_DIGEST` when using an immutable builder;
+the helper records null when no image identifier was supplied.
+
+Build native binaries separately on each promised OS/architecture. Use repeated
+`--include-artifact PATH` options when assembling the complete release. Include
+each platform's provenance under a distinct filename as well. Supplied artifacts
+are checksummed and signed but are not rebuilt by this invocation; retain and
+review their original build/reproducibility records.
+
+Validate a wheel in a fresh environment outside the checkout:
+
+```bash
+python tools/release/verify_python_package.py dist/release/tinylanguage-1.0.0-py3-none-any.whl --report dist/wheel-acceptance.json
+python -m pip wheel --no-deps --no-build-isolation dist/release/tinylanguage-1.0.0.tar.gz --wheel-dir dist/from-sdist
+python tools/release/verify_python_package.py dist/from-sdist/tinylanguage-1.0.0-py3-none-any.whl --report dist/sdist-acceptance.json
+```
+
+The second command runs in the pinned builder environment and proves the sdist
+contains the inputs needed to rebuild a wheel. Installation uses a separate,
+fresh venv with no dependencies or checkout paths. Set `TEMP`/`TMP` (Windows)
+or `TMPDIR` (POSIX) to an accessible directory outside the checkout if needed.
 
 ## Signing
 
@@ -20,7 +56,8 @@ GPG_KEY_ID="you@example.com" \
 ```
 
 The script writes detached ASCII signatures (`.asc`) for each artifact and the
-`SHA256SUMS` file.
+`SHA256SUMS` and `build-info.json` files and verifies them with GPG. Signing uses the actual release key;
+unsigned CI artifacts do not establish signature acceptance.
 
 ## Outputs
 
@@ -32,8 +69,12 @@ The helper emits:
 - `build-info.json`
 - Optional `.asc` signatures
 
-Integrate additional artifacts (binaries, wheels, VSIX) in the pipeline and add
-those files to the `SHA256SUMS` and SBOM entries before publishing.
+Selected build options also produce the wheel, sdist, a host-platform executable
+(`tiny-language-OS-ARCH[.exe]`) and/or `tiny-language-vscode.vsix`. Every selected
+or included payload appears in SHA256SUMS and the SPDX inventory. Python and npm
+build dependency versions are retained separately from mandatory interpreter
+runtime dependencies (none). `build-info.json` records host-specific provenance;
+payload hash comparisons exclude provenance and signatures.
 
 ## Release-candidate checklist
 

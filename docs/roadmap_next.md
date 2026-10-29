@@ -4,6 +4,14 @@ This document captures a forward-looking roadmap for maturing TinyLanguage into
 an end-to-end programming language with a stable toolchain and ecosystem. The
 phases below build on each other but can progress in parallel where practical.
 
+## Desiderata and possible development directions
+
+- [Safer function dependencies](dependency_safety_desiderata.md): explore
+  checkable behavioral contracts, visibility of affected callers, tests across
+  call chains, and explicit effects to reduce the risk of changes to shared
+  functions and methods. This is an exploratory proposal without a scheduled
+  milestone or implementation commitment.
+
 ## Roadmap by area (execution-oriented)
 
 To make the roadmap actionable, the work is grouped by the major program areas

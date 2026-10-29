@@ -224,6 +224,7 @@ See [benchmarks/microbenchmarks.py](benchmarks/microbenchmarks.py) and [docs/per
 
 ### Planning
 - [docs/expansion_roadmap.md](docs/expansion_roadmap.md)
+- [docs/dependency_safety_desiderata.md](docs/dependency_safety_desiderata.md) — possible direction for contracts, dependency visibility, and change safety
 - [docs/self_hosting_port_plan.md](docs/self_hosting_port_plan.md)
 
 ---

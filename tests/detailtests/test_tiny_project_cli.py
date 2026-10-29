@@ -61,5 +61,5 @@ def test_project_cli_init_scaffolds_project(tmp_path):
     assert launch["configurations"][0]["type"] == "tinylanguage"
 
     settings = json.loads((project_dir / ".vscode" / "settings.json").read_text(encoding="utf-8"))
-    assert settings["tinylanguage.pythonPath"] == "python"
-    assert settings["tinylanguage.runtimePath"] == str(SRC_ROOT / "tiny_language.py")
+    assert settings["tinylanguage.pythonPath"] == sys.executable
+    assert settings["tinylanguage.runtimePath"] == ""

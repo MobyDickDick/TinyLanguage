@@ -38,7 +38,7 @@ document or prototype alone does not close the package.
 
 ### 2. Installed CLI and editor workflow
 
-- [ ] **Make the CLI and editor work independently of the source checkout**
+- [x] **Make the CLI and editor work independently of the source checkout**
   (Owner: Tooling/Developer Experience; priority: P1; depends on package 1)
   - Scope: expose a consistent installed `tiny` command for the supported run,
     project, package, and backend workflows. Resolve runtime and standard-library
@@ -51,6 +51,17 @@ document or prototype alone does not close the package.
     `python -m tinyc_cli`.
   - References: [cli_workflows.md](cli_workflows.md),
     [project_scaffolding.md](project_scaffolding.md), `vscode-extension/`.
+  - Acceptance checkpoint (2026-10-29): installed `tiny project`/`tiny c`
+    dispatch, installed-runtime editor discovery, portable scaffolding settings,
+    and argument-safe run commands are implemented. A fresh Windows wheel install
+    outside the checkout passes all ten installed quickstart commands, multi-file
+    local/stdlib imports, package resolution, backend entry points and editor
+    helpers. Actual VS Code extension-host acceptance passes activation,
+    formatting, diagnostics, run/native run and breakpoint/stack/output/continue
+    debugging. Two discovered defects (import output handling and the adapter
+    TCP startup race) have regression coverage. Retained evidence and scope:
+    [installed_workflows_acceptance.md](installed_workflows_acceptance.md).
+    Package 1 release qualification and package 3 platform coverage remain open.
 
 ### 3. Supported-platform verification
 

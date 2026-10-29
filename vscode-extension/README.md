@@ -10,22 +10,22 @@ This extension adds TinyLanguage editing support to Visual Studio Code:
 
 ## Getting started
 
-1. **Install dependencies**: Make sure `python` is on your PATH and can import the TinyLanguage sources in `src/`.
-2. **Open the folder**: Launch VS Code in the repository root (`code .`).
-3. **Install locally**: From the `vscode-extension` directory run `npm install` (not required for pure JS) and `vsce package` to build a `.vsix`, or use the built-in `F5` launch to run the extension host.
-4. **Install the packaged extension**: `code --install-extension tinylanguage-vscode-0.1.2.vsix`.
-5. **Verify the new version is active**: Open the **Extensions** view, search for *TinyLanguage*, and confirm the version shows `0.1.2` with a green checkmark. If VS Code still shows an older version, run **Developer: Reload Window** after the installation command.
+1. **Install the runtime**: Install the candidate `tinylanguage` wheel in a Python 3.11+ environment.
+2. **Create an application**: Run `tiny project init my_app --vscode` in any directory and open `my_app` in VS Code.
+3. **Install the packaged extension**: `code --install-extension tinylanguage-vscode-1.0.0.vsix`. For development builds, run `npm ci` and `npx vsce package` in `vscode-extension`.
+4. **Select Python**: Scaffolding selects its own Python executable. For existing projects, set `tinylanguage.pythonPath` to the Python environment containing TinyLanguage.
+5. **Discover the runtime**: Leave `tinylanguage.runtimePath` and `tinylanguage.cliPath` empty to find installed modules. Explicit paths, including `${workspaceFolder}` substitutions, remain available for development. Reload VS Code after replacing an active extension.
 6. **Enable the TinyLanguage icons**: The extension now defaults the file icon theme to **TinyLanguage File Icons** on install. If you switch themes later, you can re-enable it via **File → Preferences → File Icon Theme**.
 
 ## Commands
 
-- **TinyLanguage: Start REPL** (`tinylanguage.startRepl`): Opens an integrated terminal and starts `python src/tiny_language.py --repl`.
-- **TinyLanguage: Run Active File** (`tinylanguage.runFile`): Executes the current `.tiny` document with `python src/tiny_language.py <file>`.
-- **TinyLanguage: Run Active File (Native Backend)** (`tinylanguage.runFileNative`): Executes the current `.tiny` document via `python src/tiny_language_cli.py --backend native <file>`.
+- **TinyLanguage: Start REPL** (`tinylanguage.startRepl`): Opens an integrated terminal using the selected Python and discovered runtime with `--repl`.
+- **TinyLanguage: Run Active File** (`tinylanguage.runFile`): Saves and executes the current `.tiny` document with the discovered runtime.
+- **TinyLanguage: Run Active File (Native Backend)** (`tinylanguage.runFileNative`): Saves and executes the current `.tiny` document with the discovered CLI's `--backend native` option.
 - **TinyLanguage: Format Document** (`tinylanguage.formatDocument`): Uses the TinyLanguage formatter to rewrite the buffer.
 - **TinyLanguage: Refresh Diagnostics** (`tinylanguage.refreshDiagnostics`): Manually recomputes diagnostics for the active file.
 
-Diagnostics and formatting rely on the helper script in `vscode-extension/python/vscode_helpers.py`, which imports `formatter.py` and `language_server.py`. If the sources live outside the workspace folder, adjust the `TinyLanguage › Python Path` and `TinyLanguage › Runtime Path` settings accordingly. For the native backend command, point `TinyLanguage › CLI Path` at `tiny_language_cli.py`.
+Diagnostics and formatting use the helper script in `python/vscode_helpers.py` and the same installed runtime as execution/debugging. The application workspace needs no Python runtime sources. See the [installed CLI/editor quickstart](../docs/installed_workflows.md).
 
 ## License
 
@@ -55,13 +55,13 @@ The default launch entry should look like this (comments are allowed because VS 
       "type": "tinylanguage",
       "request": "launch",
       "program": "${file}", // the active .tiny file
-      "runtime": "${workspaceFolder}/src/tiny_language.py" // Python interpreter path
+      "python": "${config:tinylanguage.pythonPath}" // Python with TinyLanguage installed
     }
   ]
 }
 ```
 
-The adapter starts the Python runtime shown in `runtime`. If the interpreter is not on your PATH or lives elsewhere, point `runtime` to the correct executable or virtual environment. When a launch fails, the extension writes activation issues to **Output → Log (Extension Host)** and adapter startup messages to **Output → TinyLanguage**, which helps pinpoint whether activation or runtime resolution failed.
+`python` selects the Python executable. The optional `runtime` field selects a `tiny_language.py` source file; omit it for installed discovery. When a launch fails, inspect **Output → TinyLanguage** for adapter startup details.
 
 If you need a detailed trace of every Debug Adapter Protocol (DAP) message exchanged with VS Code, use **TinyLanguage › Debug Log Path**. By default the extension writes adapter traces to `${workspaceFolder}/.tinylanguage/debug-adapter.log` and mirrors the same content to **Output → TinyLanguage** so you can see the log even if file writes fail. You can point the setting elsewhere or clear it to disable file logging. The extension now creates the parent directory for the log automatically and emits a warning to the TinyLanguage output channel if the directory cannot be created (for example due to permissions). The adapter records inbound and outbound DAP payloads, breakpoint updates, and stepping commands to the configured file/output.
 
@@ -82,7 +82,7 @@ To override the log destination or mirror it to the TinyLanguage output pane for
 }
 ```
 
-When you start a debug session, the extension also opens a **TinyLanguage Debug Log** integrated terminal and echoes the target program, Python executable, runtime, and working directory. This provides a quick sanity check that terminal output is working in your environment and shows exactly what the adapter is about to launch.
+Enable `tinylanguage.showDebugTerminal` to open a **TinyLanguage Debug Log** terminal showing the target program, Python executable, runtime, and working directory.
 
 VS Code now accepts the `env` block on TinyLanguage launch configurations, so you will no longer see `Property env is not allowed` when adding these environment variables.
 
@@ -90,17 +90,17 @@ VS Code now accepts the `env` block on TinyLanguage launch configurations, so yo
 
 Every TinyLanguage debug session performs a quick self-test before launching. The JSON payload printed to **Output → TinyLanguage** (and stored in your adapter log) confirms which Python executable is used and where the adapter loaded `tiny_language.py` from. Typical fields include:
 
-- `src_root` / `src_root_exists`: The adapter’s best guess at the bundled source tree. When installed from the marketplace the `src_root_exists` flag may be `false` because the sources live in your workspace instead of inside the extension package. This is informational only.
-- `tiny_language_module`: Absolute path to the loaded `tiny_language.py` module. This should point at your workspace copy (for example `${workspaceFolder}/src/tiny_language.py`). If it points somewhere unexpected, adjust **TinyLanguage › Python Path** or **TinyLanguage › Runtime Path**.
+- `src_root` / `src_root_exists`: The adapter's best guess at a development source tree. An installed distribution normally has `src_root_exists=false`; runtime discovery uses the selected Python environment instead.
+- `tiny_language_module`: Implementation path for the loaded runtime, normally under the selected environment's `site-packages`. The synthesized `tiny_language_stitched.py` traceback path does not require a generated file. Explicit development overrides may point at a checkout.
 - `sys_path_sample`: The first few entries of `sys.path`, which helps verify whether your workspace or virtual environment is being searched.
 
-If the self-test fails or shows the module being imported from the wrong location, ensure the configured Python interpreter can import your workspace’s `src/` directory and restart the debug session.
+If the self-test fails or shows the wrong runtime, ensure TinyLanguage is installed in the configured Python environment and restart the debug session.
 
 #### Troubleshooting a stuck debug session
 
 If the TinyLanguage debug session seems to “hang” (no breakpoints hit, VS Code status bar shows “running” forever), try the following steps to pinpoint the failure:
 
-- Open **Output → TinyLanguage** and inspect the self-test JSON printed when the adapter starts. Confirm the `tiny_language_module` points at your workspace copy (for example `${workspaceFolder}/src/tiny_language.py`) and that `sys_path_sample` includes your repository `src` folder. If not, set **TinyLanguage › Python Path** and **TinyLanguage › Runtime Path** to the interpreter/virtual environment that can import the sources, then restart VS Code.
+- Open **Output → TinyLanguage** and inspect the self-test JSON printed when the adapter starts. Confirm `tiny_language_module` belongs to the intended installed environment or explicit development checkout. Set **TinyLanguage › Python Path** to the correct Python executable; leave **TinyLanguage › Runtime Path** empty for installed discovery, then restart VS Code.
 - Enable a verbose adapter trace via **TinyLanguage › Debug Log Path** (or set `"TINYLANGUAGE_DAP_LOG": "${workspaceFolder}/.tinylanguage/debug-adapter.log"` in `launch.json`) and reproduce the issue. The resulting log shows every Debug Adapter Protocol request/response so you can see whether VS Code ever sent `configurationDone`, set any breakpoints, or issued a `continue` after the initial `stopped` event.
 - Verify the target file actually exists on disk after variable substitution. The adapter will refuse to launch if `program` cannot be resolved; the **Output → TinyLanguage** pane echoes the final absolute path so you can cross-check it.
 - On Windows, prefer launching the adapter with the same Python interpreter you use for running tests (for example from a virtual environment). You can override the executable in `launch.json` by adding `"python": "C:/path/to/venv/Scripts/python.exe"` so the adapter does not rely on the `python3` shim.

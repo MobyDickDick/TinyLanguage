@@ -1,8 +1,12 @@
 # CLI workflows
 
 This guide summarizes the supported command-line flows for running TinyLanguage
-programs. All commands are intended to run from the repository root; the
-canonical entry points live under `src/`.
+programs. For installed commands that work from any directory, start with the
+[installed CLI/editor quickstart](installed_workflows.md). `tiny` provides the
+interpreter and backend options below, plus `tiny project`, `tiny pkg`, and
+`tiny c` for project, package and C-backend workflows. `tiny-lsp` provides
+formatting and diagnostics. The source-level commands below are development
+equivalents and assume a checkout's repository root.
 
 ## 1. Interpreter entrypoint (`tiny_language.py`)
 

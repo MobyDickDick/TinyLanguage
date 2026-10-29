@@ -7,16 +7,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
 
 DEFAULT_ENTRY = "src/main.tiny"
-
-
-def _default_runtime_path() -> str:
-    runtime_path = Path(__file__).resolve().parent / "tiny_language.py"
-    return str(runtime_path)
 
 
 def _write_text(path: Path, content: str, *, force: bool) -> None:
@@ -75,7 +71,7 @@ def init_project(
         }
         settings = {
             "tinylanguage.pythonPath": python_path,
-            "tinylanguage.runtimePath": runtime_path or _default_runtime_path(),
+            "tinylanguage.runtimePath": runtime_path or "",
         }
         _write_json(root / ".vscode" / "launch.json", launch_config, force=force)
         _write_json(root / ".vscode" / "settings.json", settings, force=force)
@@ -95,9 +91,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     init_parser.add_argument(
         "--python",
-        default="python",
+        default=sys.executable,
         dest="python_path",
-        help="Python executable for VS Code settings (default: python)",
+        help="Python executable for VS Code settings (default: the scaffolding interpreter)",
     )
     init_parser.add_argument(
         "--runtime",

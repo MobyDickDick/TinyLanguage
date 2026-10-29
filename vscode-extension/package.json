@@ -73,13 +73,13 @@
         },
         "tinylanguage.runtimePath": {
           "type": "string",
-          "default": "${workspaceFolder}/src/tiny_language.py",
-          "description": "Path to tiny_language.py for running the REPL or executing files."
+          "default": "",
+          "description": "Optional tiny_language.py override. Empty discovers the runtime installed in tinylanguage.pythonPath."
         },
         "tinylanguage.cliPath": {
           "type": "string",
-          "default": "${workspaceFolder}/src/tiny_language_cli.py",
-          "description": "Path to tiny_language_cli.py for advanced backend options (native, LLVM)."
+          "default": "",
+          "description": "Optional tiny_language_cli.py override. Empty discovers the CLI beside the runtime or in the selected Python installation."
         },
         "tinylanguage.debugLogPath": {
           "type": "string",

@@ -44,6 +44,11 @@ Use `tiny path/to/main.tiny` to run a program. Build and qualification details,
 including the remaining release gates, are in
 [release packaging acceptance](docs/release_packaging_acceptance.md).
 
+Create and run a separate project with `tiny project init my_app --vscode` and
+`tiny my_app/src/main.tiny`. The [installed CLI/editor quickstart](docs/installed_workflows.md)
+covers package manifests, C emission, formatting, diagnostics and debugging
+without a source checkout.
+
 ### Prepare a development environment
 
 On Debian/Ubuntu, Fedora, Arch Linux, or macOS with Homebrew, the bootstrap

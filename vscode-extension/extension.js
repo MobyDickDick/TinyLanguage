@@ -82,10 +82,26 @@ function resolveWorkspacePath(rawPath) {
  * Resolve the TinyLanguage runtime path from configuration.
  * @returns {string}
  */
-function getRuntimePath() {
+function getRuntimePath(pythonExecutable = getPythonExecutable()) {
   const config = vscode.workspace.getConfiguration('tinylanguage');
   const rawPath = config.get('runtimePath') || '';
-  return resolveWorkspacePath(rawPath);
+  return rawPath ? resolveWorkspacePath(rawPath) : findInstalledModule('tiny_language', pythonExecutable) || findBundledRuntime();
+}
+
+/** Locate an installed module using the selected Python, without shell parsing. */
+function findInstalledModule(moduleName, pythonExecutable = getPythonExecutable()) {
+  const probe = cp.spawnSync(pythonExecutable, ['-c',
+    'import importlib.util, json, sys; s = importlib.util.find_spec(sys.argv[1]); print(json.dumps(s.origin if s else ""))',
+    moduleName], { encoding: 'utf-8', timeout: 5000 });
+  if (probe.error || probe.status !== 0) {
+    return '';
+  }
+  try {
+    const origin = JSON.parse(probe.stdout);
+    return typeof origin === 'string' && fs.existsSync(origin) ? origin : '';
+  } catch {
+    return '';
+  }
 }
 
 /**
@@ -110,14 +126,7 @@ function getCliPath() {
       }
     }
   }
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  if (workspaceFolder) {
-    const candidate = path.join(workspaceFolder, 'src', 'tiny_language_cli.py');
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return '';
+  return findInstalledModule('tiny_language_cli') || findBundledCli();
 }
 
 /**
@@ -241,25 +250,21 @@ function normalizeEnvValue(value) {
  * @returns {NodeJS.ProcessEnv}
  */
 function createToolEnv(extraEnv = {}, output) {
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-  const repoSrcCandidates = [path.join(__dirname, '..', 'src'), path.join(__dirname, 'src')];
-  const repoSrc = repoSrcCandidates.find((candidate) => fs.existsSync(candidate));
+  const runtimePath = extraEnv.TINYLANGUAGE_RUNTIME || getRuntimePath();
   const searchPaths = [];
-  if (workspaceFolder) {
-    searchPaths.push(path.join(workspaceFolder, 'src'));
-  }
-  if (repoSrc) {
-    searchPaths.push(repoSrc);
+  if (runtimePath) {
+    searchPaths.push(path.dirname(runtimePath));
   }
   const combined = searchPaths.concat(process.env.PYTHONPATH ? [process.env.PYTHONPATH] : []).join(path.delimiter);
   const normalizedExtraEnv = Object.entries(extraEnv).reduce((acc, [key, value]) => {
     acc[key] = normalizeEnvValue(value);
     return acc;
   }, {});
-  const env = { ...process.env, ...normalizedExtraEnv, PYTHONPATH: combined };
+  const env = { ...process.env, ...normalizedExtraEnv, PYTHONPATH: combined,
+    TINYLANGUAGE_RUNTIME: runtimePath, PYTHONIOENCODING: 'utf-8' };
   logDebug(
     output,
-    `createToolEnv: workspace=${workspaceFolder || '<none>'} searchPaths=${searchPaths.join(path.delimiter)} PYTHONPATH=${combined}`,
+    `createToolEnv: runtime=${runtimePath || '<none>'} searchPaths=${searchPaths.join(path.delimiter)}`,
   );
   return env;
 }
@@ -499,9 +504,13 @@ function registerRepl(output) {
     const pythonExecutable = getPythonExecutable();
     const runtimePath = getRuntimePath();
     logDebug(output, `repl: using python='${pythonExecutable}' runtime='${runtimePath}'`);
-    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage REPL' });
+    if (!runtimePath) {
+      vscode.window.showWarningMessage('Install TinyLanguage in tinylanguage.pythonPath or set tinylanguage.runtimePath.');
+      return;
+    }
+    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage REPL',
+      shellPath: pythonExecutable, shellArgs: [runtimePath, '--repl'], env: createToolEnv({}, output) });
     terminal.show(true);
-    terminal.sendText(`${pythonExecutable} ${runtimePath} --repl`);
   });
 }
 
@@ -511,22 +520,26 @@ function registerRepl(output) {
  * @returns {vscode.Disposable}
  */
 function registerRunFile(output) {
-  return vscode.commands.registerCommand('tinylanguage.runFile', () => {
+  return vscode.commands.registerCommand('tinylanguage.runFile', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.languageId !== 'tinylanguage') {
       vscode.window.showInformationMessage('Open a TinyLanguage file to run it.');
       return;
     }
     const document = editor.document;
-    if (document.isDirty) {
-      document.save();
+    if (document.isDirty && !(await document.save())) {
+      return;
     }
     const pythonExecutable = getPythonExecutable();
     const runtimePath = getRuntimePath();
     logDebug(output, `runFile: using python='${pythonExecutable}' runtime='${runtimePath}' program='${document.uri.fsPath}'`);
-    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Run' });
+    if (!runtimePath) {
+      vscode.window.showWarningMessage('Install TinyLanguage in tinylanguage.pythonPath or set tinylanguage.runtimePath.');
+      return;
+    }
+    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Run',
+      shellPath: pythonExecutable, shellArgs: [runtimePath, document.uri.fsPath], env: createToolEnv({}, output) });
     terminal.show(true);
-    terminal.sendText(`${pythonExecutable} ${runtimePath} ${document.uri.fsPath}`);
   });
 }
 
@@ -536,15 +549,15 @@ function registerRunFile(output) {
  * @returns {vscode.Disposable}
  */
 function registerRunFileNative(output) {
-  return vscode.commands.registerCommand('tinylanguage.runFileNative', () => {
+  return vscode.commands.registerCommand('tinylanguage.runFileNative', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.languageId !== 'tinylanguage') {
       vscode.window.showInformationMessage('Open a TinyLanguage file to run it with the native backend.');
       return;
     }
     const document = editor.document;
-    if (document.isDirty) {
-      document.save();
+    if (document.isDirty && !(await document.save())) {
+      return;
     }
     const pythonExecutable = getPythonExecutable();
     let cliPath = getCliPath();
@@ -559,9 +572,10 @@ function registerRunFileNative(output) {
       output,
       `runFileNative: using python='${pythonExecutable}' cli='${cliPath}' program='${document.uri.fsPath}'`,
     );
-    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Native Run' });
+    const terminal = vscode.window.createTerminal({ name: 'TinyLanguage Native Run',
+      shellPath: pythonExecutable, shellArgs: [cliPath, '--backend', 'native', document.uri.fsPath],
+      env: createToolEnv({}, output) });
     terminal.show(true);
-    terminal.sendText(`${pythonExecutable} ${cliPath} --backend native ${document.uri.fsPath}`);
   });
 }
 
@@ -623,7 +637,7 @@ function registerDebugAdapterExecutable(output) {
     const adapterPath = path.join(__dirname, 'python', 'tiny_debug_adapter.py');
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     logDebug(output, `debugAdapter: preparing adapter using python='${pythonExecutable}' path='${adapterPath}'`);
-    const runtimePath = configuration.runtime || getRuntimePath();
+    const runtimePath = configuration.runtime || getRuntimePath(pythonExecutable);
     const pythonMode = Boolean(configuration.pythonMode);
     if (pythonMode) {
       output.appendLine(
@@ -637,7 +651,7 @@ function registerDebugAdapterExecutable(output) {
     if (typeof normalizedConfigEnv.TINYLANG_TRACE_LOG === 'string') {
       normalizedConfigEnv.TINYLANG_TRACE_LOG = resolveWorkspacePath(normalizedConfigEnv.TINYLANG_TRACE_LOG);
     }
-    const env = createToolEnv(normalizedConfigEnv, output);
+    const env = createToolEnv({ ...normalizedConfigEnv, TINYLANGUAGE_RUNTIME: runtimePath }, output);
     const logPath = ensureDirectoryForFile(
       normalizedConfigEnv.TINYLANGUAGE_DAP_LOG || getDebugLogPath(),
       output,
@@ -734,6 +748,29 @@ function registerDebugAdapterExecutable(output) {
       stdio: 'pipe',
     });
 
+    // VS Code connects as soon as it receives the descriptor. Wait for the
+    // adapter's listening signal so Python startup cannot race that connection.
+    const listening = new Promise((resolve, reject) => {
+      let received = '';
+      const finish = (error) => {
+        clearTimeout(timer);
+        child.stderr.removeListener('data', onData);
+        child.removeListener('error', onError);
+        child.removeListener('exit', onExit);
+        if (error) reject(error); else resolve();
+      };
+      const onData = (chunk) => {
+        received = (received + chunk.toString()).slice(-4096);
+        if (/TINYLANGUAGE_DAP_READY\r?\n/.test(received)) finish();
+      };
+      const onError = (error) => finish(error);
+      const onExit = (code) => finish(new Error(`Debug adapter exited before listening (${code})`));
+      const timer = setTimeout(() => finish(new Error('Debug adapter did not listen within 10 seconds')), 10000);
+      child.stderr.on('data', onData);
+      child.once('error', onError);
+      child.once('exit', onExit);
+    });
+
     child.on('exit', (code, signal) => {
       const reason = signal ? `signal ${signal}` : `exit ${code}`;
       output.appendLine(`[TinyLanguage] Debug adapter exited (${reason})`);
@@ -751,6 +788,12 @@ function registerDebugAdapterExecutable(output) {
       }
     });
 
+    try {
+      await listening;
+    } catch (error) {
+      child.kill();
+      throw error;
+    }
     return new vscode.DebugAdapterServer(port, host);
   }
 
@@ -794,7 +837,7 @@ function registerDebugConfigurations(output) {
   }
   const provider = {
     provideDebugConfigurations(folder) {
-      const runtimePath = getRuntimePath() || '${workspaceFolder}/src/tiny_language.py';
+      const runtimePath = getRuntimePath();
       logDebug(output, `debugConfig: provide initial configurations for ${folder?.uri.fsPath || '<no workspace>'}`);
       return [
         {
@@ -829,7 +872,7 @@ function registerDebugConfigurations(output) {
       }
 
       const pythonExecutable = config.python || getPythonExecutable();
-      const runtimePath = config.runtime || getRuntimePath();
+      const runtimePath = config.runtime || getRuntimePath(pythonExecutable);
       const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
       output.appendLine(`[TinyLanguage] Resolving debug configuration for ${workspaceRoot}`);
       output.appendLine(`[TinyLanguage]  • Program: ${config.program}`);
@@ -873,7 +916,7 @@ function registerDebugConfigurations(output) {
 
       const workspaceRoot = folder?.uri.fsPath || 'unknown workspace';
       const pythonExecutable = config.python || getPythonExecutable();
-      let runtimePath = config.runtime || getRuntimePath();
+      let runtimePath = config.runtime || getRuntimePath(pythonExecutable);
       let runtimeExists = runtimePath ? fs.existsSync(runtimePath) : false;
       logDebug(output, `debugConfig: resolveWithVariables start for ${workspaceRoot}`);
       if (!runtimeExists) {

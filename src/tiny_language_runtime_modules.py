@@ -96,6 +96,9 @@ class ModuleResolver:
                 try:
                     module_env = Environment(parent=None, namespace=resolved_name, runtime=runtime)
                     previous_global_env = runtime.global_env
+                    previous_output = list(runtime.output)
+                    previous_errors = list(runtime.error_messages)
+                    previous_streamed = runtime.streamed_output
                     try:
                         compile_and_run(
                             resolved_path.read_text(encoding="utf-8"),
@@ -104,9 +107,16 @@ class ModuleResolver:
                             module_namespace=resolved_name,
                             module_path=resolved_path,
                             module_resolver=self,
+                            stream_output=runtime.stream_output,
                         )
                     finally:
                         runtime.global_env = previous_global_env
+                        # Nested compilation resets these buffers. Keep the caller's
+                        # output and its debugger cursor alongside module output.
+                        runtime.output[:0] = previous_output
+                        runtime.error_messages[:0] = previous_errors
+                        runtime._last_emitted_output_idx += len(previous_output)
+                        runtime.streamed_output = runtime.streamed_output or previous_streamed
                     ns_ref = NamespaceRef(runtime, resolved_name)
                     self.cache[resolved_path] = ns_ref
                     return ns_ref

@@ -39,8 +39,6 @@ def _discover_repo_root(start: Path) -> Path:
 
 REPO_ROOT = _discover_repo_root(Path(__file__).resolve())
 SRC_ROOT = REPO_ROOT / "src"
-if SRC_ROOT.exists():
-    sys.path.insert(0, str(SRC_ROOT))
 
 # These globals are populated by _load_tiny_language().
 Debugger = None
@@ -58,9 +56,18 @@ def _load_module_from_path(path: Path):
         return None
 
     module = importlib.util.module_from_spec(spec)
+    runtime_directory = str(path.parent.resolve())
+    if runtime_directory not in sys.path:
+        sys.path.insert(0, runtime_directory)
+    previous = sys.modules.get("tiny_language")
+    sys.modules["tiny_language"] = module
     try:
         spec.loader.exec_module(module)
     except Exception:  # pragma: no cover - import failure
+        if previous is None:
+            sys.modules.pop("tiny_language", None)
+        else:
+            sys.modules["tiny_language"] = previous
         return None
     return module
 
@@ -80,9 +87,12 @@ def _load_tiny_language() -> None:
             candidates.append(hint_path / "tiny_language_stitched.py")
         else:
             candidates.append(hint_path)
-    if SRC_ROOT.exists():
-        candidates.append(SRC_ROOT / "tiny_language.py")
-        candidates.append(SRC_ROOT / "tiny_language_stitched.py")
+    if not runtime_hint:
+        installed = importlib.util.find_spec("tiny_language")
+        if installed and installed.origin:
+            candidates.append(Path(installed.origin))
+        elif SRC_ROOT.exists():
+            candidates.append(SRC_ROOT / "tiny_language.py")
 
     module = None
     for candidate in candidates:
@@ -96,7 +106,7 @@ def _load_tiny_language() -> None:
         except Exception as exc:  # pragma: no cover - diagnostic guardrail
             message = (
                 "TinyLanguage runtime could not be loaded. Set tinylanguage.runtimePath "
-                "to a valid tiny_language.py or install the extension from the repository. "
+                "to a valid tiny_language.py or install tinylanguage in the selected Python environment. "
                 f"Last error: {exc}"
             )
             raise ImportError(message) from exc
@@ -258,6 +268,8 @@ class DAPServer:
         self._reader = None
         self._writer = None
         self._log(f"Debug adapter listening on TCP {self._tcp_host}:{self._tcp_port}")
+        sys.stderr.write("TINYLANGUAGE_DAP_READY\n")
+        sys.stderr.flush()
 
     def _await_client(self) -> bool:
         """Accept a TCP client when the transport uses sockets."""

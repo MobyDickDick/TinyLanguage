@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SRC_DIR = ROOT / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
+# Explicit development runtimes supply their own formatter/server modules.
+# Otherwise Python resolves the installed distribution in this environment.
+runtime_hint = os.environ.get("TINYLANGUAGE_RUNTIME")
+if runtime_hint:
+    runtime_path = Path(runtime_hint).resolve()
+    sys.path.insert(0, str(runtime_path if runtime_path.is_dir() else runtime_path.parent))
 
 from formatter import format_source  # type: ignore
 from language_server import TinyLanguageServer  # type: ignore

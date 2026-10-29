@@ -30,6 +30,7 @@ from tiny_language import (
     run_with_python_backend,
 )
 from tiny_pkg_cli import main as pkg_main
+from tiny_project_cli import main as project_main
 from tiny_language_version import runtime_version
 
 
@@ -124,7 +125,17 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(argv) if argv is not None else sys.argv[1:]
     if argv[:1] == ["pkg"]:
         return int(pkg_main(argv[1:]))
-    parser = argparse.ArgumentParser(description="Run TinyLanguage programs from the command line")
+    if argv[:1] == ["project"]:
+        project_main(argv[1:])
+        return 0
+    if argv[:1] == ["c"]:
+        from tinyc_cli import main as compiler_main
+
+        return compiler_main(argv[1:])
+    parser = argparse.ArgumentParser(
+        description="Run TinyLanguage programs from the command line",
+        epilog="Subcommands: tiny project --help, tiny pkg --help, tiny c --help",
+    )
     parser.add_argument("--version", action="version", version=f"TinyLanguage {runtime_version()}")
     parser.add_argument(
         "path",

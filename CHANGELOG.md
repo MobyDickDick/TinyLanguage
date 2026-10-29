@@ -7,6 +7,11 @@ All notable changes to TinyLanguage will be documented in this file.
 Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 
 ### Added
+- Installed `tiny project` and `tiny c` workflows, VS Code runtime discovery from
+  the selected Python environment, portable project settings, and isolated
+  CLI/editor acceptance tooling.
+- Imports preserve buffered output and the selected debugger output mode in
+  multi-file programs.
 - Installable Python wheel/sdist metadata and `tiny`, `tiny-project`, `tiny-pkg`,
   `tinyc`, and `tiny-lsp` commands with bundled runtime and Tiny stdlib assets.
 - `tiny --version` for installed and frozen runtimes; runtime imports keep

@@ -41,6 +41,9 @@ jobs:
           python tools/release/verify_python_package.py dist/release/*.whl --report dist/wheel-acceptance.json
           python -m pip wheel --no-deps --no-build-isolation dist/release/tinylanguage-*.tar.gz --wheel-dir dist/from-sdist
           python tools/release/verify_python_package.py dist/from-sdist/*.whl --report dist/sdist-acceptance.json
+      - name: Qualify installed project, package, backend and editor-helper workflows
+        shell: bash
+        run: python tools/release/verify_installed_workflows.py dist/release/*.whl --report dist/workflow-acceptance.json
       - name: Execute the standalone interpreter outside the checkout
         shell: bash
         run: |
@@ -70,6 +73,7 @@ jobs:
         with:
           node-version: '22.14.0'
       - run: python tools/release/build_release_artifacts.py --vsix --verify-reproducible --output-dir dist/release
+      - run: node --test tests/vscode_runtime.test.cjs
       - uses: actions/upload-artifact@v5
         with:
           name: release-editor

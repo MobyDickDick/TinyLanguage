@@ -1,6 +1,6 @@
 """Tests for the stdlib path module."""
 
-import os
+import posixpath
 
 import pytest
 
@@ -56,16 +56,16 @@ def test_stdlib_path_join_rejects_invalid_inputs(run_tiny_source, monkeypatch):
 
 
 def test_stdlib_path_posix_parity_with_python(run_tiny_source, monkeypatch):
-    """Compare stdlib.path outputs to Python os.path for POSIX-style paths."""
+    """Compare the lexical POSIX contract to Python posixpath on every host."""
     monkeypatch.setenv("TINY_LINT_HEAP", "0")
 
     sample_path = "/var/log/app.txt"
     join_parts = ["/var", "log", "app.txt"]
-    expected_normalize = os.path.normpath(sample_path)
-    expected_join = os.path.join(*join_parts)
-    expected_basename = os.path.basename(sample_path)
-    expected_dirname = os.path.dirname(sample_path)
-    expected_isabs = os.path.isabs(sample_path)
+    expected_normalize = posixpath.normpath(sample_path)
+    expected_join = posixpath.join(*join_parts)
+    expected_basename = posixpath.basename(sample_path)
+    expected_dirname = posixpath.dirname(sample_path)
+    expected_isabs = posixpath.isabs(sample_path)
 
     out = run_tiny_source(
         """

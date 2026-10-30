@@ -6,6 +6,7 @@ import datetime as py_datetime
 import json as py_json
 import math as py_math
 import os as py_os
+import posixpath
 import random as py_random
 import statistics as py_statistics
 from collections import deque as py_deque
@@ -269,9 +270,10 @@ def test_stdlib_os_and_pathlib_match_python(tmp_path: PyPath) -> None:
     """Test that stdlib os and pathlib match python."""
     base = tmp_path / "root"
     child = "note.txt"
-    joined = py_os.path.join(base.as_posix(), child)
-    expected_dir = py_os.path.dirname(joined)
-    expected_name = py_os.path.basename(joined)
+    # The Tiny os.path subset is lexical and uses forward slashes on all hosts.
+    joined = posixpath.join(base.as_posix(), child)
+    expected_dir = posixpath.dirname(joined)
+    expected_name = posixpath.basename(joined)
 
     source = f"""
 import stdlib.os;
@@ -303,7 +305,7 @@ def test_stdlib_os_remove_and_pathlib_joinpath(tmp_path: PyPath) -> None:
     """Test that stdlib os remove and pathlib joinpath."""
     base = tmp_path / "root"
     child = "note.txt"
-    joined = py_os.path.join(base.as_posix(), child)
+    joined = posixpath.join(base.as_posix(), child)
     expected = PyPath(joined)
     base.mkdir()
     expected.write_text("cleanup")

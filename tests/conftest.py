@@ -39,11 +39,35 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     """Register CLI flags for test-only configuration."""
 
     parser.addoption(
+        "--require-backend-toolchains",
+        action="store_true",
+        default=False,
+        help="Require clang and reject skips in C/LLVM executable conformance checks.",
+    )
+    parser.addoption(
         "--assert-no-heap-leaks",
         action="store_true",
         default=False,
         help="Fail tests when heap allocations remain after in-process runs.",
     )
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """CI qualification must fail when the promised compiler is absent."""
+    if session.config.getoption("--require-backend-toolchains") and not shutil.which("clang"):
+        raise pytest.UsageError("platform qualification requires clang on PATH")
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """A skipped required backend check is missing acceptance evidence."""
+    outcome = yield
+    report = outcome.get_result()
+    if (item.config.getoption("--require-backend-toolchains") and report.skipped
+            and item.path.name in {"test_c_backend.py", "test_llvm_conformance_smoke.py",
+                                   "test_tiny_language_compiler_cli.py"}):
+        report.outcome = "failed"
+        report.longrepr = "Required backend qualification skipped: " + str(report.longrepr)
 
 
 @pytest.fixture

@@ -115,13 +115,13 @@ def _build_executable(tmp_path: Path, ll_path: Path) -> Path:
     if not toolchain:
         pytest.skip("clang or (llc + cc) is required for LLVM conformance smoke tests")
 
-    exe_path = tmp_path / "program_exec"
+    exe_path = tmp_path / ("program_exec.exe" if os.name == "nt" else "program_exec")
     if toolchain == "clang":
         compile_cmd = [tool_path, str(ll_path), "-o", str(exe_path)]
         try:
             subprocess.run(compile_cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:
-            pytest.skip(f"clang failed to compile LLVM IR: {exc.stderr.strip()}")
+            pytest.fail(f"clang failed to compile LLVM IR: {exc.stderr.strip()}")
         return exe_path
 
     obj_path = tmp_path / "program.o"
@@ -129,7 +129,7 @@ def _build_executable(tmp_path: Path, ll_path: Path) -> Path:
     try:
         subprocess.run(llc_cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as exc:
-        pytest.skip(f"llc failed to compile LLVM IR: {exc.stderr.strip()}")
+        pytest.fail(f"llc failed to compile LLVM IR: {exc.stderr.strip()}")
     cc_path = shutil.which("cc") or shutil.which("gcc")
     if cc_path is None:
         raise AssertionError("C compiler not found after llc produced object file")
@@ -137,7 +137,7 @@ def _build_executable(tmp_path: Path, ll_path: Path) -> Path:
     try:
         subprocess.run(link_cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as exc:
-        pytest.skip(f"linker failed to build executable: {exc.stderr.strip()}")
+        pytest.fail(f"linker failed to build executable: {exc.stderr.strip()}")
     return exe_path
 
 

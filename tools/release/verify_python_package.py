@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import subprocess
 import sys
@@ -25,7 +26,8 @@ def verify(wheel: Path, work: Path) -> dict:
 
     def run(arguments: list[str]) -> str:
         result = subprocess.run(arguments, cwd=work, env=clean_env,
-                                capture_output=True, text=True, timeout=180)
+                                stdin=subprocess.DEVNULL, capture_output=True,
+                                text=True, encoding="utf-8", timeout=180)
         if result.returncode:
             raise RuntimeError(f"Command failed: {arguments}\n{result.stdout}\n{result.stderr}")
         return result.stdout.strip()
@@ -61,6 +63,7 @@ print(json.dumps({'version': metadata.version('tinylanguage'),
                           "console-entry-points", "bootstrap-assets", "no-source-write", "release-version"]
     metadata["artifact"] = {"name": wheel.name, "sha256": hashlib.sha256(wheel.read_bytes()).hexdigest()}
     metadata["python"] = sys.version.split()[0]
+    metadata["platform"] = {"system": platform.system(), "machine": platform.machine()}
     assert cli_version == f"TinyLanguage {metadata['version']}", "CLI and distribution versions differ"
     return metadata
 

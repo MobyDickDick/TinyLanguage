@@ -92,7 +92,7 @@ def fetch_to_quarantine(
     ):
         fd, temporary = tempfile.mkstemp(dir=quarantine_dir, prefix=".incoming-")
         try:
-            os.fchmod(fd, 0o600)
+            # mkstemp creates mode 0600 on POSIX; Windows inherits the directory ACL.
             with os.fdopen(fd, "wb") as handle:
                 handle.write(content)
             os.replace(temporary, destination)

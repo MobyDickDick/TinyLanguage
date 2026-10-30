@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-30",
+  "status": "local-checkpoint-not-cross-platform-qualification",
+  "base_commit": "b8a3910927691254a384cdb54f89fc8ef7b90cf6",
+  "working_tree": true,
+  "modified_implementation_sha256": {
+    ".github/workflows/ci.yml": "5bc5417352bec04157c06d6c54487e01ebf90b206394a0fb2bf13f23a46fa135",
+    "src/tiny_language_api.py": "7707e0945b5ca6d551508c231508c0fb9537bb3ed4745ad74bd0713953b365d1",
+    "src/tiny_language_compiler_cli.py": "407574ad0bca2495e8f0d3c5a65700bb1a5c8e21e32ee8c126df84ed181bfd57",
+    "src/tiny_pkg_resolution.py": "2c0d31c654cd27acdc58a6b0f36e7cc0b1b4ed0b3c889e73ff28baf4c168ac24",
+    "src/tiny_program_source_import.py": "ac398af2d72b7b02ddc4d6bcd95bb5cd5933307f53a012946831d182c1949005",
+    "src/tiny_program_source_port.py": "eea56daebe4d8c47c3a945b6339168251124d583b72c8764aae504977cf012f8",
+    "src/tiny_program_source_sandbox.py": "e1a412bd78d0f14413a3cc7995fddeb6c30b02abe2b1d98457582b808fdb9355",
+    "src/tiny_program_source_scan.py": "f029b3662fa2a4c2d8529db14aad4eed6cf9602125768226466f50c4577df5ea",
+    "tests/conftest.py": "83a510bc394a756793bb242908078fce6daaf524e890759634191f1dba4a1bc7",
+    "tests/detailtests/test_llvm_conformance_smoke.py": "9c0ec4ee0f0c2da43f0141ab1d563179917ecbc3446b3b8d78252ff397d805ad",
+    "tests/detailtests/test_pkg_lockfile_reproducibility.py": "b5d92907556ab6a34f75be98e16f7bd1cbd521321d6ba532527acc2211e7fbe2",
+    "tests/detailtests/test_stdlib_path.py": "83a7d23e5f77b20b0ff7b274293f7a76b9445fc090cc0b37c9478a9bb1618203",
+    "tests/detailtests/test_stdlib_yaml.py": "ebfd5933bd82da41e5f15d45afbdf5cde620b463b3d76f576efad067db32c077",
+    "tests/test_c_backend.py": "a170bc3fc2f64bcb11086cc608e98b4fdd1239debb660bf4eab168982a4d714f",
+    "tests/test_output_normalization.py": "316044fbb17753d49a24bfc6972557ab65b2d148700c37b42dfa4a8e5f1d136d",
+    "tests/test_stdlib_compatibility.py": "1a0c3f24d25c0737584ff0de2666087478649b2473960a1373ef8bf2f9238796",
+    "tests/test_tiny_program_gui_wrapper.py": "4a7b834b6d06279baefa6eff6feba27cb633dedff1584d2314dc07e56dba2706",
+    "tests/test_tiny_program_source_import.py": "ca2e5abd43e2b6e518be368f7ea15b987dbfb0fd017e0bc941b55e80862cfdf1",
+    "tests/test_tiny_program_source_port.py": "cbb22449647f78e2c709ab75ca3a681f19b3f46aeb8a623f26fe9de18aaf9d9a",
+    "tests/test_tiny_program_source_sandbox.py": "322450c7632c1ad52500604a0e212075aa69b46bada4fbd5229c7866b92a87a9",
+    "tests/test_tiny_program_source_scan.py": "62a1499b7bf674ef733916169524d5c3a80f185d02436ceef8751bb4378a1b0b",
+    "tools/output_normalization.py": "d30c1bccc52c3f2c1830833bc081143dd72f757ad404337edc3c2b79ec97b5a9",
+    "tools/release/verify_installed_workflows.py": "969a8c07ab11b10038e0fb18402f1e8ae8618a6fe947a66e4957f646320bb84b",
+    "tools/release/verify_python_package.py": "082071a8e4c80d0bc344dfebeddbcd2ebee5de9a373a5e25dbdb0fb9357b9a79"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "implementation": "CPython",
+    "system": "Windows",
+    "machine": "AMD64",
+    "pytest": "8.4.2",
+    "test_dependency_source": "repository .venv/Lib/python3.14/site-packages (pure Python test packages)"
+  },
+  "suite": {
+    "command": "python -m pytest -q -ra --tb=short -o junit_family=legacy --basetemp=build/platform-final --junitxml=build/platform-final.xml",
+    "tests": 833,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 14,
+    "duration_seconds": 133.939,
+    "passed": 819,
+    "skips": [
+      {
+        "test": "tests.detailtests.test_llvm_conformance_smoke::test_llvm_conformance_smoke[arithmetic]",
+        "reason": "clang or (llc + cc) is required for LLVM conformance smoke tests"
+      },
+      {
+        "test": "tests.detailtests.test_llvm_conformance_smoke::test_llvm_conformance_smoke[control_flow]",
+        "reason": "clang or (llc + cc) is required for LLVM conformance smoke tests"
+      },
+      {
+        "test": "tests.detailtests.test_llvm_conformance_smoke::test_llvm_conformance_smoke[functions]",
+        "reason": "clang or (llc + cc) is required for LLVM conformance smoke tests"
+      },
+      {
+        "test": "tests.detailtests.test_llvm_conformance_smoke::test_llvm_conformance_smoke[heap_ops]",
+        "reason": "clang or (llc + cc) is required for LLVM conformance smoke tests"
+      },
+      {
+        "test": "tests.detailtests.test_llvm_conformance_smoke::test_llvm_conformance_smoke[string_ops]",
+        "reason": "clang or (llc + cc) is required for LLVM conformance smoke tests"
+      },
+      {
+        "test": "tests.test_c_backend::test_c_backend_examples[source_path0-Hello World\\n]",
+        "reason": "no C compiler available for C backend tests"
+      },
+      {
+        "test": "tests.test_c_backend::test_c_backend_examples[source_path1-5\\n]",
+        "reason": "no C compiler available for C backend tests"
+      },
+      {
+        "test": "tests.test_c_backend::test_emit_llvm_ir_via_c",
+        "reason": "clang not available for LLVM IR emission"
+      },
+      {
+        "test": "tests.test_c_backend::test_emit_llvm_ir_via_c_cli",
+        "reason": "clang not available for LLVM IR emission"
+      },
+      {
+        "test": "tests.test_llvm_jit::test_llvm_jit_executes_program",
+        "reason": "llvmlite not available"
+      },
+      {
+        "test": "tests.test_tiny_language_compiler_cli::test_emit_llvm_bitcode_creates_artifact",
+        "reason": "clang not available for LLVM bitcode emission"
+      },
+      {
+        "test": "tests.test_tiny_program_source_sandbox::test_runs_approved_port_and_records_passing_assessment",
+        "reason": "source-port execution requires Linux resource limits"
+      },
+      {
+        "test": "tests.test_tiny_program_source_sandbox::test_records_runtime_failure_without_promoting_program",
+        "reason": "source-port execution requires Linux resource limits"
+      },
+      {
+        "test": "tests.test_tiny_program_source_scan::test_symlinked_source_is_not_scanned",
+        "reason": "Windows symlink creation requires Developer Mode or symlink privilege"
+      }
+    ]
+  },
+  "required_compiler_gate": {
+    "command": "python -m pytest --require-backend-toolchains --collect-only -q",
+    "exit_code": 4,
+    "message": "platform qualification requires clang on PATH",
+    "backend_execution_qualified": false
+  },
+  "additional_checks": {
+    "formatter_lint": "passed",
+    "workflow_yaml_parse": "passed",
+    "node_extension_tests": {
+      "passed": 8,
+      "failed": 0
+    }
+  },
+  "outstanding": [
+    "all sixteen candidate CI jobs",
+    "local C/LLVM compilation and execution",
+    "release artifact qualification from work package 1"
+  ]
+}

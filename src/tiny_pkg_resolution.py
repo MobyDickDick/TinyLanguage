@@ -396,5 +396,5 @@ def write_lockfile(lock_path: Path, manifest_path: Path) -> Path:
                 lines.append(f"rev = {_toml_string(dep.rev)}")
             if dep.tag:
                 lines.append(f"tag = {_toml_string(dep.tag)}")
-    lock_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    lock_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     return lock_path

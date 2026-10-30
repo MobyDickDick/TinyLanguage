@@ -34,6 +34,18 @@ def _find_clang() -> str | None:
     return None
 
 
+@pytest.mark.parametrize("platform,math_library", [("win32", False), ("linux", True), ("darwin", True)])
+def test_c_compiler_uses_platform_math_library(tmp_path, monkeypatch, platform, math_library):
+    """MSVC links math from its runtime and cannot resolve the POSIX libm flag."""
+    namespace = compile_to_c_executable.__globals__
+    commands = []
+    monkeypatch.setattr(namespace["sys"], "platform", platform)
+    monkeypatch.setattr(namespace["shutil"], "which", lambda compiler: "clang")
+    monkeypatch.setattr(namespace["subprocess"], "run", lambda command, **kwargs: commands.append(command))
+    compile_to_c_executable("print(3);", tmp_path / "program")
+    assert ("-lm" in commands[0]) is math_library
+
+
 @pytest.mark.parametrize(
     "source_path,expected",
     [
@@ -47,7 +59,7 @@ def test_c_backend_examples(tmp_path: Path, source_path: Path, expected: str) ->
     if compiler is None:
         pytest.skip("no C compiler available for C backend tests")
 
-    output_path = tmp_path / "tiny_program"
+    output_path = tmp_path / ("tiny_program.exe" if os.name == "nt" else "tiny_program")
     source = source_path.read_text(encoding="utf-8")
     compile_to_c_executable(source, output_path, compiler=compiler)
 

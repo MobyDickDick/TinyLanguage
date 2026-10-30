@@ -15,7 +15,8 @@ import tempfile
 from verify_python_package import verify as verify_package
 
 
-def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = None) -> dict:
+def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = None,
+           require_compiler: bool = False) -> dict:
     """Install a wheel and exercise project, backend, tooling and DAP workflows."""
     report = verify_package(wheel, work)
     scripts = work / "environment" / ("Scripts" if os.name == "nt" else "bin")
@@ -27,7 +28,7 @@ def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = No
     commands = []
 
     def run(arguments, *, source=None, cwd=work):
-        result = subprocess.run([str(arg) for arg in arguments], input=source,
+        result = subprocess.run([str(arg) for arg in arguments], input=source if source is not None else "",
                                 cwd=cwd, env=environment, capture_output=True,
                                 text=True, encoding="utf-8", timeout=120)
         assert result.returncode == 0, f"{arguments}\n{result.stdout}\n{result.stderr}"
@@ -57,6 +58,19 @@ def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = No
                        encoding="utf-8")
     assert run([tiny, program]) == "16"
     assert run([tiny, "--file", program, "--typecheck"]) == "16"
+    # Check both source line endings using byte-exact writes on every host.
+    for ending in (b"\n", b"\r\n"):
+        (program.parent / "helper.tiny").write_bytes(
+            ending.join([b"fn value() {", b"    return 7;", b"}", b""])
+        )
+        program.write_bytes(ending.join([
+            b"import helper;", b"import stdlib.math as math;",
+            b"print(helper.value() + math.sqrt(81));", b""
+        ]))
+        assert run([tiny, program]) == "16"
+    unusual = project / "argument 'quoted' & (literal).tiny"
+    unusual.write_text('print("argument path preserved");\n', encoding="utf-8")
+    assert run([tiny, unusual]) == "argument path preserved"
     run([tiny, "pkg", "init", project])
     run([tiny, "pkg", "resolve", "--manifest", project / "tiny.toml"])
     assert (project / "tiny.lock").is_file()
@@ -68,6 +82,20 @@ def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = No
     c_source = run([python, "-m", "tinyc_cli", simple, "--emit-c"])
     assert "main(" in c_source
     assert run([tiny, "c", simple, "--emit-c"]) == c_source
+    if require_compiler:
+        compiler = shutil.which("clang")
+        if compiler is None:
+            raise RuntimeError("platform qualification requires clang on PATH")
+        compiler_version = run([compiler, "--version"])
+        executable = project / ("compiled program.exe" if os.name == "nt" else "compiled program")
+        run([tiny, "c", simple, "--compiler", compiler, "-o", executable])
+        assert run([executable]) == "3"
+        llvm = project / "program.ll"
+        run([tiny, simple, "--emit-llvm", llvm])
+        run([compiler, llvm, "-o", executable])
+        assert run([executable]) == "3"
+        report["compiler"] = {"path": compiler, "version": compiler_version}
+        report["checks"] += ["installed-c-compile-execute", "installed-llvm-compile-execute"]
     lsp = scripts / ("tiny-lsp.exe" if os.name == "nt" else "tiny-lsp")
     assert json.loads(run([lsp, "--file", simple, "diagnostics"])) == []
     assert "print" in json.loads(run([lsp, "--file", simple, "format"]))["source"]
@@ -122,6 +150,7 @@ print(json.dumps({"debug": "breakpoint-stack-continue-terminate", "runtime": mod
 ''', encoding="utf-8")
     debug = json.loads(run([python, driver, installed_extension / "python/tiny_debug_adapter.py", program]))
     report["checks"] += ["project-scaffolding", "unrelated-working-directory", "unicode-space-paths",
+                         "lf-and-crlf-imports", "literal-argument-path",
                          "local-and-stdlib-import", "typecheck", "package-init-resolve", "execution-backends",
                          "c-module-and-subcommand-emission", "lsp-format-diagnostics",
                          "extension-helper-format-diagnostics", debug["debug"]]
@@ -146,9 +175,12 @@ def main() -> None:
     parser.add_argument("--extension", type=Path, default=Path(__file__).resolve().parents[2] / "vscode-extension")
     parser.add_argument("--report", type=Path)
     parser.add_argument("--editor", type=Path, help="Optional VS Code executable for actual extension-host acceptance")
+    parser.add_argument("--require-compiler", action="store_true",
+                        help="Require clang and execute installed C/LLVM compilation checks")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="tiny-workflows-") as directory:
-        report = verify(args.wheel.resolve(), args.extension.resolve(), Path(directory), editor=args.editor)
+        report = verify(args.wheel.resolve(), args.extension.resolve(), Path(directory),
+                        editor=args.editor, require_compiler=args.require_compiler)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

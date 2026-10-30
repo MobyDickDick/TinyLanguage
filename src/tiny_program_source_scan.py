@@ -119,7 +119,7 @@ def scan_quarantined_source(source: Path, metadata: Path) -> Path:
     content = (json.dumps(asdict(report), indent=2, sort_keys=True) + "\n").encode()
     fd, temporary = tempfile.mkstemp(dir=source.parent, prefix=".scan-")
     try:
-        os.fchmod(fd, 0o600)
+        # mkstemp creates mode 0600 on POSIX; Windows inherits the directory ACL.
         with os.fdopen(fd, "wb") as handle:
             handle.write(content)
         os.replace(temporary, destination)

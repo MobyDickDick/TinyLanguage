@@ -45,6 +45,20 @@ contains the inputs needed to rebuild a wheel. Installation uses a separate,
 fresh venv with no dependencies or checkout paths. Set `TEMP`/`TMP` (Windows)
 or `TMPDIR` (POSIX) to an accessible directory outside the checkout if needed.
 
+Platform qualification additionally runs the complete regression suite with
+`python -m pytest --require-backend-toolchains -ra` and the fresh-install
+workflow helper with mandatory C/LLVM compilation and execution:
+
+```bash
+python tools/release/verify_installed_workflows.py dist/release/tinylanguage-1.0.0-py3-none-any.whl --require-compiler --report dist/platform-acceptance.json
+```
+
+Install Clang and the native linker/SDK first. Missing tools or compilation
+failures are errors; optional JIT checks still report their skips separately.
+The installed workflow check also covers local/stdlib imports with LF and CRLF,
+Unicode/space/quoted argument paths, project/package tooling, LSP and DAP helpers.
+See [platform qualification status](../../docs/platform_verification_acceptance.md).
+
 ## Signing
 
 To sign artifacts, ensure `gpg` is installed and the release key is available

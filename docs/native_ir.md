@@ -27,7 +27,8 @@ This quick reference describes the internal bytecode format of the native backen
 
 The helper `format_program(program)` prints a human-friendly view of the instructions and simplifies snapshot tests.
 
-## Beispiel
+<a id="beispiel"></a>
+## Example
 
 ```text
 entry[00]: PUSH_CONST 1

@@ -213,13 +213,14 @@ caught
 - **Return requirement:** Annotated functions must return a value on all paths, otherwise error `E010` is raised.
 - **Closures:** Functions are first-class and can be returned or passed as arguments.
 
-## Argument-Kapselung
+<a id="argument-kapselung"></a>
+## Argument encapsulation
 
 - **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
 - **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
 - **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
 - **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
-- **Beispiel:**
+- **Example:**
 
   ```tiny
   fn bump(buf) {
@@ -228,7 +229,7 @@ caught
 
   def data = new(1);
   def _unused3 = heap_set(data, 0, 1);
-  def _unused4 = bump(data); // mit --copy-on-call bleibt data[0] == 1
+  def _unused4 = bump(data); // with --copy-on-call, data[0] remains 1
   ```
 
 ## Algebraic data types and pattern matching

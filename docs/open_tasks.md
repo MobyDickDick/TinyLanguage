@@ -169,7 +169,7 @@ they are not a claim that every feature or backend has been audited.
     contract, merely computing a scalar return from a buffer must not silently
     grant permission to mutate caller-owned data. Document migration from the
     current rule and measure copying time and memory on shared/cyclic graphs.
-  - References: [language_spec.md](language_spec.md#argument-kapselung),
+  - References: [language_spec.md](language_spec.md#argument-encapsulation),
     `src/tiny_language_parser.py`, `src/tiny_language_runtime.py`,
     `tests/detailtests/test_copy_on_call.py`.
 
@@ -223,6 +223,13 @@ they are not a claim that every feature or backend has been audited.
     `tests/detailtests/test_semantics_suite.py`, `tests/parity/`,
     [conformance_compatibility_test_strategy.md](conformance_compatibility_test_strategy.md),
     [backend_feature_matrix.md](backend_feature_matrix.md).
+  - Documentation-audit follow-up (2026-10-30): the
+    [argument-encapsulation example](language_spec.md#argument-encapsulation)
+    fails verbatim with `E001` because `_unused3` discards the result of
+    `heap_set`. Correct the example's discard bindings and add executable
+    documentation coverage. The defect reproduces before and after translation;
+    ordinary `ignored` bindings allow the example to preserve the caller's
+    buffer value of `1` as described.
 
 ### 10. Maintainable runtime module boundaries
 

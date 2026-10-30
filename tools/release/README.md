@@ -22,8 +22,12 @@ python tools/release/build_release_artifacts.py --python --binary --verify-repro
 
 `--vsix` additionally runs `npm ci` and the locked local VSCE, checks extension
 versions against `VERSION`, and normalizes VSIX ZIP metadata. Install Node/npm
-before using this option. The platform workflow selects Python 3.12.14 and
-Node 22.14.0. Supply `BUILDER_IMAGE_DIGEST` when using an immutable builder;
+before using this option. The release workflow selects Python 3.12 and
+Node 22.14.0. The Python patch version is resolved from the versions available
+for each runner; later security-only 3.12 patches do not have Windows/macOS
+builds in `actions/setup-python`. The exact runtime version is recorded in
+`build-info.json`, and reproducibility is checked within the same builder run.
+Supply `BUILDER_IMAGE_DIGEST` when using an immutable builder;
 the helper records null when no image identifier was supplied.
 
 Build native binaries separately on each promised OS/architecture. Use repeated

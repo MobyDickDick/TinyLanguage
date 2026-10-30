@@ -31,8 +31,12 @@ current evidence and remaining gates are recorded in
 Other Python implementations, newer Python versions, Linux/Windows ARM, and
 32-bit hosts are unqualified. Package metadata permits Python 3.11+; that
 installation constraint does not establish qualification of future versions.
-Standalone release artifacts use Python 3.12.14 on the same four OS/architecture
-targets in `.github/workflows/release-artifacts.yml`.
+Standalone release artifacts use Python 3.12 on the same four OS/architecture
+targets in `.github/workflows/release-artifacts.yml`. Each runner selects an
+available 3.12 patch version because later security-only releases are not
+available for all platforms in `actions/setup-python`. The exact version is
+recorded in `build-info.json`; reproducibility checks compare builds within
+the same builder run.
 
 Backend expectations are:
 

@@ -40,7 +40,7 @@ PROGRAM_CASES = [
             "}"
             "print(total);"
         ),
-        expected_output="8",
+        expected_output="9",
     ),
     LLVMProgramCase(
         name="functions",
@@ -61,8 +61,13 @@ PROGRAM_CASES = [
     ),
     LLVMProgramCase(
         name="string_ops",
-        source='def text = "Tiny"; print(text + "Language");',
+        source='def text = "TinyLanguage"; def copy = text; print(copy);',
         expected_output="TinyLanguage",
+    ),
+    LLVMProgramCase(
+        name="mixed_print",
+        source='print(1, true, "Tiny", Null, 2.5);',
+        expected_output="1 1 Tiny Null 2.500000",
     ),
 ]
 
@@ -115,9 +120,17 @@ def _build_executable(tmp_path: Path, ll_path: Path) -> Path:
     if not toolchain:
         pytest.skip("clang or (llc + cc) is required for LLVM conformance smoke tests")
 
+    # Emitted modules expose tiny_main for embedding/JIT execution. Supply the
+    # host executable entry point when linking these standalone smoke tests.
+    runner_path = tmp_path / "runner.c"
+    runner_path.write_text(
+        "extern int tiny_main(void);\n"
+        "int main(void) { return tiny_main(); }\n",
+        encoding="utf-8",
+    )
     exe_path = tmp_path / ("program_exec.exe" if os.name == "nt" else "program_exec")
     if toolchain == "clang":
-        compile_cmd = [tool_path, str(ll_path), "-o", str(exe_path)]
+        compile_cmd = [tool_path, str(ll_path), str(runner_path), "-o", str(exe_path)]
         try:
             subprocess.run(compile_cmd, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:
@@ -133,7 +146,7 @@ def _build_executable(tmp_path: Path, ll_path: Path) -> Path:
     cc_path = shutil.which("cc") or shutil.which("gcc")
     if cc_path is None:
         raise AssertionError("C compiler not found after llc produced object file")
-    link_cmd = [cc_path, str(obj_path), "-o", str(exe_path)]
+    link_cmd = [cc_path, str(obj_path), str(runner_path), "-o", str(exe_path)]
     try:
         subprocess.run(link_cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as exc:
@@ -159,4 +172,45 @@ def test_llvm_conformance_smoke(case: LLVMProgramCase, tmp_path: Path) -> None:
 
     assert result.returncode == 0
     assert result.stdout.strip() == case.expected_output
+    assert result.stderr.strip() == ""
+
+
+@pytest.mark.parametrize(
+    ("operation", "error_kind"),
+    [
+        ("heap_get(ptr, 0)", "access"),
+        ("heap_set(ptr, 0, 42)", "access"),
+        ("heap_len(ptr)", "access"),
+        ("delete(ptr)", "delete"),
+    ],
+    ids=["get_after_delete", "set_after_delete", "len_after_delete", "double_delete"],
+)
+def test_llvm_rejects_freed_heap_pointers(
+    operation: str, error_kind: str, tmp_path: Path
+) -> None:
+    """Freed-pointer branches must compile and terminate with a runtime error."""
+    toolchain, _ = _llvm_toolchain()
+    if not toolchain:
+        pytest.skip("clang or (llc + cc) is required for LLVM conformance smoke tests")
+    source = (
+        # Keep the deletion across a call boundary so the lifetime linter does
+        # not reject the program before the runtime checks can execute.
+        "fn release(ptr) { return delete(ptr); }"
+        "def ptr = new(1);"
+        "def ignored_delete = release(ptr);"
+        f"def ignored_operation = {operation};"
+    )
+    ll_path = _run_emit_llvm(tmp_path, source)
+    exe_path = _build_executable(tmp_path, ll_path)
+
+    result = subprocess.run(
+        [str(exe_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert result.stdout.startswith(f"heap {error_kind} error: pointer ")
+    assert result.stdout.strip().endswith(" was already freed (size 1)")
     assert result.stderr.strip() == ""

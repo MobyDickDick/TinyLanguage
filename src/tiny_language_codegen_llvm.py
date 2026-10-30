@@ -452,6 +452,8 @@ class LLVMCodeGenerator:
 
     def _emit_arithmetic_op(self, op: str, left: _StackValue, right: _StackValue) -> None:
         ty = left.ty
+        if ty not in {"i64", "i1", "double"}:
+            self._lowering_error(f"operator {op} not supported for type {ty}")
         dest = self._next_tmp()
         if ty == "double":
             instr = {"+": "fadd", "-": "fsub", "*": "fmul", "/": "fdiv", "%": "frem"}.get(op)
@@ -500,8 +502,8 @@ class LLVMCodeGenerator:
         if count <= 0:
             return
         values = [self._stack.pop() for _ in range(count)][::-1]
-        for value in values:
-            fmt, fmt_len = self._format_for_type(value.ty)
+        for index, value in enumerate(values):
+            fmt, fmt_len = self._format_for_type(value.ty, trailing_space=index < len(values) - 1)
             fmt_ptr = self._next_tmp()
             self._body.append(
                 f"  {fmt_ptr} = getelementptr inbounds [{fmt_len} x i8], [{fmt_len} x i8]* @{fmt}, i32 0, i32 0"
@@ -1500,13 +1502,14 @@ class LLVMCodeGenerator:
         self._label_index += 1
         return f"{prefix}.{self._label_index}"
 
-    def _format_for_type(self, ty: str) -> tuple[str, int]:
+    def _format_for_type(self, ty: str, *, trailing_space: bool = False) -> tuple[str, int]:
+        suffix = "_space" if trailing_space else ""
         if ty == "double":
-            return ".fmt_double", 5
+            return f".fmt_double{suffix}", 5
         if ty in {"i64", "i1"}:
-            return ".fmt_i64", 5
+            return f".fmt_i64{suffix}", 5
         if ty == "i8*":
-            return ".fmt_str", 4
+            return f".fmt_str{suffix}", 4
         self._lowering_error(f"printing values of type {ty} not supported")
 
     def _header(self) -> List[str]:
@@ -1520,6 +1523,9 @@ class LLVMCodeGenerator:
             "@.fmt_i64 = private unnamed_addr constant [5 x i8] c\"%ld\\0A\\00\"",
             "@.fmt_double = private unnamed_addr constant [5 x i8] c\"%lf\\0A\\00\"",
             "@.fmt_str = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"",
+            "@.fmt_i64_space = private unnamed_addr constant [5 x i8] c\"%ld \\00\"",
+            "@.fmt_double_space = private unnamed_addr constant [5 x i8] c\"%lf \\00\"",
+            "@.fmt_str_space = private unnamed_addr constant [4 x i8] c\"%s \\00\"",
             "@.heap_bounds_err = private unnamed_addr constant [70 x i8] c\"heap access error: index %ld out of range for pointer %ld (size %ld)\\0A\\00\"",
             "@.heap_invalid_ptr_err = private unnamed_addr constant [86 x i8] c\"heap access error: pointer %ld is invalid (must refer to a live positive allocation)\\0A\\00\"",
             "@.heap_unknown_ptr_err = private unnamed_addr constant [40 x i8] c\"heap access error: unknown pointer %ld\\0A\\00\"",
@@ -1607,8 +1613,8 @@ class LLVMCodeGenerator:
             "check_freed:",
             "  %meta_ptr = inttoptr i64 %meta to i64*",
             "  %freed_ptr = getelementptr i64, i64* %meta_ptr, i64 2",
-            "  %freed = load i64, i64* %freed_ptr",
-            "  %is_freed = icmp ne i64 %freed, 0",
+            "  %freed_flag = load i64, i64* %freed_ptr",
+            "  %is_freed = icmp ne i64 %freed_flag, 0",
             "  br i1 %is_freed, label %freed, label %ok",
             "freed:",
             "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",
@@ -1638,8 +1644,8 @@ class LLVMCodeGenerator:
             "check_freed:",
             "  %meta_ptr = inttoptr i64 %meta to i64*",
             "  %freed_ptr = getelementptr i64, i64* %meta_ptr, i64 2",
-            "  %freed = load i64, i64* %freed_ptr",
-            "  %is_freed = icmp ne i64 %freed, 0",
+            "  %freed_flag = load i64, i64* %freed_ptr",
+            "  %is_freed = icmp ne i64 %freed_flag, 0",
             "  br i1 %is_freed, label %freed, label %ok",
             "freed:",
             "  %size_ptr = getelementptr i64, i64* %meta_ptr, i64 1",

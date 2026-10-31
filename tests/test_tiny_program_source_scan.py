@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -27,7 +28,8 @@ def test_safe_text_source_receives_porting_gate(tmp_path: Path):
     assert report["findings"] == []
     assert report["next_stage"] == "automatic-porting"
     assert report["source_sha256"] == hashlib.sha256(source.read_bytes()).hexdigest()
-    assert report_path.stat().st_mode & 0o777 == 0o600
+    if os.name == "posix":
+        assert report_path.stat().st_mode & 0o777 == 0o600
 
 
 @pytest.mark.parametrize("payload, finding", [
@@ -64,6 +66,11 @@ def test_symlinked_source_is_not_scanned(tmp_path: Path):
     target.write_bytes(b"print(1)\n")
     source, metadata = quarantine_pair(tmp_path, target.read_bytes())
     source.unlink()
-    source.symlink_to(target)
+    try:
+        source.symlink_to(target)
+    except OSError as exc:
+        if os.name == "nt" and exc.winerror == 1314:
+            pytest.skip("Windows symlink creation requires Developer Mode or symlink privilege")
+        raise
     with pytest.raises(ValueError, match="regular file"):
         scan_quarantined_source(source, metadata)

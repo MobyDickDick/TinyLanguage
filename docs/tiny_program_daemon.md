@@ -130,6 +130,11 @@ porting to Tiny), a pipeline with multiple stages is recommended:
    `src/tiny_program_source_sandbox.py` limits runtime, memory, output file size,
    open files, and child processes, captures the combined output, and authorizes
    only successful runs for a GUI wrapper through a versioned report.
+   Execution requires Linux with POSIX resource limits; Windows and macOS
+   reject this step without launching the program or generating an approval.
+   These resource limits do not isolate filesystem or network access. See the
+   [platform contract](release_compatibility_matrix.md#source-program-service-platform-contract)
+   for execution and file-permission limitations.
 5. **Optional GUI wrapper (completed 2026-08-23)**: the generator
    `src/tiny_program_gui_wrapper.py` accepts only a passing sandbox result whose
    source and output hashes still match. The generated Tk wrapper displays only

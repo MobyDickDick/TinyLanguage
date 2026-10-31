@@ -71,10 +71,9 @@ def _strip_timing(lines: Iterable[str]) -> list[str]:
 
 def _replace_paths(text: str, root: pathlib.Path) -> str:
     """Replace absolute paths rooted at the repository with <ROOT> placeholders."""
-    root_str = str(root)
-    if not root_str.endswith("/"):
-        root_str += "/"
-    return text.replace(root_str, "<ROOT>/")
+    for root_str in {str(root).rstrip("/\\") + "\\", root.as_posix().rstrip("/") + "/"}:
+        text = text.replace(root_str, "<ROOT>/")
+    return text
 
 
 def _replace_ids(text: str) -> str:

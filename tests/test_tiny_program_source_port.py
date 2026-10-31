@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -31,7 +32,8 @@ def test_ports_approved_python_subset_and_records_unexecuted_handoff(tmp_path: P
     assert report["status"] == "ported-unexecuted"
     assert report["next_stage"] == "sandbox-test"
     assert report["output_sha256"] == hashlib.sha256(output.read_bytes()).hexdigest()
-    assert output.stat().st_mode & 0o777 == 0o600
+    if os.name == "posix":
+        assert output.stat().st_mode & 0o777 == 0o600
 
 
 def test_rejects_scan_report_for_different_bytes(tmp_path: Path):

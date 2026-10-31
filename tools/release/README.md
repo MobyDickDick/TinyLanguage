@@ -22,8 +22,12 @@ python tools/release/build_release_artifacts.py --python --binary --verify-repro
 
 `--vsix` additionally runs `npm ci` and the locked local VSCE, checks extension
 versions against `VERSION`, and normalizes VSIX ZIP metadata. Install Node/npm
-before using this option. The platform workflow selects Python 3.12.14 and
-Node 22.14.0. Supply `BUILDER_IMAGE_DIGEST` when using an immutable builder;
+before using this option. The release workflow selects Python 3.12 and
+Node 22.14.0. The Python patch version is resolved from the versions available
+for each runner; later security-only 3.12 patches do not have Windows/macOS
+builds in `actions/setup-python`. The exact runtime version is recorded in
+`build-info.json`, and reproducibility is checked within the same builder run.
+Supply `BUILDER_IMAGE_DIGEST` when using an immutable builder;
 the helper records null when no image identifier was supplied.
 
 Build native binaries separately on each promised OS/architecture. Use repeated
@@ -44,6 +48,20 @@ The second command runs in the pinned builder environment and proves the sdist
 contains the inputs needed to rebuild a wheel. Installation uses a separate,
 fresh venv with no dependencies or checkout paths. Set `TEMP`/`TMP` (Windows)
 or `TMPDIR` (POSIX) to an accessible directory outside the checkout if needed.
+
+Platform qualification additionally runs the complete regression suite with
+`python -m pytest --require-backend-toolchains -ra` and the fresh-install
+workflow helper with mandatory C/LLVM compilation and execution:
+
+```bash
+python tools/release/verify_installed_workflows.py dist/release/tinylanguage-1.0.0-py3-none-any.whl --require-compiler --report dist/platform-acceptance.json
+```
+
+Install Clang and the native linker/SDK first. Missing tools or compilation
+failures are errors; optional JIT checks still report their skips separately.
+The installed workflow check also covers local/stdlib imports with LF and CRLF,
+Unicode/space/quoted argument paths, project/package tooling, LSP and DAP helpers.
+See [platform qualification status](../../docs/platform_verification_acceptance.md).
 
 ## Signing
 

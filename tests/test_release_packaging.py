@@ -5,10 +5,13 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import stat
 import subprocess
 import sys
 import tarfile
 import zipfile
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("release_builder", ROOT / "tools/release/build_release_artifacts.py")
@@ -45,6 +48,43 @@ def test_vsix_normalization_removes_zip_metadata(tmp_path):
                 archive.writestr(info, name.encode())
         release.normalize_vsix(path, 1793232000)
     assert paths[0].read_bytes() == paths[1].read_bytes()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Executable permission bits require POSIX")
+@pytest.mark.parametrize("artifact_source", ["built", "included"])
+def test_release_preserves_executable_permissions(tmp_path, monkeypatch, artifact_source):
+    """Retained executables must run outside the checkout after artifact copying."""
+    monkeypatch.chdir(ROOT)
+    name = "tiny-language-linux-x86_64"
+
+    def make_executable(directory):
+        directory.mkdir(parents=True, exist_ok=True)
+        executable = directory / name
+        executable.write_text('#!/bin/sh\nprintf "TinyLanguage 1.0.0\\n"\n', encoding="utf-8")
+        executable.chmod(0o755)
+        return executable
+
+    def fake_build(source, destination, **kwargs):
+        return [make_executable(destination)]
+
+    monkeypatch.setattr(release, "build_from_archive", fake_build)
+    included = [str(make_executable(tmp_path / "supplied"))] if artifact_source == "included" else []
+    output = tmp_path / "release"
+    args = argparse.Namespace(
+        version=None, tag=None, output_dir=str(output), sign=False, gpg_key_id=None,
+        binary=artifact_source == "built", include_artifact=included,
+        verify_reproducible=artifact_source == "built",
+    )
+
+    assert release.build_release(args) == 0
+    executable = output / name
+    assert stat.S_IMODE(executable.stat().st_mode) == 0o755
+    result = subprocess.run([str(executable), "--version"], cwd=tmp_path,
+                            capture_output=True, text=True, check=True)
+    assert result.stdout.strip() == "TinyLanguage 1.0.0"
+    assert result.stderr == ""
+    checksums = dict(line.split("  ") for line in (output / "SHA256SUMS").read_text().splitlines())
+    assert checksums[release.sha256sum(executable)] == name
 
 
 def test_import_and_stdlib_do_not_require_generated_source(tmp_path):

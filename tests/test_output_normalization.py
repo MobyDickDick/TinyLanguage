@@ -40,6 +40,16 @@ def test_normalize_error_prefix_and_paths() -> None:
     assert normalized == "error: failure at <ROOT>/src/main.tiny:12"
 
 
+def test_normalize_windows_root_with_either_separator() -> None:
+    """Retained Windows reports may contain native or forward-slash roots."""
+    root = pathlib.PureWindowsPath("C:/workspace/TinyLanguage")
+    for prefix in (str(root) + "\\", root.as_posix() + "/"):
+        raw = "Error: failure at " + prefix + "src/main.tiny:12"
+        assert normalize_output(raw, NormalizationOptions(root=root)) == (
+            "error: failure at <ROOT>/src/main.tiny:12"
+        )
+
+
 def test_normalize_pid_port_seed_tokens() -> None:
     """Normalize PID/port/seed values into placeholders."""
     raw = "pid=123 port: 8080 seed=999 random_seed 42"

@@ -134,10 +134,10 @@ def test_stdlib_yaml_load_dump_round_trip(run_tiny_source, tmp_path):
     out = run_tiny_source(
         f"""
         import stdlib.yaml;
-        def value = yaml.load("{yaml_path}");
-        def _dumped = yaml.dump("{yaml_path}", value);
+        def value = yaml.load("{yaml_path.as_posix()}");
+        def _dumped = yaml.dump("{yaml_path.as_posix()}", value);
         def _cleanup_value = delete(value);
-        print(File.read("{yaml_path}"));
+        print(File.read("{yaml_path.as_posix()}"));
         """,
     )
 

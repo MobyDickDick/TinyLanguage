@@ -75,13 +75,18 @@ document or prototype alone does not close the package.
     project pass on every promised target. Required checks cannot silently skip
     because a toolchain is missing. Include path, Unicode, argument-escaping,
     file-system, and line-ending cases.
-  - Known regression: `test_write_lockfile_escapes_path_as_valid_toml` creates
-    `deps/quoted"library`, which is not a valid Windows file name. Preserve TOML
-    escaping coverage with a portable fixture or an explicitly POSIX-only case.
-  - Additional platform gap: the full suite cannot collect on Windows because
-    `src/tiny_program_source_sandbox.py` imports the POSIX-only `resource`
-    module unconditionally. Define the supported sandbox behavior per platform
-    and make its implementation and test collection follow that contract.
+  - Implementation checkpoint (2026-10-30): CI now defines sixteen qualification
+    jobs across CPython 3.11-3.14 and the four release OS/architecture targets,
+    checks the actual CPU architecture, installs required compiler/linker tools,
+    and rejects missing/skipped required C/LLVM checks. Fresh-wheel acceptance
+    covers multi-file/stdlib imports, package resolution, LSP/debug helpers,
+    LF/CRLF and Unicode/quoted argument paths. Windows collection, lockfile TOML
+    escaping and LF output, temporary-file handling, compiler-output newlines,
+    and platform-specific test oracles are corrected. Source-port sandbox
+    execution is explicitly Linux-only and refuses unsupported hosts before
+    launching a child. See [platform_verification_acceptance.md](platform_verification_acceptance.md)
+    for retained local evidence and the outstanding cross-platform runs. This
+    package remains open until all promised targets pass for the candidate.
   - References: `.github/workflows/ci.yml`,
     [release_compatibility_matrix.md](release_compatibility_matrix.md),
     `tests/detailtests/test_pkg_lockfile_reproducibility.py`.

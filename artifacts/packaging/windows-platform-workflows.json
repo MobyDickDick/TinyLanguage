@@ -1,0 +1,263 @@
+{
+  "version": "1.0.0",
+  "module": "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Lib\\site-packages\\tiny_language.py",
+  "requires": [],
+  "checks": [
+    "clean-wheel-install",
+    "stdlib-import",
+    "python-module",
+    "console-entry-points",
+    "bootstrap-assets",
+    "no-source-write",
+    "release-version",
+    "project-scaffolding",
+    "unrelated-working-directory",
+    "unicode-space-paths",
+    "lf-and-crlf-imports",
+    "literal-argument-path",
+    "local-and-stdlib-import",
+    "typecheck",
+    "package-init-resolve",
+    "execution-backends",
+    "c-module-and-subcommand-emission",
+    "lsp-format-diagnostics",
+    "extension-helper-format-diagnostics",
+    "breakpoint-stack-continue-terminate"
+  ],
+  "artifact": {
+    "name": "tinylanguage-1.0.0-py3-none-any.whl",
+    "sha256": "2ceca2968ec7ecab8df9fc9a6215e106677f12079be3bb092de65883818b7d6c"
+  },
+  "python": "3.12.14",
+  "platform": {
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "extension_files": {
+    "extension.js": "4774c3e73ccf4655fe214aa532aad472e64ebb8d4647b3ba804591517e8bba66",
+    "package.json": "bd43b9929a962e3fdf7986bdbdbf0248254d96eaa81e172127b0a1a88822389d",
+    "python/vscode_helpers.py": "3dbe9561edf1a70dfd9fd3477166404a98342f4273c4fee48da1c31996524fb7",
+    "python/tiny_debug_adapter.py": "376840b19c615e49c5fc98a19f7f5b0fe7053978b542f8584b180008c53c11f5"
+  },
+  "commands": [
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "--version"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "project",
+      "init",
+      "my_app",
+      "--vscode"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "my_app/src/main.tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "--source",
+      "print(1 + 2);"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "--backend",
+      "native",
+      "--source",
+      "print(1 + 2);"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "pkg",
+      "init",
+      "my_app"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "pkg",
+      "resolve",
+      "--manifest",
+      "my_app/tiny.toml"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "-m",
+      "tinyc_cli",
+      "my_app/src/main.tiny",
+      "--emit-c"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny-lsp.exe",
+      "--file",
+      "my_app/src/main.tiny",
+      "diagnostics"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny-lsp.exe",
+      "--file",
+      "my_app/src/main.tiny",
+      "format"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "project",
+      "init",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces",
+      "--name",
+      "demo",
+      "--vscode"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "--file",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny",
+      "--typecheck"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\argument 'quoted' & (literal).tiny"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "pkg",
+      "init",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "pkg",
+      "resolve",
+      "--manifest",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\tiny.toml"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--backend",
+      "interpreter"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--backend",
+      "python"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--backend",
+      "native"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--backend",
+      "native-python-bytecode"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "-m",
+      "tinyc_cli",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--emit-c"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny.exe",
+      "c",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "--emit-c"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny-lsp.exe",
+      "--file",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "diagnostics"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\tiny-lsp.exe",
+      "--file",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\backend.tiny",
+      "format"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\installed extension\\python\\vscode_helpers.py",
+      "format"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\installed extension\\python\\vscode_helpers.py",
+      "format"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\installed extension\\python\\vscode_helpers.py",
+      "diagnostics"
+    ],
+    [
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\environment\\Scripts\\python.exe",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\debug_acceptance.py",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\installed extension\\python\\tiny_debug_adapter.py",
+      "C:\\Users\\marku\\.codex\\visualizations\\2026\\10\\30\\01a18e65-a098-78a3-8344-e73b532a2f7d\\platform-temp\\tiny-workflows-blr7964x\\Pr\u00f6jekt with spaces\\src\\main.tiny"
+    ]
+  ],
+  "quickstart": [
+    {
+      "command": "tiny --version",
+      "stdout_sha256": "58f8f73565cadb28b9c9bb685ae0774fdbb4a4bdf7d3071d9fc6fd60c7d8200d"
+    },
+    {
+      "command": "tiny project init my_app --vscode",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "tiny my_app/src/main.tiny",
+      "stdout_sha256": "2fd88d1d003fd46fc0fa943ef9121c07883e5a4fe5425945d0bbbfe8789b48d7"
+    },
+    {
+      "command": "tiny --source \"print(1 + 2);\"",
+      "stdout_sha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+    },
+    {
+      "command": "tiny --backend native --source \"print(1 + 2);\"",
+      "stdout_sha256": "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce"
+    },
+    {
+      "command": "tiny pkg init my_app",
+      "stdout_sha256": "6000c1f8fce497d86a1d7e1cf91844af3d057c0d13471bbc1d5014cf6765e312"
+    },
+    {
+      "command": "tiny pkg resolve --manifest my_app/tiny.toml",
+      "stdout_sha256": "cc9b21aab2d68fb2a5564e80e7d0554ed4ef98296d94dee525b91e74da80aa64"
+    },
+    {
+      "command": "python -m tinyc_cli my_app/src/main.tiny --emit-c",
+      "stdout_sha256": "a2f8c6ffc87d2d92ff5558dd84e7b1e3cffbfbce92eff07797ad52208141a9b1"
+    },
+    {
+      "command": "tiny-lsp --file my_app/src/main.tiny diagnostics",
+      "stdout_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    {
+      "command": "tiny-lsp --file my_app/src/main.tiny format",
+      "stdout_sha256": "84eb1e3258e8f9af4ab2a5b431c8d3e9c85b11c181bf0f5743db02189155589a"
+    }
+  ]
+}

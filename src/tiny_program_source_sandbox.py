@@ -2,8 +2,9 @@
 
 The hand-off is accepted only when the porter's audit record still matches the
 exact program bytes.  Execution happens in an empty temporary working
-directory, in an isolated Python process with a short timeout and POSIX resource
-ceilings.  The original port is never imported into the coordinator process.
+directory, in an isolated Python process with a short timeout and Linux resource
+ceilings. Other hosts refuse execution. The original port is never imported into
+the coordinator process. Resource ceilings are not filesystem/network isolation.
 """
 
 from __future__ import annotations
@@ -12,7 +13,6 @@ import argparse
 import hashlib
 import json
 import os
-import resource
 import subprocess
 import sys
 import tempfile
@@ -21,11 +21,28 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    import resource
+except ImportError:  # Windows has no POSIX resource module.
+    resource = None
+
 
 SANDBOX_POLICY = "tiny-source-sandbox-v1"
 REQUIRED_PORT_POLICY = "tiny-source-port-v1"
 OUTPUT_LIMIT = 64 * 1024
 FILE_SIZE_LIMIT = 16 * 1024 * 1024
+
+
+class SandboxUnavailableError(RuntimeError):
+    """The host cannot enforce the source-port execution policy."""
+
+
+def sandbox_supported() -> bool:
+    """Only Linux implements the complete resource-limit policy at present."""
+    return sys.platform == "linux" and resource is not None and all(
+        hasattr(resource, name)
+        for name in ("RLIMIT_CPU", "RLIMIT_AS", "RLIMIT_FSIZE", "RLIMIT_NOFILE", "RLIMIT_NPROC")
+    )
 
 
 @dataclass(frozen=True)
@@ -71,9 +88,7 @@ def _limits() -> None:
     """Apply child-only ceilings before the TinyLanguage interpreter starts."""
     resource.setrlimit(resource.RLIMIT_CPU, (2, 2))
     resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024,) * 2)
-    # The interpreter stitches its modules into a temporary source file before
-    # execution, so the filesystem ceiling must exceed that trusted bootstrap
-    # artifact. Captured child output is still truncated to OUTPUT_LIMIT below.
+    # Bound files created by the child. The interpreter loads source in memory.
     resource.setrlimit(resource.RLIMIT_FSIZE, (FILE_SIZE_LIMIT,) * 2)
     resource.setrlimit(resource.RLIMIT_NOFILE, (16, 16))
     resource.setrlimit(resource.RLIMIT_NPROC, (1, 1))
@@ -84,6 +99,11 @@ def sandbox_test_port(
 ) -> tuple[Path, Path]:
     """Run one byte-verified port and write captured output plus an assessment."""
     _report, payload = _load_port_report(program, port_report)
+    if not sandbox_supported():
+        raise SandboxUnavailableError(
+            "source-port sandbox execution requires Linux with POSIX resource limits; "
+            "execution is unavailable on this platform"
+        )
     digest = hashlib.sha256(payload).hexdigest()
     destination_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     output_path = destination_dir / f"{program.stem}.sandbox.out"
@@ -148,9 +168,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--destination", type=Path, default=Path("var/sandbox-results"))
     parser.add_argument("--timeout", type=float, default=3.0)
     args = parser.parse_args(argv)
-    _output, report = sandbox_test_port(
-        args.program, args.port_report, args.destination, timeout=args.timeout
-    )
+    try:
+        _output, report = sandbox_test_port(
+            args.program, args.port_report, args.destination, timeout=args.timeout
+        )
+    except SandboxUnavailableError as exc:
+        parser.error(str(exc))
     assessment = json.loads(report.read_text(encoding="utf-8"))
     print(f"sandbox report: {report}")
     return 0 if assessment["verdict"] == "passed" else 1

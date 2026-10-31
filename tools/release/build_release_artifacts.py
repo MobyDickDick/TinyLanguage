@@ -246,7 +246,7 @@ def build_release(args: argparse.Namespace) -> int:
                 reproduced_artifacts = [path.name for path in built]
             for path in built:
                 target = output_dir / path.name
-                shutil.copyfile(path, target)
+                shutil.copy(path, target)
                 paths.append(target)
         dependencies = sorted(
             [{"name": d.metadata["Name"], "version": d.version}
@@ -265,7 +265,7 @@ def build_release(args: argparse.Namespace) -> int:
             raise RuntimeError(f"Duplicate or reserved artifact name: {path.name}")
         target = output_dir / path.name
         if path != target:
-            shutil.copyfile(path, target)
+            shutil.copy(path, target)
         paths.append(target)
     artifacts = [{"name": p.name, "sha256": sha256sum(p), "size": str(p.stat().st_size)}
                  for p in sorted(paths)]

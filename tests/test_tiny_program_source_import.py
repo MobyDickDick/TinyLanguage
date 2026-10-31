@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -50,7 +51,8 @@ def test_fetch_retains_byte_exact_source_and_provenance(tmp_path: Path):
     assert record["byte_size"] == len(payload)
     assert record["sha256"] == hashlib.sha256(payload).hexdigest()
     assert source.suffix == ".quarantine"
-    assert source.stat().st_mode & 0o777 == 0o600
+    if os.name == "posix":
+        assert source.stat().st_mode & 0o777 == 0o600
 
 
 @pytest.mark.parametrize(

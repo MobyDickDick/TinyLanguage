@@ -5,6 +5,7 @@ that major language features lower into the expected IR constructs.
 """
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -100,6 +101,38 @@ def test_llvm_codegen_emits_full_format_string_lengths() -> None:
     assert '@.fmt_double = private unnamed_addr constant [5 x i8] c"%lf\\0A\\00"' in llvm_ir
     assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_i64" in llvm_ir
     assert "getelementptr inbounds [5 x i8], [5 x i8]* @.fmt_double" in llvm_ir
+
+
+def test_llvm_codegen_separates_print_arguments_with_spaces() -> None:
+    """Only the last argument of a print statement ends with a newline."""
+    llvm_ir = compile_to_llvm_ir('print(1, 2.0, true, "Tiny", Null, 3);')
+    main_ir = _tiny_main_body(llvm_ir)
+
+    assert '@.fmt_i64_space = private unnamed_addr constant [5 x i8] c"%ld \\00"' in llvm_ir
+    assert '@.fmt_double_space = private unnamed_addr constant [5 x i8] c"%lf \\00"' in llvm_ir
+    assert '@.fmt_str_space = private unnamed_addr constant [4 x i8] c"%s \\00"' in llvm_ir
+    formats = re.findall(r"@([.\w]+), i32 0, i32 0", main_ir)
+    assert [name for name in formats if name.startswith(".fmt_")] == [
+        ".fmt_i64_space", ".fmt_double_space", ".fmt_i64_space",
+        ".fmt_str_space", ".fmt_str_space", ".fmt_i64",
+    ]
+
+
+@pytest.mark.parametrize("operator", ["+", "-", "*", "/", "%"])
+def test_llvm_codegen_rejects_string_arithmetic(operator: str) -> None:
+    """Unsupported string arithmetic must fail before invalid IR is emitted."""
+    program = ProgramIR(
+        entry=[
+            Instruction(Opcode.PUSH_CONST, "Tiny"),
+            Instruction(Opcode.PUSH_CONST, "Language"),
+            Instruction(Opcode.BINARY, operator),
+            Instruction(Opcode.PRINT, 1),
+        ],
+        functions={},
+    )
+
+    with pytest.raises(NotImplementedError, match="not supported for type i8\\*"):
+        LLVMCodeGenerator().compile_program(program)
 
 
 def test_llvm_codegen_supports_function_calls() -> None:
@@ -509,6 +542,21 @@ def test_llvm_codegen_defines_heap_runtime_helpers() -> None:
     assert "define i64 @heap_set_double(i64 %ptr, i64 %idx, double %value)" in llvm_ir
     assert "define i64 @heap_set_bool(i64 %ptr, i64 %idx, i1 %value)" in llvm_ir
     assert "define i64 @delete(i64 %ptr)" in llvm_ir
+
+
+def test_llvm_codegen_keeps_block_labels_distinct_from_local_values() -> None:
+    """LLVM block labels and SSA values share a function-local namespace."""
+    llvm_ir = compile_to_llvm_ir("print(1);")
+    functions = list(re.finditer(r"^define ([^\n]+)\{\n(.*?)^}", llvm_ir, re.M | re.S))
+
+    assert functions, "No LLVM function definitions found"
+    for function in functions:
+        signature, body = function.groups()
+        labels = set(re.findall(r"^([-\w.$]+):", body, re.M))
+        values = set(re.findall(r"^\s+%([-\w.$]+)\s*=", body, re.M))
+        parameters = set(re.findall(r"%([-\w.$]+)", signature))
+        collisions = labels & (values | parameters)
+        assert not collisions, f"LLVM label/value name collision in {signature}: {collisions}"
 
 
 def test_llvm_codegen_emits_collection_helpers() -> None:

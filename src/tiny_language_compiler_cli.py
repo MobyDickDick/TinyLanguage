@@ -140,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.emit_c is not None:
             c_source = compile_to_c_source(source)
             if args.emit_c == "-":
-                sys.stdout.write(c_source + os.linesep)
+                sys.stdout.write(c_source + "\n")
             else:
                 out_path = Path(args.emit_c)
                 out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -149,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.emit_llvm is not None:
             llvm_ir = compile_to_llvm_ir_via_c(source, compiler=args.compiler, extra_args=extra_args)
             if args.emit_llvm == "-":
-                sys.stdout.write(llvm_ir + os.linesep)
+                sys.stdout.write(llvm_ir + "\n")
             else:
                 out_path = Path(args.emit_llvm)
                 out_path.parent.mkdir(parents=True, exist_ok=True)

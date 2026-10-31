@@ -64,7 +64,7 @@ def _atomic_write(destination: Path, content: bytes) -> None:
     destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     fd, temporary = tempfile.mkstemp(dir=destination.parent, prefix=".port-")
     try:
-        os.fchmod(fd, 0o600)
+        # mkstemp creates mode 0600 on POSIX; Windows inherits the directory ACL.
         with os.fdopen(fd, "wb") as handle:
             handle.write(content)
         os.replace(temporary, destination)

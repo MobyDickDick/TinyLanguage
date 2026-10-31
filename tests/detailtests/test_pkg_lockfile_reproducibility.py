@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from tiny_pkg_resolution import write_lockfile
+from tiny_pkg_resolution import ResolvedDependency, write_lockfile
 
 
 if importlib.util.find_spec("tomllib"):
@@ -168,9 +168,16 @@ def test_write_lockfile_normalizes_dependency_override_paths(tmp_path: Path) -> 
     assert lock_data["dependencies"][0]["path"] == "overrides/alpha"
 
 
-def test_write_lockfile_escapes_path_as_valid_toml(tmp_path: Path) -> None:
+def test_write_lockfile_escapes_path_as_valid_toml(tmp_path: Path, monkeypatch) -> None:
     dependency_path = 'deps/quoted"library'
-    _write_dependency(tmp_path, dependency_path, version="1.0.0")
+    # Test serialization of POSIX path metadata without creating a filename
+    # forbidden on Windows. Real filesystem resolution is covered above.
+    dependency = ResolvedDependency(
+        name="alpha", version="1.0.0", source="path", checksum="abc", path=dependency_path
+    )
+    monkeypatch.setattr("tiny_pkg_resolution.resolve_manifest", lambda path: (
+        {"dependencies": [dependency]}, "manifest-hash", None, None
+    ))
     manifest_path = tmp_path / "tiny.toml"
     manifest_path.write_text(
         "\n".join(

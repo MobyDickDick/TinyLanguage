@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -37,7 +38,8 @@ def test_generates_read_only_wrapper_and_audit_report(tmp_path: Path):
     assert "subprocess" not in wrapper_text
     assert report["status"] == "generated-read-only"
     assert report["wrapper_sha256"] == hashlib.sha256(wrapper.read_bytes()).hexdigest()
-    assert wrapper.stat().st_mode & 0o777 == 0o700
+    if os.name == "posix":
+        assert wrapper.stat().st_mode & 0o777 == 0o700
 
 
 def test_rejects_failed_sandbox_assessment(tmp_path: Path):

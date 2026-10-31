@@ -1190,7 +1190,8 @@ def compile_to_c_executable(
         cmd = [compiler_path, str(c_path), "-o", str(output_path)]
         cmd.extend(_compiler_opt_args(opt_level))
         args = list(extra_args) if extra_args else []
-        if "-lm" not in args:
+        # Windows' C runtime already provides math functions; MSVC has no libm.
+        if sys.platform != "win32" and "-lm" not in args:
             args.append("-lm")
         cmd.extend(args)
         try:

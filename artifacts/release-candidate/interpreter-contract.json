@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "check": "interpreter-contract",
+  "source": {
+    "commit": "34ed85aa53ede0c2466833a5ae94691465a6da51",
+    "files_sha256": "dec8859b28f8c234ecbb5cf39b37c76e31efd6fd158d4c796f85a127f724d386",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "command": [
+    "-m",
+    "pytest",
+    "tests/test_spec_conformance.py",
+    "tests/test_release_scope_contract.py",
+    "tests/detailtests/test_semantics_suite.py",
+    "tests/detailtests/test_stdlib_doc_examples.py",
+    "--junitxml=artifacts/release-candidate/interpreter-contract.xml"
+  ],
+  "returncode": 0,
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "files": {
+    "evidence/interpreter-contract.log": "9302b5fe43c37a2359c1ea9dd8d8ac89a1e4a14c40d9a423c896f7b7775040d6",
+    "evidence/interpreter-contract.xml": "c15d7184dace78def60c2ab371f0bca172311962679a5fcad12018c5c028bc3a"
+  }
+}

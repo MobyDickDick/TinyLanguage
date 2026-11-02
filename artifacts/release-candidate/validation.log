@@ -1,0 +1,6 @@
+lsp: {'tests': 38, 'failures': 0, 'errors': 0, 'skipped': 0}
+interpreter-contract: {'tests': 33, 'failures': 0, 'errors': 0, 'skipped': 0}
+native-parity: {'tests': 16, 'failures': 0, 'errors': 0, 'skipped': 0}
+regression: {'tests': 871, 'failures': 0, 'errors': 0, 'skipped': 6}
+docstrings: failed check, changed source, or mismatched command/identity
+unsigned-source: source archive builds HEAD; commit candidate changes before qualification

@@ -1,0 +1,11 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\marku\myCloud\TinyLanguage
+configfile: pytest.ini
+collected 16 items
+
+tests\test_parity_runner.py ...                                          [ 18%]
+tests\detailtests\test_native_backend_error_parity.py .............      [100%]
+
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\release-candidate\native-parity.xml -
+============================= 16 passed in 0.63s ==============================

@@ -2,6 +2,12 @@
 
 This document proposes concrete steps to plan a **1.0 release** of TinyLanguage. It focuses on scope, readiness criteria, and a lightweight execution checklist so the release can be scoped and delivered predictably.
 
+**Current status: planned candidate, qualification pending.** The canonical
+scope and evidence map are [release_scope_v1.md](release_scope_v1.md). Historical
+check marks below record planning/implementation checkpoints, not current
+candidate acceptance. Release approval requires source-bound regression evidence
+and successful delivery packages 1–3.
+
 ---
 
 ## 1) Define 1.0 scope and non-goals
@@ -9,7 +15,7 @@ This document proposes concrete steps to plan a **1.0 release** of TinyLanguage.
 **Goal:** lock a stable interpreter experience with core language features + docs + tests.
 
 **In scope (candidate 1.0):**
-- Interpreter backend (default) is stable.
+- Interpreter backend (default) is the candidate stability target.
 - Language syntax and semantics documented in [docs/language_spec.md](language_spec.md).
 - Standard library baseline in [stdlib/](../stdlib/) documented in [docs/stdlib_compatibility.md](stdlib_compatibility.md).
 - CLI usage documented in [README.md](../README.md) and [docs/tutorial.md](tutorial.md).
@@ -18,15 +24,19 @@ This document proposes concrete steps to plan a **1.0 release** of TinyLanguage.
 **Explicit non-goals for 1.0 (defer):**
 - LLVM and native compiler backends beyond the current experimental state.
 - Performance guarantees or optimization targets.
-- A formal package distribution beyond source checkout.
+- Performance promises beyond demonstrated correctness and portability checks.
 
 **Action:** decide and record the official 1.0 scope, then freeze it.
 
 **Scope decision (frozen):**
-- **Release scope:** interpreter + core language only.
+- **Release scope:** interpreter, core language, documented stable stdlib and
+  installed CLI/editor workflows in the candidate contract.
 - **Out of scope:** LLVM backend, native/C compiler backend, performance guarantees,
-  and packaging/distribution beyond source checkout.
-- **Status:** frozen for 1.0 to prioritize interpreter stability, docs, and tests.
+  and unqualified beta/experimental APIs. Copy-on-call inference and interval
+  enclosure remain excluded until packages 7–8 resolve their correctness issues.
+- **Delivery:** installable artifacts and supported-platform acceptance are
+  mandatory release gates (packages 1–3).
+- **Status:** candidate target frozen; actual candidate qualification is pending.
 
 ---
 
@@ -54,7 +64,7 @@ Create an explicit **release checklist** and treat it as the definition of done.
 - [x] Version set to `1.0.0` in all relevant files (stored in `VERSION`,
   `CHANGELOG.md`, and release tags).
 - [x] `CHANGELOG.md` created or updated with “1.0.0” notes.
-- [x] Tag + GitHub release notes prepared (see `docs/release_notes_v1.md`).
+- [ ] Candidate evidence, tag and publication verified (see `docs/release_notes_v1.md`).
 
 ---
 
@@ -147,15 +157,11 @@ Make a decision (and record it in this plan or a roadmap entry):
 ## 9) Quick checklist (copy/paste)
 
 ```
-[x] Scope frozen (interpreter + core language only)
-[x] Language spec audited and updated
-[x] Tutorial audited and demo commands verified
-[x] pytest passes
-[x] src/run_all.py passes
-[x] Regression tests added
-[x] CHANGELOG.md updated
-[x] Version set to 1.0.0
-[x] Release notes written
-[x] Tag created and release published
-[x] RC window scheduled + doc/demo run-through complete
+[x] Candidate target scope documented
+[ ] Candidate language/spec and tutorial evidence verified
+[ ] Candidate regression evidence gate passes
+[ ] Delivery packages 1-3 pass
+[ ] Final changelog and release notes approved
+[x] Planned version set to 1.0.0
+[ ] Approved candidate tagged and release published
 ```

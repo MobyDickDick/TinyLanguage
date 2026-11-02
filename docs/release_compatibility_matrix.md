@@ -4,11 +4,12 @@ This document captures the compatibility commitments for major TinyLanguage
 releases. It is intentionally lightweight and should be updated alongside
 `VERSION` and `CHANGELOG.md` whenever a new major release is tagged.
 
-## 1.0.0 (current)
+## 1.0.0 (planned candidate; qualification pending)
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Interpreter backend | **Supported** | Full-language reference implementation; baseline for correctness tests. |
+| Interpreter backend | **Candidate stability target** | Reference implementation; exact scope, exclusions and evidence in [release_scope_v1.md](release_scope_v1.md). |
+| C backend (`tiny c`) | **Experimental** | Minimal arithmetic/control-flow/function subset; no heap or module imports. |
 | Native VM backend (`--native-backend`) | **Experimental** | Feature coverage is intentionally limited; unsupported constructs raise `NotImplementedError`. Use the interpreter for complete coverage. |
 | LLVM pipeline (`--emit-llvm`, `--emit-exe`) | **Experimental** | Shares the same experimental constraints as the native VM; only a subset of language features is supported. |
 | Native Python bytecode backend (`--native-python-bytecode`) | **Experimental** | Alternate lowering path for the native IR; use for comparisons only. |

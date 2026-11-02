@@ -7,6 +7,9 @@ All notable changes to TinyLanguage will be documented in this file.
 Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 
 ### Added
+- Source-bound release regression evidence (commands, logs, JUnit and artifact
+  hashes) replaces the Markdown-checkbox gate. Candidate scope and remaining
+  release qualification are documented in `docs/release_scope_v1.md`.
 - Installed `tiny project` and `tiny c` workflows, VS Code runtime discovery from
   the selected Python environment, portable project settings, and isolated
   CLI/editor acceptance tooling.
@@ -18,10 +21,13 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
   stitched traceback source in memory without rewriting installation files.
 - Artifact build/rebuild checks, standalone packaging spec, normalized VSIX
   generation, dependency inventories and platform artifact CI (qualification pending).
-- Stable interpreter + core language scope for the 1.0.0 release.
+- Candidate interpreter + core language stability target for 1.0.0
+  (qualification pending).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Known issues / limitations
+- Copy-on-call escape inference and interval enclosure have unresolved correctness
+  issues (work packages 7–8) and are excluded from the frozen stability target.
 - LLVM and native/C compiler backends remain experimental and are out of scope for 1.0.0.
 - Performance guarantees remain outside the 1.0.0 scope. Packaging implementation
   is available; full release qualification is tracked in `docs/open_tasks.md`.

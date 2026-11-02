@@ -333,7 +333,7 @@ tests. Their scope and acceptance criteria are recorded in that task list.
 - Formatter + lints + stable language-server workflows.
 
 ### Native backends
-- Keep the C backend stable and documented (see [docs/c_backend.md](docs/c_backend.md)).
+- Keep the experimental C subset documented and tested (see [docs/c_backend.md](docs/c_backend.md)).
 - Continue LLVM emission experiments as a separate track.
 
 ---

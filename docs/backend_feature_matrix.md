@@ -2,6 +2,12 @@
 
 This matrix summarizes which TinyLanguage language/runtime features are available in each execution backend. It focuses on runtime support; the parser, linter, and type checker are shared across backends and run before code generation.
 
+All non-interpreter backends are **experimental**, including C and the native
+VM. A supported cell describes implementation coverage, not a stable release
+commitment or retained compilation/execution evidence for the candidate.
+See the [candidate contract and evidence map](release_scope_v1.md) and
+[platform qualification status](platform_verification_acceptance.md).
+
 Legend:
 
 - ✅ Supported

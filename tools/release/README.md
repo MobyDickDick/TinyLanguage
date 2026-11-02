@@ -96,9 +96,17 @@ payload hash comparisons exclude provenance and signatures.
 
 ## Release-candidate checklist
 
-CI enforces the release-candidate checklist in
-`docs/release_candidate_checklist.md` via:
+CI records each actual check and then validates its source identity, exit
+status, JUnit/log hashes and unsigned source artifact payloads. See
+[`release_scope_v1.md`](../../docs/release_scope_v1.md) for all seven
+`--run-check` commands and the evidence map. After recording those checks:
 
 ```bash
 python tools/release/check_release_candidate_checklist.py
 ```
+
+Missing/stale evidence fails even when Markdown boxes are checked. Required
+contract/LSP/native parity skips fail; full-suite optional skips are reported
+separately. A dirty candidate cannot qualify an archive built from HEAD.
+CI retains `candidate-regression-evidence` even on failure. This verifies
+regressions, not the outstanding delivery/signature/platform acceptance.

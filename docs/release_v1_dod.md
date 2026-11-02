@@ -2,6 +2,8 @@
 
 This document defines the release criteria for TinyLanguage v1.0. A v1.0
 release is considered complete only when all criteria below are satisfied.
+The canonical candidate scope and executable evidence map are in
+[release_scope_v1.md](release_scope_v1.md). Qualification is pending.
 
 ## 1. Diagnostics & error reporting
 
@@ -42,9 +44,10 @@ release is considered complete only when all criteria below are satisfied.
 ## 5. Backend parity & release scope
 
 - Interpreter behavior is the golden reference; parity tests are enforced in CI.
-- The C backend has a documented, stable feature subset with a published matrix.
-- The LLVM backend is explicitly marked as experimental and non-blocking for
-  v1.0.
+- C, native VM, native bytecode, transpilers and LLVM remain experimental;
+  their matrices describe implementation coverage, not stable language scope.
+- Required platform C/LLVM subset checks must compile and execute. This delivery
+  gate does not extend the interpreter stability promise to those backends.
 
 ## 6. Spec-freeze scope
 
@@ -58,4 +61,6 @@ release is considered complete only when all criteria below are satisfied.
 
 - Release notes summarize breaking changes and known limitations.
 - A full regression run (interpreter + native + LSP) is green.
+- The evidence gate verifies actual source-bound results and artifacts.
+- Delivery work packages 1–3 have passing candidate acceptance records.
 - The v1.0 release is approved after all criteria are satisfied.

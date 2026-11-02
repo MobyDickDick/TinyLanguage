@@ -1,0 +1,13 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\marku\myCloud\TinyLanguage
+configfile: pytest.ini
+collected 33 items
+
+tests\test_spec_conformance.py .                                         [  3%]
+tests\test_release_scope_contract.py .......                             [ 24%]
+tests\detailtests\test_semantics_suite.py .....                          [ 39%]
+tests\detailtests\test_stdlib_doc_examples.py ....................       [100%]
+
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\release-candidate\interpreter-contract.xml -
+============================= 33 passed in 0.97s ==============================

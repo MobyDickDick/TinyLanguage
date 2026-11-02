@@ -125,6 +125,16 @@ document or prototype alone does not close the package.
     [release_v1_dod.md](release_v1_dod.md),
     [backend_feature_matrix.md](backend_feature_matrix.md),
     `tools/release/check_release_candidate_checklist.py`.
+  - Implementation checkpoint (2026-11-02): the canonical
+    [candidate contract and evidence map](release_scope_v1.md) reconciles
+    interpreter/stdlib/CLI scope, experimental backend status, known copy-on-call
+    and interval exclusions, and planned-version versus publication status.
+    The CI gate now executes and verifies source-bound command/log/JUnit/artifact
+    evidence instead of trusting Markdown boxes. Focused checks reject missing,
+    stale, altered, empty or skipped required evidence. The actual spec example
+    for argument encapsulation is corrected and tested verbatim. This package
+    remains open until the committed candidate has passing retained checks and
+    delivery packages 1–3 have complete acceptance evidence.
 
 ### 6. Package hardening and real-project acceptance
 
@@ -230,11 +240,11 @@ they are not a claim that every feature or backend has been audited.
     [backend_feature_matrix.md](backend_feature_matrix.md).
   - Documentation-audit follow-up (2026-10-30): the
     [argument-encapsulation example](language_spec.md#argument-encapsulation)
-    fails verbatim with `E001` because `_unused3` discards the result of
-    `heap_set`. Correct the example's discard bindings and add executable
-    documentation coverage. The defect reproduces before and after translation;
-    ordinary `ignored` bindings allow the example to preserve the caller's
-    buffer value of `1` as described.
+    failed verbatim with `E001` because `_unused3` discarded the result of
+    `heap_set`. Fixed under package 5 on 2026-11-02 with ordinary `ignored`
+    bindings and executable Markdown coverage in
+    `tests/test_release_scope_contract.py`. The documented caller-buffer value
+    of `1` is asserted; the wider aliasing/numeric/backend audit remains open.
 
 ### 10. Maintainable runtime module boundaries
 

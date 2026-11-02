@@ -224,12 +224,12 @@ caught
 
   ```tiny
   fn bump(buf) {
-      def _unused2 = heap_set(buf, 0, 99);
+      def ignored2 = heap_set(buf, 0, 99);
   }
 
   def data = new(1);
-  def _unused3 = heap_set(data, 0, 1);
-  def _unused4 = bump(data); // with --copy-on-call, data[0] remains 1
+  def ignored3 = heap_set(data, 0, 1);
+  def ignored4 = bump(data); // with --copy-on-call, data[0] remains 1
   ```
 
 ## Algebraic data types and pattern matching
@@ -277,8 +277,12 @@ caught
   Added/Changed/Fixed entries plus known issues. The canonical policy is
   documented in [`docs/versioning_deprecation_policy.md`](versioning_deprecation_policy.md).
 - **Stability guarantees:** the interpreter behavior documented in this spec is
-  considered stable for the current major line; breaking changes require a major
-  version bump and an explicit migration plan.
+  the candidate stability target for the current major line; qualification is
+  pending under the [candidate contract](release_scope_v1.md). Copy-on-call
+  escape inference and guaranteed interval enclosure remain unresolved work
+  packages 7 and 8, and are excluded from the frozen contract until resolved.
+  Breaking changes to the qualified contract require a major version bump and
+  an explicit migration plan.
 - **Deprecations:** breaking or removed features must be announced in the
   changelog and documentation before removal. When possible, tooling should emit
   deprecation warnings and maintain backwards-compatible shims through at least

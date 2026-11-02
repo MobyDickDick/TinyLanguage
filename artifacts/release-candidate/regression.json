@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "check": "regression",
+  "source": {
+    "commit": "34ed85aa53ede0c2466833a5ae94691465a6da51",
+    "files_sha256": "dec8859b28f8c234ecbb5cf39b37c76e31efd6fd158d4c796f85a127f724d386",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "command": [
+    "-m",
+    "pytest",
+    "--assert-no-heap-leaks",
+    "-ra",
+    "--junitxml=artifacts/release-candidate/regression.xml"
+  ],
+  "returncode": 0,
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "files": {
+    "evidence/regression.log": "9d0eebeb6bd19b64d2a91c506f04c184cbe8132fd89a7b5332bd5cecedb2b350",
+    "evidence/regression.xml": "c273b484b4360c33f8001d44ace20d2a7191905f3576a137f34ed667321d80c2"
+  }
+}

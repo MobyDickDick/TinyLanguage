@@ -92,10 +92,18 @@ def verify(wheel: Path, extension: Path, work: Path, *, editor: Path | None = No
         assert run([executable]) == "3"
         llvm = project / "program.ll"
         run([tiny, simple, "--emit-llvm", llvm])
-        run([compiler, llvm, "-o", executable])
+        # The emitted module is embeddable and exports tiny_main, not main.
+        # Exercise the raw IR link as well as the installed executable API.
+        runner = project / "runner.c"
+        runner.write_text("extern int tiny_main(void);\n"
+                          "int main(void) { return tiny_main(); }\n", encoding="utf-8")
+        run([compiler, llvm, runner, "-o", executable])
+        assert run([executable]) == "3"
+        run([python, "-m", "tiny_language", simple, "--emit-exe", executable, "--compiler", compiler])
         assert run([executable]) == "3"
         report["compiler"] = {"path": compiler, "version": compiler_version}
-        report["checks"] += ["installed-c-compile-execute", "installed-llvm-compile-execute"]
+        report["checks"] += ["installed-c-compile-execute", "installed-llvm-compile-execute",
+                             "installed-llvm-executable-api"]
     lsp = scripts / ("tiny-lsp.exe" if os.name == "nt" else "tiny-lsp")
     assert json.loads(run([lsp, "--file", simple, "diagnostics"])) == []
     assert "print" in json.loads(run([lsp, "--file", simple, "format"]))["source"]

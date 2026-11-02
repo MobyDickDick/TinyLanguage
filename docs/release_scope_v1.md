@@ -48,10 +48,11 @@ The CI evidence gate records their results for the exact checked source.
 | Evaluation order, scopes, types, tasks | `tests/detailtests/test_semantics_suite.py`, `tests/test_tiny_language.py`, `tests/detailtests/test_async_structured.py` | Spec-derived expected outputs and error/cleanup cases |
 | Heap safety and structured errors | `tests/detailtests/test_heap_api_errors.py`, `tests/test_release_scope_contract.py` | Invalid operations fail; documented error codes/positions remain observable |
 | Arithmetic and documentation | `tests/test_release_scope_contract.py` | Exact rational oracle for small core arithmetic; actual encapsulation snippet executes |
+| Source-preserving module summaries | `tests/test_module_summary_persistence.py` | Unchanged LF/CRLF summaries keep their bytes and timestamp; changed summaries update |
 | Stable stdlib | `tests/test_stdlib_compatibility.py`, `tests/detailtests/test_stdlib_parity.py`, `tests/detailtests/test_stdlib_doc_examples.py` | Reference parity and executable documented outputs |
 | CLI/editor | `tests/detailtests/test_cli_smoke.py`, LSP suites in the evidence gate; installed acceptance records | CLI/LSP behavior; external installation and actual editor evidence have distinct scopes |
 | Experimental native VM | `tests/test_parity_runner.py`, `tests/detailtests/test_native_backend_error_parity.py` | Execution and observable outputs/errors for named fixtures, not independent proof of all semantics |
-| Experimental C/LLVM | `tests/test_c_backend.py`, `tests/detailtests/test_llvm_conformance_smoke.py` | Compiled execution only when the required toolchain is present; text emission alone is insufficient |
+| Experimental C/LLVM | `tests/test_c_backend.py`, `tests/detailtests/test_llvm_conformance_smoke.py` | Required compiler execution, including LLVM executable API/CLI entry points; text emission alone is insufficient |
 
 The full regression check includes all listed suites. The focused
 `interpreter-contract`, `lsp`, and `native-parity` checks reject skipped tests.

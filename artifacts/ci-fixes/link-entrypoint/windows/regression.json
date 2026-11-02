@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "check": "regression",
+  "source": {
+    "commit": "5ee28d99019da626057ca2d2ca86658b12a5e36b",
+    "files_sha256": "2f2f81bb092749c0833c46ff86d0515399085e65f8d160ee8d7e6d576809af4f",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "source_after": {
+    "commit": "5ee28d99019da626057ca2d2ca86658b12a5e36b",
+    "files_sha256": "2f2f81bb092749c0833c46ff86d0515399085e65f8d160ee8d7e6d576809af4f",
+    "clean": false
+  },
+  "command": [
+    "-m",
+    "pytest",
+    "--assert-no-heap-leaks",
+    "-ra",
+    "--junitxml=build/ci-link-fix-evidence/regression.xml"
+  ],
+  "returncode": 0,
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "files": {
+    "evidence/regression.log": "c327496a30c1f15d5feaa5a3eddde281910b69e9fe141cfec4173693668f64e0",
+    "evidence/regression.xml": "fadca35f03677a5533620c1bd950e3aa6bffa8d5939c25dafc33a5c0f28eae47"
+  }
+}

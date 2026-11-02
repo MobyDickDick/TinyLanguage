@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from tiny_language import compile_to_executable
+
 
 @dataclass(frozen=True)
 class LLVMProgramCase:
@@ -173,6 +175,32 @@ def test_llvm_conformance_smoke(case: LLVMProgramCase, tmp_path: Path) -> None:
     assert result.returncode == 0
     assert result.stdout.strip() == case.expected_output
     assert result.stderr.strip() == ""
+
+
+@pytest.mark.parametrize("entrypoint", ["api", "module-cli"])
+def test_llvm_executable_entrypoint(tmp_path: Path, entrypoint: str) -> None:
+    """The public executable paths must supply main and execute top-level code."""
+    compiler = shutil.which("clang")
+    if compiler is None:
+        pytest.skip("clang is required for executable API/CLI conformance")
+    project = tmp_path / "Pröjekt with spaces"
+    project.mkdir()
+    source = project / "program.tiny"
+    source.write_text("print(6 * 7);", encoding="utf-8")
+    executable = project / ("program.exe" if os.name == "nt" else "program")
+    if entrypoint == "api":
+        assert compile_to_executable(source.read_text(), executable, compiler=compiler) == executable
+    else:
+        emitted = subprocess.run(
+            [sys.executable, "-m", "tiny_language", str(source), "--emit-exe", str(executable),
+             "--compiler", compiler],
+            stdin=subprocess.DEVNULL, capture_output=True, text=True,
+        )
+        assert emitted.returncode == 0, emitted.stderr
+    result = subprocess.run([str(executable)], stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    assert result.returncode == 0
+    assert result.stdout == "42\n"
+    assert result.stderr == ""
 
 
 @pytest.mark.parametrize(

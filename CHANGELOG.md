@@ -25,6 +25,12 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
   (qualification pending).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
+### Fixed
+- LLVM executable builds now link a C `main` launcher for the emitted
+  `tiny_main` entry point, including fresh-install platform qualification.
+- Unchanged module summaries retain their original bytes and timestamps across
+  Windows/Linux, preventing false candidate-source changes from CRLF conversion.
+
 ### Known issues / limitations
 - Copy-on-call escape inference and interval enclosure have unresolved correctness
   issues (work packages 7–8) and are excluded from the frozen stability target.

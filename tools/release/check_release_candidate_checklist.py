@@ -24,6 +24,7 @@ CHECKS = {
             "tests/detailtests/test_tiny_language_server_cli_self_host.py"],
     "interpreter-contract": ["-m", "pytest", "tests/test_spec_conformance.py",
                              "tests/test_release_scope_contract.py",
+                             "tests/test_module_summary_persistence.py",
                              "tests/detailtests/test_semantics_suite.py",
                              "tests/detailtests/test_stdlib_doc_examples.py"],
     "native-parity": ["-m", "pytest", "tests/test_parity_runner.py",
@@ -99,9 +100,10 @@ def run_check(name: str, directory: Path) -> int:
         if (artifact_dir / "build-info.json").is_file():
             metadata = json.loads((artifact_dir / "build-info.json").read_text(encoding="utf-8"))
             outputs.extend(artifact_dir / item["name"] for item in metadata["artifacts"])
+    after = source_identity()
     record = {
         "schema": 1, "check": name, "source": before,
-        "source_unchanged": before == source_identity(),
+        "source_unchanged": before == after, "source_after": after,
         "command": command, "returncode": result.returncode,
         "environment": {"python": sys.version, "executable": sys.executable,
                         "platform": platform.platform()},
@@ -109,6 +111,8 @@ def run_check(name: str, directory: Path) -> int:
     }
     (directory / f"{name}.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     print(log.read_text(encoding="utf-8", errors="replace"))
+    if not record["source_unchanged"]:
+        print(f"Source identity changed during {name}: {before} -> {after}")
     return result.returncode if record["source_unchanged"] else 1
 
 

@@ -146,6 +146,23 @@ def test_stale_junit_is_removed_before_failed_execution(tmp_path, monkeypatch):
     assert not (directory / "lsp.xml").exists()
 
 
+def test_source_change_fails_even_when_process_succeeds(tmp_path, monkeypatch, capsys):
+    """A successful check that rewrites maintained files must explain its failure."""
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "CHECKS", {"probe": ["-c", "pass"]})
+    before = {"commit": "current", "files_sha256": "before"}
+    after = {"commit": "current", "files_sha256": "after"}
+    identities = iter([before, after])
+    monkeypatch.setattr(gate, "source_identity", lambda: next(identities))
+    directory = tmp_path / "evidence"
+    assert gate.run_check("probe", directory) == 1
+    record = json.loads((directory / "probe.json").read_text())
+    assert record["returncode"] == 0
+    assert record["source_unchanged"] is False
+    assert record["source_after"] == after
+    assert "Source identity changed during probe" in capsys.readouterr().out
+
+
 def test_changed_working_files_invalidate_source_identity(tmp_path, monkeypatch):
     """A changed file with the same HEAD must invalidate earlier passing evidence."""
     monkeypatch.setattr(gate.subprocess, "check_output", lambda command, **kwargs:

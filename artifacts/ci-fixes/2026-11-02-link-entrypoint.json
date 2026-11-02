@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-02",
+  "status": "local-working-tree-fix-verification-not-platform-release-signoff",
+  "failed_ci_run": "https://github.com/MobyDickDick/TinyLanguage/actions/runs/41518845379",
+  "failed_jobs": {
+    "linux_installation": 125529311308,
+    "candidate_contract": 125529310945
+  },
+  "source": {
+    "commit": "5ee28d99019da626057ca2d2ca86658b12a5e36b",
+    "files_sha256": "2f2f81bb092749c0833c46ff86d0515399085e65f8d160ee8d7e6d576809af4f",
+    "clean": false
+  },
+  "fixes": [
+    "Link raw LLVM and public executable API/CLI with a C main calling tiny_main.",
+    "Preserve unchanged LF/CRLF module summaries byte-for-byte, updating stale summaries with LF.",
+    "Print and retain post-check source identity when a check changes maintained files."
+  ],
+  "windows_full_suite": {
+    "tests": 877,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 6
+  },
+  "windows_full_suite_source_unchanged": true,
+  "linux_contract": {
+    "tests": 36,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "linux_contract_source_unchanged": true,
+  "windows_installed_wheel": {
+    "artifact": {
+      "name": "tinylanguage-1.0.0-py3-none-any.whl",
+      "sha256": "2ad28d20dd740167b093d439fda7d8868f72976140b651e5f3fdba0041fd9695"
+    },
+    "python": "3.12.14",
+    "compiler": {
+      "path": "C:\\Users\\marku\\AppData\\Local\\Microsoft\\WinGet\\Packages\\MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\\llvm-mingw-20261020-ucrt-x86_64\\bin\\clang.EXE",
+      "version": "clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)\nTarget: x86_64-w64-windows-gnu\nThread model: posix\nInstalledDir: C:/Users/marku/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20261020-ucrt-x86_64/bin\nConfiguration file: C:/Users/marku/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20261020-ucrt-x86_64/bin/x86_64-w64-windows-gnu.cfg"
+    },
+    "checks": [
+      "clean-wheel-install",
+      "stdlib-import",
+      "python-module",
+      "console-entry-points",
+      "bootstrap-assets",
+      "no-source-write",
+      "release-version",
+      "installed-c-compile-execute",
+      "installed-llvm-compile-execute",
+      "installed-llvm-executable-api",
+      "project-scaffolding",
+      "unrelated-working-directory",
+      "unicode-space-paths",
+      "lf-and-crlf-imports",
+      "literal-argument-path",
+      "local-and-stdlib-import",
+      "typecheck",
+      "package-init-resolve",
+      "execution-backends",
+      "c-module-and-subcommand-emission",
+      "lsp-format-diagnostics",
+      "extension-helper-format-diagnostics",
+      "breakpoint-stack-continue-terminate"
+    ]
+  },
+  "formatter_lint": "passed",
+  "limitations": [
+    "The local Linux environment lacks clang; Linux compiler execution requires the next CI candidate run.",
+    "The Windows full suite has six explicit optional/platform skips, and four existing JUnit-property warnings.",
+    "Local evidence describes uncommitted sources on the recorded base commit. All sixteen candidate jobs remain required for platform sign-off."
+  ],
+  "retained_files_sha256": {
+    "artifacts/ci-fixes/link-entrypoint/linux/interpreter-contract.json": "e271ea01cedbf19194c04fddf48433cf9f95a651dbcad00878f834a5c4611d63",
+    "artifacts/ci-fixes/link-entrypoint/linux/interpreter-contract.log": "0091efa8d9421157f7af257fd4aa0e5cd59a8fb27e29f738940ff68a1a8f7937",
+    "artifacts/ci-fixes/link-entrypoint/linux/interpreter-contract.xml": "057d3d12b2444ea821777e0a88c410d150bbc8bf4a9062e30135c9c129dd0cba",
+    "artifacts/ci-fixes/link-entrypoint/windows/installed-workflows.json": "b8525386772cffec89dfae23366550086d006614a52c624222b145c977659162",
+    "artifacts/ci-fixes/link-entrypoint/windows/regression.json": "84726147a32423952edc43bb177d8e87af9376879a00ea92f57dce517337874a",
+    "artifacts/ci-fixes/link-entrypoint/windows/regression.log": "c327496a30c1f15d5feaa5a3eddde281910b69e9fe141cfec4173693668f64e0",
+    "artifacts/ci-fixes/link-entrypoint/windows/regression.xml": "fadca35f03677a5533620c1bd950e3aa6bffa8d5939c25dafc33a5c0f28eae47"
+  }
+}

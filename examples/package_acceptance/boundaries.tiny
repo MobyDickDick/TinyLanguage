@@ -1,0 +1,31 @@
+// These stubs deny real networking/process execution. Python has an allowlist,
+// not an operating-system sandbox; see docs/python_interop.md.
+import stdlib.http;
+import stdlib.process;
+
+def request = http.get("https://127.0.0.1:1/never-contacted", Null);
+print(match(request) {
+    case Ok { value: response } => "unexpected network access";
+    case Err { code: code, message: message } => code + ":" + message;
+});
+def arguments = new[];
+def command = process.run("never-execute-this", arguments, Null);
+print(match(command) {
+    case Ok { value: response } => "unexpected process access";
+    case Err { code: code, message: message } => code + ":" + message;
+});
+def _cleanup_arguments = delete(arguments);
+try {
+    def forbidden = Python.import_module("subprocess");
+    print(forbidden);
+} catch (error) { print(error.message); }
+try {
+    def forbidden_call = Python.call("math", "sqrt", Null);
+    print(forbidden_call);
+} catch (error) { print(error.message); }
+
+fn forever() { while (true) { def ignored = 1; } }
+def worker = spawn forever();
+def cancelled = join(worker, 0, true);
+def stopped = join(worker, 2000);
+print(cancelled.cancelled, stopped.done, stopped.cancelled);

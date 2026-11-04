@@ -1,0 +1,208 @@
+{
+  "version": "1.0.0",
+  "module": "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Lib\\site-packages\\tiny_language.py",
+  "requires": [],
+  "checks": [
+    "clean-wheel-install",
+    "stdlib-import",
+    "python-module",
+    "console-entry-points",
+    "bootstrap-assets",
+    "no-source-write",
+    "release-version",
+    "installed-multifile-json-application",
+    "locked-http-dependency",
+    "dependency-upgrade",
+    "offline-lock-reproduction",
+    "cli-errors",
+    "file-output-preserved-on-invalid-input",
+    "network-and-process-denial",
+    "python-allowlist",
+    "worker-join-and-cancel",
+    "application-heap-cleanup"
+  ],
+  "artifact": {
+    "name": "tinylanguage-1.0.0-py3-none-any.whl",
+    "sha256": "93a14a788f7c5487c6f0b948817f1aa178f06db21239df338b5ed8d9de2862a1"
+  },
+  "python": "3.12.14",
+  "platform": {
+    "system": "Windows",
+    "machine": "AMD64"
+  },
+  "dependency_upgrade": {
+    "from": "1.0.0",
+    "to": "1.1.0",
+    "rollback_offline": true
+  },
+  "runtime_upgrade": {
+    "status": "not-run",
+    "reason": "No previous release wheel supplied"
+  },
+  "fixtures": {
+    "boundaries.tiny": "fece038245659007e693a709aaccc6d2339c299fa2674fba7a13d755eda1e792",
+    "main.tiny": "428d1d533b8b1953cd592c8b3ffb443b71587c255510d9d368acc26b78190879"
+  },
+  "commands": [
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "resolve",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "1030f56f33211995f5af379e9290335d63424c6064b928c6619ff0721089f2e7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "vendor",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "88e80b6a7859a560da38ac8e6ef24e75adb5fc0a09b0e48c883694653cf98edc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "4fa727b9a426b1597f329ed16946a784d93d0a15728adb614c77c9fa38738155",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\python.exe",
+        "-c",
+        "from pathlib import Path; import sys; from tiny_language import Runtime, compile_and_run; path = Path(sys.argv[1]); source = path.read_text(encoding='utf-8'); runtime = Runtime(source); compile_and_run(source, runtime=runtime, module_path=path); assert runtime.heap_leak_report()['count'] == 0, runtime.heap_leak_report()",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "4fa727b9a426b1597f329ed16946a784d93d0a15728adb614c77c9fa38738155",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "vendor",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml",
+        "--force"
+      ],
+      "returncode": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "0df2ae22a22690a61d198c5f992be07d921386c45e925df6ede6916c6de55a17"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "update",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "1030f56f33211995f5af379e9290335d63424c6064b928c6619ff0721089f2e7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "vendor",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "88e80b6a7859a560da38ac8e6ef24e75adb5fc0a09b0e48c883694653cf98edc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "87caca0ce76fe780b20361529abfea9e3e0fe5de392bd9a18c6cbd4356e35b18",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\python.exe",
+        "-c",
+        "from pathlib import Path; import sys; from tiny_language import Runtime, compile_and_run; path = Path(sys.argv[1]); source = path.read_text(encoding='utf-8'); runtime = Runtime(source); compile_and_run(source, runtime=runtime, module_path=path); assert runtime.heap_leak_report()['count'] == 0, runtime.heap_leak_report()",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "87caca0ce76fe780b20361529abfea9e3e0fe5de392bd9a18c6cbd4356e35b18",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "pkg",
+        "vendor",
+        "--manifest",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\tiny.toml"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "88e80b6a7859a560da38ac8e6ef24e75adb5fc0a09b0e48c883694653cf98edc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "4fa727b9a426b1597f329ed16946a784d93d0a15728adb614c77c9fa38738155",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\python.exe",
+        "-c",
+        "from pathlib import Path; import sys; from tiny_language import Runtime, compile_and_run; path = Path(sys.argv[1]); source = path.read_text(encoding='utf-8'); runtime = Runtime(source); compile_and_run(source, runtime=runtime, module_path=path); assert runtime.heap_leak_report()['count'] == 0, runtime.heap_leak_report()",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "4fa727b9a426b1597f329ed16946a784d93d0a15728adb614c77c9fa38738155",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\invalid.tiny"
+      ],
+      "returncode": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "bee59d5098e63352b5af3d54743ddbc793592ae31a5c72dc4203652cfa4c9f76"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\main.tiny"
+      ],
+      "returncode": 1,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "ddf6e29c70a7eb4b4cdae8beefd824bfe367da4011f31b9fefafa0326874cb30"
+    },
+    {
+      "arguments": [
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\environment\\Scripts\\tiny.exe",
+        "C:\\Users\\marku\\AppData\\Local\\Temp\\tiny-application-9sw3b9f5\\Application \u00fc with spaces\\src\\boundaries.tiny"
+      ],
+      "returncode": 0,
+      "stdout_sha256": "351caef4ec4e4a9de5fce63b53584a46b4db4c5253b7b0446c7afe80b64cfb33",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

@@ -1,12 +1,18 @@
 # Python interop and FFI design
 
-This draft describes how TinyLanguage can interact safely with Python functions and modules. The focus is on clear argument/return mapping, predictable security controls, and illustrative examples.
+This draft describes TinyLanguage's Python function and module bridge. The
+implemented bridge uses attribute allowlists and a module denylist; Python code
+runs in the interpreter's host process with its permissions. It is not an
+operating-system sandbox. The focus is on argument/return mapping, the actual
+access checks, and illustrative examples.
 
 ## Goals
 
 - **Simple API**: TinyLanguage code should load Python modules and call functions with minimal boilerplate.
 - **Predictable type mapping**: Arguments and returns are deterministically mapped between TinyLanguage and Python values.
-- **Security**: Sandbox rules prevent unwanted filesystem, network, or process access.
+- **Access checks**: Attribute allowlists and a module denylist reject direct
+  calls outside the configured interface. They do not contain side effects of
+  allowlisted Python code or provide isolation for untrusted Tiny programs.
 - **Testability**: Mapping and sandbox settings are deterministic and configurable per call.
 
 ## FFI API and type mapping
@@ -44,11 +50,25 @@ This draft describes how TinyLanguage can interact safely with Python functions 
 
 - **Per-module allowlist**: `new[...]` explicitly defines which attributes/functions of a module are available. The default is an empty allowlist entry that blocks everything.
 - **Global bans**: Certain modules are always denied (`subprocess`, `socket`, `multiprocessing`, `ctypes`, `ssl`, `sys`). Attempts to load them raise `[PYSEC] module denied`.
-- **Timeouts**: Every call supports `timeout_ms`; exceeding it yields `[PYTIMEOUT]` and aborts the Python call.
+- **Timeouts**: `Python.call` supports `timeout_ms`; exceeding it yields
+  `[PYTIMEOUT]` and stops waiting. The daemon thread continues executing Python
+  code and can perform later side effects. A timeout does not abort that work.
 - **Allowlist enforcement**: Calls without an explicit allowlist rely on the attributes registered through `Python.import_module`; without one, the call is denied with `[PYDENY]`.
-- **Side-effect sandbox**: Filesystem access is allowed only when the module and function are allowlisted and do not escape the working directory. Network access is disabled by default.
+- **Side effects**: Allowlisted Python functions retain host filesystem,
+  network, and process privileges. There is no working-directory containment.
+  The separate `stdlib.http` and `stdlib.process` stubs deny real network and
+  process operations with `E_PERMISSION`; that stub behavior does not restrict
+  arbitrary Python code. Direct `File`/`stdlib.fs` operations also use host
+  permissions and can access paths outside the working directory.
 - **Isolation**: Proxy objects returned from Python do not allow attribute access unless explicitly freed via `allow` (`Python.import_module("pathlib", new["Path.name"])`). This prevents injecting arbitrary Python code through dynamic attributes.
 - **Deterministic error codes**: Security violations, timeouts, and missing allowlist entries produce clear, distinct error prefixes (`[PYSEC]`, `[PYTIMEOUT]`, `[PYDENY]`).
+
+The executable boundary checks are in
+`tests/detailtests/test_application_boundaries.py`. They demonstrate both the
+implemented denials and the filesystem/timeout limitations. Do not execute
+untrusted programs using this bridge as a security boundary. The
+[strict-by-default profile](strict_by_default_safety_profile.md) remains a
+proposal rather than an implemented isolation mode.
 
 ## Common interop scenarios
 

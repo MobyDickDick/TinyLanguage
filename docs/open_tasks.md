@@ -152,6 +152,18 @@ document or prototype alone does not close the package.
   - References: `src/tiny_pkg_cli.py`,
     [python_interop.md](python_interop.md),
     [strict_by_default_safety_profile.md](strict_by_default_safety_profile.md).
+  - Implementation checkpoint (2026-11-04): remote archives now require locked
+    SHA-256 integrity, bounded downloads and data-only, contained extraction.
+    Cache and vendor changes are staged; validation failures preserve existing
+    installations. Adversarial regression tests and an installed application
+    helper cover JSON/file processing, dependencies, offline reproduction,
+    dependency upgrades, CLI errors, worker cancellation and heap cleanup.
+    Python filesystem/timeout boundaries are tested and their previous
+    overstatements corrected. CI retains installed application reports. See
+    [package hardening acceptance](package_hardening_acceptance.md) for the
+    contract, evidence and limitations. Keep this package open until an actual
+    previous/current TinyLanguage release pair passes runtime-upgrade acceptance;
+    the helper explicitly records a missing pair as not run.
 
 ## Language quality and design review follow-up (2026-10-21)
 

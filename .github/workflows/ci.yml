@@ -67,6 +67,9 @@ jobs:
       - name: Qualify a fresh installation outside the checkout
         shell: bash
         run: python tools/release/verify_installed_workflows.py dist/platform/*.whl --require-compiler --report artifacts/platform-install.json
+      - name: Qualify an installed application and locked package upgrades
+        shell: bash
+        run: python tools/release/verify_application_workflows.py dist/platform/*.whl --report artifacts/platform-application.json
       - name: Retain platform acceptance evidence
         if: always()
         uses: actions/upload-artifact@v5
@@ -75,6 +78,7 @@ jobs:
           path: |
             artifacts/platform-tests.xml
             artifacts/platform-install.json
+            artifacts/platform-application.json
           if-no-files-found: error
 
   test:

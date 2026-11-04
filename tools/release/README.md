@@ -63,6 +63,19 @@ The installed workflow check also covers local/stdlib imports with LF and CRLF,
 Unicode/space/quoted argument paths, project/package tooling, LSP and DAP helpers.
 See [platform qualification status](../../docs/platform_verification_acceptance.md).
 
+Qualify the complete installed JSON application, locked HTTP distributions,
+dependency upgrades, offline cache reproduction, CLI errors and worker cleanup:
+
+```bash
+python tools/release/verify_application_workflows.py dist/release/tinylanguage-1.0.0-py3-none-any.whl --report dist/application-acceptance.json
+```
+
+An actual runtime upgrade additionally requires `--previous-wheel PATH` and
+`--require-runtime-upgrade`. Without a previous release artifact, the report
+records that gate as not run. See
+[package hardening acceptance](../../docs/package_hardening_acceptance.md) for
+distribution limits, migration and the actual filesystem/Python trust boundary.
+
 ## Signing
 
 To sign artifacts, ensure `gpg` is installed and the release key is available

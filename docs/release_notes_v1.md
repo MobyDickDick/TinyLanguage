@@ -37,8 +37,10 @@ Native VM, bytecode, transpilers, LLVM and C remain experimental.
 
 - LLVM and native/C compiler backends remain experimental and out of scope for
   1.0 stability guarantees.
-- Copy-on-call escape inference and guaranteed interval enclosure have open
-  correctness work (packages 7–8) and are excluded from the frozen contract.
+- Guaranteed interval enclosure has open correctness work (package 8).
+  Opt-in copy-on-call also remains outside the frozen contract; package 7
+  replaces return inference with [copying and explicit adoption](copy_on_call_contract.md),
+  including migration guidance and known limits.
 - Performance guarantees remain out of scope. Packaging/distribution and
   platform qualification are mandatory release gates in packages 1–3 and are
   still pending; local implementation checkpoints do not close them.

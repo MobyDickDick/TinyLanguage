@@ -217,9 +217,12 @@ caught
 ## Argument encapsulation
 
 - **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
-- **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
-- **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
-- **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
+- **When copying happens:** Mutable arguments (live heap pointers, lists, struct/variant maps and class instances) are deep-copied before binding. All arguments in one call share copy memos, preserving shared subgraphs and cycles.
+- **Return expressions:** Returning an argument, a local alias or a container containing an argument returns the copied data. Scalar calculations such as `return len(buf)` never grant permission to modify the original. Conditional and unreachable returns cannot change this rule; unreachable statements after a guaranteed exit still fail linting with `E013`.
+- **Methods and nested calls:** A method's receiver (`self`) retains its identity; explicit method arguments are copied. A method invoked on a copied object changes that copy. Every nested Tiny function call creates another copy boundary.
+- **Write protection:** During the call, writes through other aliases to the original argument graph fail with a runtime error. This includes field/heap writes, deletion and retagging; a method receiver cannot bypass an enclosing call's protection.
+- **Adopting updates:** The caller explicitly adopts a returned copy. For a heap buffer, receive the replacement first, delete the old allocation, then rebind; the existing single-owner checks reject directly overwriting a live buffer.
+- **Scope and cost:** This is an opt-in interpreter contract for Tiny function and method calls, not isolation for host/native functions, interop or other backends. Copying consumes time and memory; heap copies use the existing manual allocation lifecycle. Numeric heap handles and recursion-depth limits still apply. See the [contract, migration and measured costs](copy_on_call_contract.md).
 - **Example:**
 
   ```tiny
@@ -279,8 +282,8 @@ caught
 - **Stability guarantees:** the interpreter behavior documented in this spec is
   the candidate stability target for the current major line; qualification is
   pending under the [candidate contract](release_scope_v1.md). Copy-on-call
-  escape inference and guaranteed interval enclosure remain unresolved work
-  packages 7 and 8, and are excluded from the frozen contract until resolved.
+  remains opt-in and outside that target after the package 7 contract revision;
+  guaranteed interval enclosure remains excluded pending work package 8.
   Breaking changes to the qualified contract require a major version bump and
   an explicit migration plan.
 - **Deprecations:** breaking or removed features must be announced in the

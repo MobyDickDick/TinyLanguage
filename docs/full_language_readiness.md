@@ -27,8 +27,10 @@ documents and prototypes do not by themselves establish release readiness.
 The [candidate contract and evidence map](release_scope_v1.md) defines the
 proposed stable scope and the checks required for the actual candidate.
 Checked items below record implemented capabilities or published designs;
-they do not certify release qualification or production readiness. Copy-on-call,
-interval correctness, external-package hardening and delivery remain open.
+they do not certify release qualification or production readiness.
+[Copy-on-call](copy_on_call_contract.md) has a revised opt-in contract and
+acceptance evidence; interval correctness, release-pair application acceptance
+and delivery remain open.
 
 ### 1) Core language + semantics
 - [x] Specify a formal versioning + deprecation policy for language changes.

@@ -13,16 +13,20 @@ operators, ADTs, namespaces/imports, and cooperative task/cleanup semantics as
 specified in [language_spec.md](language_spec.md). The proposed
 [strict profile](strict_by_default_safety_profile.md) is a design, not an
 implemented default. Default calls retain the documented shared mutation
-behavior; optional copy-on-call inference is excluded pending work package 7.
+behavior. Optional copy-on-call remains outside the frozen stability target;
+work package 7 replaces return inference with the explicit adoption contract in
+[copy_on_call_contract.md](copy_on_call_contract.md).
 
 The stable stdlib target is the existing API of `stdlib.math`, `stdlib.random`,
 `stdlib.string`, `stdlib.collections`, `stdlib.io` and `stdlib.json`, with the
 deviations and maturity tiers in [stdlib_compatibility.md](stdlib_compatibility.md).
 Beta and experimental modules retain their stated tiers. Ordinary floating-point
-math does not promise exact real arithmetic. `NumberIntervall` enclosure and
-copy-on-call escape inference have known defects (packages 8 and 7); neither is
-covered by the frozen stability target. Resolving them requires explicit
-contract decisions, independent checks, and migration notes before inclusion.
+math does not promise exact real arithmetic. `NumberIntervall` enclosure has
+known defects (package 8) and remains excluded. Copy-on-call's revised contract
+has regression and migration evidence but is not added to this frozen target.
+Its numeric-pointer representation, manual heap cleanup and interop limits are
+documented separately. Interval inclusion still requires a contract decision,
+independent checks and migration notes.
 
 The CLI target is the installed interpreter, version reporting, project/local
 package workflows, and LSP/editor operations demonstrated in
@@ -48,6 +52,7 @@ The CI evidence gate records their results for the exact checked source.
 | Evaluation order, scopes, types, tasks | `tests/detailtests/test_semantics_suite.py`, `tests/test_tiny_language.py`, `tests/detailtests/test_async_structured.py` | Spec-derived expected outputs and error/cleanup cases |
 | Heap safety and structured errors | `tests/detailtests/test_heap_api_errors.py`, `tests/test_release_scope_contract.py` | Invalid operations fail; documented error codes/positions remain observable |
 | Arithmetic and documentation | `tests/test_release_scope_contract.py` | Exact rational oracle for small core arithmetic; actual encapsulation snippet executes |
+| Opt-in argument encapsulation (outside frozen target) | `tests/detailtests/test_copy_on_call.py`, [contract and measurements](copy_on_call_contract.md) | Scalar/alias returns, protected writes, nested calls, methods and shared/cyclic graphs |
 | Source-preserving module summaries | `tests/test_module_summary_persistence.py` | Unchanged LF/CRLF summaries keep their bytes and timestamp; changed summaries update |
 | Stable stdlib | `tests/test_stdlib_compatibility.py`, `tests/detailtests/test_stdlib_parity.py`, `tests/detailtests/test_stdlib_doc_examples.py` | Reference parity and executable documented outputs |
 | CLI/editor | `tests/detailtests/test_cli_smoke.py`, LSP suites in the evidence gate; installed acceptance records | CLI/LSP behavior; external installation and actual editor evidence have distinct scopes |

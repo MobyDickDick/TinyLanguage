@@ -1892,7 +1892,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_copy_on_call_default(),
-        help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+        help="Deep-copy mutable arguments before Tiny calls (method receivers stay shared) (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
         "--v1-only",

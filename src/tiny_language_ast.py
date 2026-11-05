@@ -136,6 +136,7 @@ class Fn(IR):
     name: str
     params: List[Param]
     body: List[IR]
+    # Legacy AST/port compatibility only; returns do not grant mutation rights.
     return_param_names: Set[str] = field(default_factory=set)
     namespace: Optional[str] = None
     return_type: Optional[str] = None
@@ -152,6 +153,7 @@ class MethodDef(IR):
     name: str
     params: List[Param]
     body: List[IR]
+    # Legacy AST/port compatibility only; returns do not grant mutation rights.
     return_param_names: Set[str] = field(default_factory=set)
     return_type: Optional[str] = None
     inferred_return_type: Optional[str] = None

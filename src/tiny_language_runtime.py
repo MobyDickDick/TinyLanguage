@@ -247,8 +247,12 @@ class Runtime:
         ptr_memo: Optional[Dict[int, Any]] = None,
         protected_keys: Optional[Set[ParamKey]] = None,
     ) -> Any:
-        memo = memo or {}
-        ptr_memo = ptr_memo or {}
+        # Empty caller-owned memos must survive the first recursive visit and
+        # subsequent arguments: one call copies one graph, including its aliases.
+        if memo is None:
+            memo = {}
+        if ptr_memo is None:
+            ptr_memo = {}
         if protected_keys is not None:
             key = self._binding_key(value)
             if key:
@@ -288,18 +292,9 @@ class Runtime:
             copied: Dict[str, Any] = {}
             memo[obj_id] = copied
             for key, val in value.items():
-                if key == "__fields__" and isinstance(val, dict):
-                    copied_fields: Dict[str, Dict[str, Any]] = {}
-                    copied[key] = copied_fields
-                    for cls, fmap in val.items():
-                        copied_fields[cls] = {
-                            fname: self._deep_copy_value(fval, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
-                            for fname, fval in fmap.items()
-                        }
-                else:
-                    copied[key] = self._deep_copy_value(
-                        val, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
-                    )
+                copied[key] = self._deep_copy_value(
+                    val, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
+                )
             return copied
 
         if isinstance(value, list):
@@ -341,7 +336,7 @@ class Runtime:
         raise self._error(
             f"mutation of protected parameter {binding.name} is not allowed while copy-on-call is enabled",
             pos or SourcePos.origin(),
-            hint="Return the argument or disable --copy-on-call to mutate caller-owned data.",
+            hint="Mutate the local copy and assign its return value in the caller, or disable --copy-on-call.",
         )
 
     def _bind_parameters_to_env(
@@ -350,19 +345,19 @@ class Runtime:
         args: List[Any],
         env: "Environment",
         *,
-        escaped_params: Set[str],
         pos: SourcePos,
         type_label: str,
-        force_escaped: Optional[Set[str]] = None,
+        receiver_name: Optional[str] = None,
     ) -> Dict[ParamKey, ParameterBinding]:
         bindings: Dict[ParamKey, ParameterBinding] = {}
         memo: Dict[int, Any] = {}
         ptr_memo: Dict[int, Any] = {}
-        forced = force_escaped or set()
         for param, arg in zip(params, args):
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in {type_label}", pos=pos)
-            should_escape = param.name in escaped_params or param.name in forced
+            # Only method-call syntax grants a shared receiver. Return syntax
+            # never changes argument identity or caller mutation permission.
+            should_escape = param.name == receiver_name
             is_mutable = self._is_mutable_argument(arg)
             protected_keys: Set[ParamKey] = set()
             bound_val = arg
@@ -758,6 +753,7 @@ class Runtime:
         if ip is None:
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": self.error_message or ""}}
 
+        self._guard_protected_mutation(ip, pos)
         with self._lock:
             self.heap.pop(ip, None)
             self.heap_cell_types.pop(ip, None)
@@ -844,6 +840,7 @@ class Runtime:
             }
 
     def tag(self, p: Any, typ: Any, *, pos: Optional[Any] = None) -> Dict[str, Any]:
+        self._guard_protected_mutation(p, pos)
         try:
             with self._lock:
                 self.ptr_tags[int(p)] = str(typ)
@@ -1731,7 +1728,6 @@ class Runtime:
             fn.params,
             args,
             call_env,
-            escaped_params=getattr(fn, "return_param_names", set()),
             pos=fn.pos,
             type_label=f"function {fn.name}",
         )
@@ -1945,15 +1941,13 @@ class Runtime:
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)
         method_args = [self_value] + args
-        forced_escape = {md.params[0].name} if md.params else set()
         param_bindings = self._bind_parameters_to_env(
             md.params,
             method_args,
             env,
-            escaped_params=getattr(md, "return_param_names", set()),
             pos=md.pos,
             type_label=f"method {md.class_name}.{md.name}",
-            force_escaped=forced_escape,
+            receiver_name=md.params[0].name if md.params else None,
         )
         for base in self.class_mro(cname)[1:]:
             env.define(base, BaseView(target_obj, base), md.pos)

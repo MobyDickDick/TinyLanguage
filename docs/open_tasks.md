@@ -177,7 +177,7 @@ they are not a claim that every feature or backend has been audited.
 
 ### 7. Predictable argument encapsulation
 
-- [ ] **Define and validate the mutation contract for copy-on-call**
+- [x] **Define and validate the mutation contract for copy-on-call**
   (Owner: Language/Runtime; priority: P1)
   - Observed behavior: with `copy_on_call=True`, a function that executes
     `heap_set(buf, 0, 99)` without returning a value leaves the caller's
@@ -199,6 +199,20 @@ they are not a claim that every feature or backend has been audited.
   - References: [language_spec.md](language_spec.md#argument-encapsulation),
     `src/tiny_language_parser.py`, `src/tiny_language_runtime.py`,
     `tests/detailtests/test_copy_on_call.py`.
+  - Acceptance checkpoint (2026-11-05): Tiny function and explicit method
+    arguments are now copied independently of return syntax. Scalar and alias
+    returns cannot authorize caller mutations; method receivers retain their
+    existing identity and respect enclosing protection. Shared memos preserve
+    aliases and cycles across arguments and class-field storage. Python and
+    Tiny parsers no longer infer escape permission; old AST metadata is inert.
+    The [contract, executable migration examples and measured time/memory costs](copy_on_call_contract.md)
+    document numeric-pointer, manual-cleanup, recursion and interop limits.
+    All 61 focused checks pass. The complete 969-test Windows run plus retained
+    reruns yields 962 passing cases and seven explicit platform/optional skips;
+    eight sandbox-blocked loopback tests and one timing-sensitive check pass on
+    rerun. [Source and result checkpoint](../artifacts/copy-on-call/checkpoint.json).
+    This closes package 7 without expanding the frozen 1.0 stability target or
+    closing release/platform qualification.
 
 ### 8. Numerically sound interval operations
 

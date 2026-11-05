@@ -32,8 +32,9 @@ and successful delivery packages 1–3.
 - **Release scope:** interpreter, core language, documented stable stdlib and
   installed CLI/editor workflows in the candidate contract.
 - **Out of scope:** LLVM backend, native/C compiler backend, performance guarantees,
-  and unqualified beta/experimental APIs. Copy-on-call inference and interval
-  enclosure remain excluded until packages 7–8 resolve their correctness issues.
+  and unqualified beta/experimental APIs. Opt-in copy-on-call remains excluded
+  after package 7's [contract revision](copy_on_call_contract.md); interval
+  enclosure remains excluded pending package 8's correctness work.
 - **Delivery:** installable artifacts and supported-platform acceptance are
   mandatory release gates (packages 1–3).
 - **Status:** candidate target frozen; actual candidate qualification is pending.

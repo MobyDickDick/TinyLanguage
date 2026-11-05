@@ -26,14 +26,20 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Fixed
+- Opt-in copy-on-call now copies mutable arguments independently of return
+  expressions; scalar calculations and alias returns cannot grant writes to
+  caller data. Shared/cyclic graph copying preserves aliases across arguments.
+  Method receivers stay shared. This changes the previous escape behavior;
+  migration and measured costs are in `docs/copy_on_call_contract.md`.
 - LLVM executable builds now link a C `main` launcher for the emitted
   `tiny_main` entry point, including fresh-install platform qualification.
 - Unchanged module summaries retain their original bytes and timestamps across
   Windows/Linux, preventing false candidate-source changes from CRLF conversion.
 
 ### Known issues / limitations
-- Copy-on-call escape inference and interval enclosure have unresolved correctness
-  issues (work packages 7–8) and are excluded from the frozen stability target.
+- Interval enclosure has unresolved correctness issues (work package 8).
+  Opt-in copy-on-call remains outside the frozen stability target; its revised
+  contract and numeric-pointer/manual-cleanup limits are documented separately.
 - LLVM and native/C compiler backends remain experimental and are out of scope for 1.0.0.
 - Performance guarantees remain outside the 1.0.0 scope. Packaging implementation
   is available; full release qualification is tracked in `docs/open_tasks.md`.

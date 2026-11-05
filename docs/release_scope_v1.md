@@ -21,12 +21,14 @@ The stable stdlib target is the existing API of `stdlib.math`, `stdlib.random`,
 `stdlib.string`, `stdlib.collections`, `stdlib.io` and `stdlib.json`, with the
 deviations and maturity tiers in [stdlib_compatibility.md](stdlib_compatibility.md).
 Beta and experimental modules retain their stated tiers. Ordinary floating-point
-math does not promise exact real arithmetic. `NumberIntervall` enclosure has
-known defects (package 8) and remains excluded. Copy-on-call's revised contract
+math does not promise exact real arithmetic. `NumberIntervall` has a separate
+[set and rounding contract](interval_arithmetic_contract.md) with independent
+reference-interpreter checks (package 8) and remains excluded from this frozen
+target. Copy-on-call's revised contract
 has regression and migration evidence but is not added to this frozen target.
 Its numeric-pointer representation, manual heap cleanup and interop limits are
-documented separately. Interval inclusion still requires a contract decision,
-independent checks and migration notes.
+documented separately. Future interval inclusion requires its own stability
+and backend/platform qualification decision.
 
 The CLI target is the installed interpreter, version reporting, project/local
 package workflows, and LSP/editor operations demonstrated in

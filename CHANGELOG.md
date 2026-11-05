@@ -26,6 +26,11 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Fixed
+- Interval `+`, `-`, `*`, `/` now enclose pointwise real results with directed
+  outward rounding, correct division across zero, explicit empty/unbounded and
+  exterior sets, and safe integer/Number conversion. Neighbor envelopes use
+  infinite directions. Legacy Math interval estimates are marked `approximate`;
+  the contract and migration notes are in `docs/interval_arithmetic_contract.md`.
 - Opt-in copy-on-call now copies mutable arguments independently of return
   expressions; scalar calculations and alias returns cannot grant writes to
   caller data. Shared/cyclic graph copying preserves aliases across arguments.
@@ -37,8 +42,10 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
   Windows/Linux, preventing false candidate-source changes from CRLF conversion.
 
 ### Known issues / limitations
-- Interval enclosure has unresolved correctness issues (work package 8).
-  Opt-in copy-on-call remains outside the frozen stability target; its revised
+- Interval arithmetic and opt-in copy-on-call remain outside the frozen
+  stability target. Interval guarantees cover the four documented operators
+  on the reference interpreter; Math interval estimates and compiler backends
+  have no enclosure promise. Copy-on-call's revised
   contract and numeric-pointer/manual-cleanup limits are documented separately.
 - LLVM and native/C compiler backends remain experimental and are out of scope for 1.0.0.
 - Performance guarantees remain outside the 1.0.0 scope. Packaging implementation

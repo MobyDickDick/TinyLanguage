@@ -1139,15 +1139,14 @@ class Runtime:
         }
 
     def _number_to_intervall(self, value: Any) -> Optional[Dict[str, Any]]:
+        import tiny_intervals
+
         fields = self._number_fields(value)
         if fields is None:
             return None
         err = fields.get("error", "normal") or "normal"
-        if err in {"plus_infinity", "minus_infinity", "any_number"}:
-            return self._make_intervall(0, 0, err)
-        lower = fields.get("value", 0)
-        upper = fields.get("value", 0)
-        return self._make_intervall(lower, upper, "normal")
+        stored = fields.get("value", 0)
+        return self._make_intervall(*tiny_intervals.scalar(stored, err))
 
     def _coerce_to_number(self, val: Any) -> Any:
         if val is None:
@@ -1171,7 +1170,9 @@ class Runtime:
         if isinstance(val, bool):
             return val
         if isinstance(val, (int, float)):
-            return self._make_intervall(val, val, "normal")
+            import tiny_intervals
+
+            return self._make_intervall(*tiny_intervals.scalar(val))
         return val
 
     def _coerce_numeric_operands(
@@ -2027,6 +2028,10 @@ class Runtime:
         if isinstance(val, dict) and val.get("__tag__") == "NumberIntervall":
             fields = val.get("__fields__", {}).get("NumberIntervall", {})
             err = fields.get("error")
+            if err in {"empty_interval", "invalid_number"}:
+                return str(err)
+            if err == "approximate":
+                return f"[{fields.get('lower')}, {fields.get('upper')}] (approximate)"
             if err in {"plus_infinity", "minus_infinity", "any_number"}:
                 return str(err)
             if err == "upper_bound_is_plus_infinity":
@@ -2042,8 +2047,15 @@ class Runtime:
             if "lower" in fields and "upper" in fields:
                 lower = fields.get("lower")
                 upper = fields.get("upper")
-                center = (lower + upper) / 2
-                radius = (upper - lower) / 2
+                center = lower / 2 + upper / 2
+                radius = upper / 2 - lower / 2
+                # Center/radius is only a display estimate. At extreme magnitudes
+                # show the authoritative endpoints instead of overflowing or
+                # losing subnormal bounds during presentation.
+                if (not math.isfinite(radius) or
+                        (lower != upper and radius == 0) or
+                        (0 < max(abs(lower), abs(upper)) < sys.float_info.min)):
+                    return f"[{lower}, {upper}]"
 
                 def _format_float(val: float) -> str:
                     abs_val = abs(val)

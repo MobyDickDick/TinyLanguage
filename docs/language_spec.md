@@ -60,7 +60,7 @@ program stays within the v1 feature set.
 
 ## Expressions and operators
 
-- **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
+- **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed). Tagged `Number` values use runtime states like `plus_infinity`. The experimental `NumberIntervall` class supports outward-rounded `+`, `-`, `*`, `/` with explicit set/status semantics; see its [interval arithmetic contract](interval_arithmetic_contract.md), including zero-only division, unbounded results and approximation exclusions.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
 - **Experimental math tuples (opt-in):** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
@@ -283,7 +283,8 @@ caught
   the candidate stability target for the current major line; qualification is
   pending under the [candidate contract](release_scope_v1.md). Copy-on-call
   remains opt-in and outside that target after the package 7 contract revision;
-  guaranteed interval enclosure remains excluded pending work package 8.
+  interval enclosure has its own [contract and migration notes](interval_arithmetic_contract.md)
+  from package 8 and remains outside this frozen target.
   Breaking changes to the qualified contract require a major version bump and
   an explicit migration plan.
 - **Deprecations:** breaking or removed features must be announced in the

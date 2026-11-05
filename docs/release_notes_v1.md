@@ -37,7 +37,9 @@ Native VM, bytecode, transpilers, LLVM and C remain experimental.
 
 - LLVM and native/C compiler backends remain experimental and out of scope for
   1.0 stability guarantees.
-- Guaranteed interval enclosure has open correctness work (package 8).
+- Interval enclosure remains outside the frozen stability target; package 8
+  defines [guaranteed operators and approximation exclusions](interval_arithmetic_contract.md)
+  with reference-interpreter regression evidence.
   Opt-in copy-on-call also remains outside the frozen contract; package 7
   replaces return inference with [copying and explicit adoption](copy_on_call_contract.md),
   including migration guidance and known limits.

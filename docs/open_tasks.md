@@ -216,7 +216,7 @@ they are not a claim that every feature or backend has been audited.
 
 ### 8. Numerically sound interval operations
 
-- [ ] **Specify interval meaning and restore the enclosure guarantee**
+- [x] **Specify interval meaning and restore the enclosure guarantee**
   (Owner: Numeric Semantics/Runtime; priority: P1)
   - Reproduced defect under ordinary set-based interval semantics:
     `NumberIntervall(-2, 3) / NumberIntervall(-5, 0.5)` produces `[6, -4]`.
@@ -242,6 +242,23 @@ they are not a claim that every feature or backend has been audited.
     `src/tiny_language_runtime.py`, `src/stdlib/__init__.py`,
     `tests/detailtests/test_number_intervall.py`,
     [stdlib_math_parity.md](stdlib_math_parity.md).
+  - Acceptance checkpoint (2026-11-05): the
+    [set, rounding and migration contract](interval_arithmetic_contract.md)
+    defines ordinary/exterior, empty, unbounded, invalid and approximate results.
+    The reference interpreter computes exact rational component bounds and rounds
+    final binary64 endpoints outwards for `+`, `-`, `*`, `/`. Both reproduced
+    defects, zero-only and one-sided division, overflow, subnormals, neighbors,
+    integer/Number conversion and mixed arithmetic have independent rational
+    oracles and Tiny integration checks. The same oracles reject both historical
+    defects. Legacy Math interval estimates are visibly `approximate` and cannot
+    enter guaranteed arithmetic silently. All 135 focused checks pass; an isolated
+    built-wheel run and reproducible packaging checks pass (64 checks, two POSIX
+    skips). The complete Windows run and targeted environment-corrected reruns
+    yield 1,013 passing cases and seven explicit platform/optional skips.
+    [Retained source, commands and results](../artifacts/interval-arithmetic/checkpoint.json).
+    This closes package 8 for the reference interpreter without expanding the
+    frozen stability target, claiming standalone self-hosted interval support,
+    or closing the wider backend audit in package 9.
 
 ### 9. Independent correctness evidence
 

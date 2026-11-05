@@ -74,6 +74,7 @@ This document tracks which Python sources have TinyLanguage equivalents and clar
 | `src/stdlib_csv.py` | Python-backed stdlib helper |
 | `src/stdlib_datetime.py` | Python-backed stdlib helper |
 | `src/tiny_language_module_resolution.py` | Host integration for module/package resolution |
+| `src/tiny_intervals.py` | Exact rational and directed-binary64 host primitives for `src_tiny/number_intervall.tiny`; reference interpreter only |
 | `src/tiny_pkg_cli.py` | Host integration for module/package resolution |
 | `src/tiny_pkg_resolution.py` | Host integration for module/package resolution |
 | `tests/__init__.py` | Test suite (Python-only) |

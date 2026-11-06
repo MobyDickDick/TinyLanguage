@@ -186,6 +186,13 @@ bootstrap, dependency changes, and reproducible builds.
 
 ## Resolution strategy
 
+The implemented distribution integrity/extraction contract and its acceptance
+workflow are documented in
+[package hardening acceptance](package_hardening_acceptance.md). Remote archives
+require `registry_checksum` in the lock; older synthetic `name@version` hashes
+cannot authorize downloads. Refresh older locks after reviewing the index.
+Registry publication and the full registry protocol below remain planned work.
+
 1. Load `tiny.toml` dependencies.
 2. Resolve versions using registry metadata and SemVer constraints.
 3. Prefer local path overrides when `dependency-overrides` are configured.

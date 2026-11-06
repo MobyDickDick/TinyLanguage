@@ -125,6 +125,16 @@ document or prototype alone does not close the package.
     [release_v1_dod.md](release_v1_dod.md),
     [backend_feature_matrix.md](backend_feature_matrix.md),
     `tools/release/check_release_candidate_checklist.py`.
+  - Implementation checkpoint (2026-11-02): the canonical
+    [candidate contract and evidence map](release_scope_v1.md) reconciles
+    interpreter/stdlib/CLI scope, experimental backend status, known copy-on-call
+    and interval exclusions, and planned-version versus publication status.
+    The CI gate now executes and verifies source-bound command/log/JUnit/artifact
+    evidence instead of trusting Markdown boxes. Focused checks reject missing,
+    stale, altered, empty or skipped required evidence. The actual spec example
+    for argument encapsulation is corrected and tested verbatim. This package
+    remains open until the committed candidate has passing retained checks and
+    delivery packages 1–3 have complete acceptance evidence.
 
 ### 6. Package hardening and real-project acceptance
 
@@ -142,6 +152,18 @@ document or prototype alone does not close the package.
   - References: `src/tiny_pkg_cli.py`,
     [python_interop.md](python_interop.md),
     [strict_by_default_safety_profile.md](strict_by_default_safety_profile.md).
+  - Implementation checkpoint (2026-11-04): remote archives now require locked
+    SHA-256 integrity, bounded downloads and data-only, contained extraction.
+    Cache and vendor changes are staged; validation failures preserve existing
+    installations. Adversarial regression tests and an installed application
+    helper cover JSON/file processing, dependencies, offline reproduction,
+    dependency upgrades, CLI errors, worker cancellation and heap cleanup.
+    Python filesystem/timeout boundaries are tested and their previous
+    overstatements corrected. CI retains installed application reports. See
+    [package hardening acceptance](package_hardening_acceptance.md) for the
+    contract, evidence and limitations. Keep this package open until an actual
+    previous/current TinyLanguage release pair passes runtime-upgrade acceptance;
+    the helper explicitly records a missing pair as not run.
 
 ## Language quality and design review follow-up (2026-10-21)
 
@@ -155,7 +177,7 @@ they are not a claim that every feature or backend has been audited.
 
 ### 7. Predictable argument encapsulation
 
-- [ ] **Define and validate the mutation contract for copy-on-call**
+- [x] **Define and validate the mutation contract for copy-on-call**
   (Owner: Language/Runtime; priority: P1)
   - Observed behavior: with `copy_on_call=True`, a function that executes
     `heap_set(buf, 0, 99)` without returning a value leaves the caller's
@@ -177,10 +199,24 @@ they are not a claim that every feature or backend has been audited.
   - References: [language_spec.md](language_spec.md#argument-encapsulation),
     `src/tiny_language_parser.py`, `src/tiny_language_runtime.py`,
     `tests/detailtests/test_copy_on_call.py`.
+  - Acceptance checkpoint (2026-11-05): Tiny function and explicit method
+    arguments are now copied independently of return syntax. Scalar and alias
+    returns cannot authorize caller mutations; method receivers retain their
+    existing identity and respect enclosing protection. Shared memos preserve
+    aliases and cycles across arguments and class-field storage. Python and
+    Tiny parsers no longer infer escape permission; old AST metadata is inert.
+    The [contract, executable migration examples and measured time/memory costs](copy_on_call_contract.md)
+    document numeric-pointer, manual-cleanup, recursion and interop limits.
+    All 61 focused checks pass. The complete 969-test Windows run plus retained
+    reruns yields 962 passing cases and seven explicit platform/optional skips;
+    eight sandbox-blocked loopback tests and one timing-sensitive check pass on
+    rerun. [Source and result checkpoint](../artifacts/copy-on-call/checkpoint.json).
+    This closes package 7 without expanding the frozen 1.0 stability target or
+    closing release/platform qualification.
 
 ### 8. Numerically sound interval operations
 
-- [ ] **Specify interval meaning and restore the enclosure guarantee**
+- [x] **Specify interval meaning and restore the enclosure guarantee**
   (Owner: Numeric Semantics/Runtime; priority: P1)
   - Reproduced defect under ordinary set-based interval semantics:
     `NumberIntervall(-2, 3) / NumberIntervall(-5, 0.5)` produces `[6, -4]`.
@@ -206,10 +242,27 @@ they are not a claim that every feature or backend has been audited.
     `src/tiny_language_runtime.py`, `src/stdlib/__init__.py`,
     `tests/detailtests/test_number_intervall.py`,
     [stdlib_math_parity.md](stdlib_math_parity.md).
+  - Acceptance checkpoint (2026-11-05): the
+    [set, rounding and migration contract](interval_arithmetic_contract.md)
+    defines ordinary/exterior, empty, unbounded, invalid and approximate results.
+    The reference interpreter computes exact rational component bounds and rounds
+    final binary64 endpoints outwards for `+`, `-`, `*`, `/`. Both reproduced
+    defects, zero-only and one-sided division, overflow, subnormals, neighbors,
+    integer/Number conversion and mixed arithmetic have independent rational
+    oracles and Tiny integration checks. The same oracles reject both historical
+    defects. Legacy Math interval estimates are visibly `approximate` and cannot
+    enter guaranteed arithmetic silently. All 135 focused checks pass; an isolated
+    built-wheel run and reproducible packaging checks pass (64 checks, two POSIX
+    skips). The complete Windows run and targeted environment-corrected reruns
+    yield 1,013 passing cases and seven explicit platform/optional skips.
+    [Retained source, commands and results](../artifacts/interval-arithmetic/checkpoint.json).
+    This closes package 8 for the reference interpreter without expanding the
+    frozen stability target, claiming standalone self-hosted interval support,
+    or closing the wider backend audit in package 9.
 
 ### 9. Independent correctness evidence
 
-- [ ] **Audit test expectations and verify backend behavior by execution**
+- [x] **Audit test expectations and verify backend behavior by execution**
   (Owner: Testing/Language; priority: P1; supports package 5)
   - Motivation: the interval regression above demonstrates that a passing test
     can preserve an incorrect expected result. Agreement between backends that
@@ -230,11 +283,26 @@ they are not a claim that every feature or backend has been audited.
     [backend_feature_matrix.md](backend_feature_matrix.md).
   - Documentation-audit follow-up (2026-10-30): the
     [argument-encapsulation example](language_spec.md#argument-encapsulation)
-    fails verbatim with `E001` because `_unused3` discards the result of
-    `heap_set`. Correct the example's discard bindings and add executable
-    documentation coverage. The defect reproduces before and after translation;
-    ordinary `ignored` bindings allow the example to preserve the caller's
-    buffer value of `1` as described.
+    failed verbatim with `E001` because `_unused3` discarded the result of
+    `heap_set`. Fixed under package 5 on 2026-11-02 with ordinary `ignored`
+    bindings and executable Markdown coverage in
+    `tests/test_release_scope_contract.py`. The documented caller-buffer value
+    of `1` is asserted; the wider aliasing/numeric/backend audit remains open.
+  - Acceptance checkpoint (2026-11-06): the
+    [independent correctness audit](independent_correctness_audit.md) reviews
+    exact numeric, interval, aliasing, ownership and error expectations against
+    explicit contracts. Generated rational comparisons and shared-graph models
+    supplement existing boundary/cycle checks; mutation witnesses reject both
+    historical interval defects. A source-bound 24-case/four-route audit retains
+    frontend, generation, compilation and execution separately: 65 entries pass,
+    15 fail in ten explicit issue groups, 16 are outside the backend subset, and
+    no tool is missing. Incorrect supported cells and stable-subset wording are
+    corrected. CI monitors the narrow known failures without counting them as
+    passes, and rejects new failures, missing tools and incomplete evidence.
+    [Commands and validation evidence](../artifacts/correctness-audit/checkpoint.json).
+    This completes the audit, not the discovered backend repairs; see the
+    [bounded AUD-001–010 follow-up](independent_correctness_audit.md#bounded-follow-up-work).
+    Release and platform qualification remain open.
 
 ### 10. Maintainable runtime module boundaries
 

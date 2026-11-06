@@ -1,0 +1,15 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.4, pytest-8.4.2, pluggy-1.6.0
+rootdir: /mnt/c/Users/marku/myCloud/TinyLanguage
+configfile: pytest.ini
+plugins: typeguard-4.4.4
+collected 36 items
+
+tests/test_spec_conformance.py .                                         [  2%]
+tests/test_release_scope_contract.py .......                             [ 22%]
+tests/test_module_summary_persistence.py ...                             [ 30%]
+tests/detailtests/test_semantics_suite.py .....                          [ 44%]
+tests/detailtests/test_stdlib_doc_examples.py ....................       [100%]
+
+- generated xml file: /mnt/c/Users/marku/myCloud/TinyLanguage/build/linux-link-fix-evidence/interpreter-contract.xml -
+============================== 36 passed in 3.12s ==============================

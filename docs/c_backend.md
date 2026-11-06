@@ -51,9 +51,10 @@ to the compiler).
 
 ## Stability status and guidance
 
-The C backend is intended for quick native builds of the TinyLanguage subset
-described below. It is stable for that subset, but it is not a full-language
-replacement for the interpreter. Expect `NotImplementedError` for unsupported
+The C backend is experimental and intended for quick native builds of the
+TinyLanguage subset described below. The
+[independent execution audit](independent_correctness_audit.md) records output,
+short-circuit and zero-division deviations within that subset. Expect `NotImplementedError` for unsupported
 features and runtime errors from the embedded VM if the bytecode hits a missing
 opcode path.
 
@@ -63,7 +64,7 @@ Use this backend when you need:
 - A quick way to compare interpreter output with native output.
 - A stepping stone to LLVM IR/bitcode emission via `clang`.
 
-Prefer the interpreter or LLVM-native backend when you need:
+Use the interpreter when you need:
 
 - Modules, classes, heap operations, collections, pattern matching, or
   concurrency.
@@ -75,18 +76,20 @@ Prefer the interpreter or LLVM-native backend when you need:
   during codegen with `NotImplementedError`.
 - **Runtime diagnostics are VM-level**: they do not include rich source spans.
 - **Platform dependencies**: the emitted C must be compiled with a local toolchain.
-- **Output parity**: formatting is line-based; expect minor differences if you
-  rely on interpreter-only formatting quirks.
+- **Semantic parity**: boolean RHS expressions are evaluated eagerly, division
+  by zero can continue with infinity, and `Null` prints as `null`. These are
+  recorded contract deviations (AUD-003/004/010), not harmless normalization.
 
 ## Supported subset
 
-The C backend intentionally targets the minimal native-VM subset. It supports:
+The C backend implements the following instructions. The independent audit
+qualifies only its bounded examples and records the deviations above:
 
 - Literals: `number`, `string`, `bool`, `null`
 - Variables: `def`, assignment
 - Arithmetic and comparisons: `+`, `-`, `*`, `/`, `%`, `^`, `==`, `!=`, `<`, `<=`,
   `>`, `>=`
-- Boolean operators: `and`, `or`, `&&`, `||`
+- Boolean operators: `and`, `or`, `&&`, `||` (currently eager, without short-circuit semantics)
 - Control flow: `if`/`else`, `while`
 - Functions and `return` (including recursion)
 - Output: `print` (space-separated arguments) and `flush`
@@ -95,7 +98,8 @@ The C backend intentionally targets the minimal native-VM subset. It supports:
 Unsupported language features surface as `NotImplementedError` during code
 generation (for example, classes/methods, pattern matching, modules, heap
 operations, collections, concurrency, and Python interop). Use the interpreter
-or native LLVM backend for those features.
+for those features. The LLVM-native prototype has its own partial coverage and
+known failures; consult the backend matrix before using it.
 
 For a side-by-side view across backends, see
 `docs/backend_feature_matrix.md`.

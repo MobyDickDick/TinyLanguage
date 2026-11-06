@@ -1,0 +1,283 @@
+{
+  "date": "2026-11-06",
+  "scope": "Work package 9 local correctness audit, not backend repair or release/platform qualification",
+  "source_identity": {
+    "commit": "436e3e76e1c84c0a45833819d7fee9a0e9ba0439",
+    "source_sha256": "9e5fdd9424899948fde58f88fe53a4fcdeb5c05a5fd9541b08025d118ffd4cf4",
+    "source_changed_during_run": false
+  },
+  "runners": {
+    "cp312": {
+      "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+      "version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26300-SP0"
+    },
+    "cp314": {
+      "executable": "C:/Users/marku/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+      "version": "3.14.4 (tags/v3.14.4:23116f9, Apr  7 2026, 14:10:54) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26300-SP0"
+    }
+  },
+  "environment": {
+    "PYTHONPATH_tests": [
+      ".venv/Lib/python3.14/site-packages",
+      "src",
+      "dist/release-tools"
+    ],
+    "PYTHONPATH_backend_audit": [
+      "src"
+    ],
+    "TEMP": ".pytest_cache/audit-temp",
+    "TMP": ".pytest_cache/audit-temp",
+    "stdin": "Full and network pytest children and final backend audit receive a valid DEVNULL handle from a native CPython parent.",
+    "network": "The initial full run's eight loopback HTTP failures were rerun outside the network sandbox against the tests' local HTTP servers; all eight passed."
+  },
+  "commands": {
+    "backend-audit": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "tools.correctness_audit",
+        "--allow-known-gaps",
+        "--report",
+        "artifacts/correctness-audit/backend-results.json"
+      ],
+      "exit_code": 0
+    },
+    "verify-evidence": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "tools.correctness_audit",
+        "--verify",
+        "artifacts/correctness-audit/backend-results.json"
+      ],
+      "exit_code": 0
+    },
+    "focused": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_correctness_audit.py",
+        "tests/test_parity_runner.py",
+        "tests/detailtests/test_interval_enclosure.py",
+        "tests/detailtests/test_number_intervall.py",
+        "tests/detailtests/test_copy_on_call.py",
+        "tests/detailtests/test_semantics_suite.py",
+        "tests/detailtests/test_native_backend_error_parity.py",
+        "tests/test_spec_conformance.py",
+        "--assert-no-heap-leaks",
+        "--tb=short",
+        "--basetemp=.pytest_cache/correctness-focused",
+        "--junitxml=artifacts/correctness-audit/focused.xml"
+      ],
+      "exit_code": 0
+    },
+    "full": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "-ra",
+        "--require-backend-toolchains",
+        "--tb=short",
+        "--basetemp=.pytest_cache/correctness-full",
+        "--junitxml=artifacts/correctness-audit/full.xml"
+      ],
+      "exit_code": 1
+    },
+    "network-rerun": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_pkg_sources.py",
+        "-k",
+        "verified_download_and_offline_cache or failed_transfer_keeps_cache_and_installation or registry_digest_is_locked",
+        "--tb=short",
+        "--basetemp=.pytest_cache/correctness-network",
+        "--junitxml=artifacts/correctness-audit/network-rerun.xml"
+      ],
+      "exit_code": 0
+    },
+    "final-tool-tests": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_correctness_audit.py",
+        "tests/test_parity_runner.py",
+        "--assert-no-heap-leaks",
+        "--tb=short",
+        "--basetemp=.pytest_cache/correctness-finaltests2",
+        "--junitxml=artifacts/correctness-audit/audit-tool-tests.xml"
+      ],
+      "exit_code": 0
+    },
+    "format-lint": {
+      "runner": "cp312",
+      "argv": [
+        "tools/check_format_lint.py"
+      ],
+      "exit_code": 0
+    },
+    "whitespace": {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  },
+  "reports": {
+    "audit-tool-tests.xml": {
+      "tests": 46,
+      "passed": 46,
+      "failed": 0,
+      "skipped": 0
+    },
+    "contracts.xml": {
+      "tests": 112,
+      "passed": 112,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focused.xml": {
+      "tests": 158,
+      "passed": 158,
+      "failed": 0,
+      "skipped": 0
+    },
+    "full.xml": {
+      "tests": 1063,
+      "passed": 1048,
+      "failed": 8,
+      "skipped": 7
+    },
+    "network-rerun.xml": {
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "combined_regression": {
+    "passed": 1056,
+    "failed": 0,
+    "skipped": 7
+  },
+  "skipped_cases": {
+    "tests.detailtests.test_pkg_sources::test_links_in_source_or_destination_are_rejected": "Host does not grant symlink creation privileges",
+    "tests.test_llvm_jit::test_llvm_jit_executes_program": "llvmlite not available",
+    "tests.test_release_packaging::test_release_preserves_executable_permissions[built]": "Executable permission bits require POSIX",
+    "tests.test_release_packaging::test_release_preserves_executable_permissions[included]": "Executable permission bits require POSIX",
+    "tests.test_tiny_program_source_sandbox::test_runs_approved_port_and_records_passing_assessment": "source-port execution requires Linux resource limits",
+    "tests.test_tiny_program_source_sandbox::test_records_runtime_failure_without_promoting_program": "source-port execution requires Linux resource limits",
+    "tests.test_tiny_program_source_scan::test_symlinked_source_is_not_scanned": "Windows symlink creation requires Developer Mode or symlink privilege"
+  },
+  "backend_counts": {
+    "passed": 65,
+    "failed": 15,
+    "unavailable": 0,
+    "not_applicable": 16
+  },
+  "backend_gaps": [
+    {
+      "case": "exact-arithmetic",
+      "backend": "llvm",
+      "issue": "AUD-001"
+    },
+    {
+      "case": "integer-boundary",
+      "backend": "llvm",
+      "issue": "AUD-002"
+    },
+    {
+      "case": "literals",
+      "backend": "native",
+      "issue": "AUD-003"
+    },
+    {
+      "case": "literals",
+      "backend": "llvm",
+      "issue": "AUD-003"
+    },
+    {
+      "case": "literals",
+      "backend": "c",
+      "issue": "AUD-003"
+    },
+    {
+      "case": "short-circuit",
+      "backend": "native",
+      "issue": "AUD-004"
+    },
+    {
+      "case": "short-circuit",
+      "backend": "llvm",
+      "issue": "AUD-004"
+    },
+    {
+      "case": "short-circuit",
+      "backend": "c",
+      "issue": "AUD-004"
+    },
+    {
+      "case": "heap-length",
+      "backend": "llvm",
+      "issue": "AUD-005"
+    },
+    {
+      "case": "operator",
+      "backend": "llvm",
+      "issue": "AUD-006"
+    },
+    {
+      "case": "file-builtins",
+      "backend": "llvm",
+      "issue": "AUD-008"
+    },
+    {
+      "case": "python-interop",
+      "backend": "llvm",
+      "issue": "AUD-009"
+    },
+    {
+      "case": "division-error",
+      "backend": "llvm",
+      "issue": "AUD-010"
+    },
+    {
+      "case": "division-error",
+      "backend": "c",
+      "issue": "AUD-010"
+    },
+    {
+      "case": "heap-error-status",
+      "backend": "llvm",
+      "issue": "AUD-007"
+    }
+  ],
+  "limitations": [
+    "The full suite ran before the final audit-verifier, metadata and documentation refinements. All 46 affected audit/parity tests were repeated on the final source. Runtime implementation files were not changed.",
+    "The 15 backend failures remain semantic or implementation gaps. Allow-known-gaps exits zero only for the inventoried narrow failure signatures; a strict audit remains nonzero.",
+    "No Linux/macOS, optional llvmlite JIT or optimization-level acceptance is claimed. Seven full-suite optional/platform skips remain explicit."
+  ],
+  "evidence_sha256": {
+    "audit-tool-tests.xml": "e2bd56798e0ffe976599bb6cbbc3b5cd5f47e457cce8dbf25b5ab0cb84404348",
+    "backend-results.json": "ef9a05bdc75cb66e05296d62d861139619aadcae1c0d5622da9c5ac235bad052",
+    "backend-run.log": "2ed68f60079937b674ccdae852bdd215b43f394642857201a6b3d57d72497105",
+    "contracts.xml": "32a87f43138f413780780e109929f25ad1174695b6de5ae9f01b255d77f0eaea",
+    "focused.xml": "610b8b8b085faff3e9568884eed90617dcb4f3b2e63e50ad14d432cf76f62cc3",
+    "format-lint.log": "254a15bf2a701f8150dc7b9d4aba97438195508ed4b10d5cc8cb9717e5549f00",
+    "full.xml": "5d500e2e7092aaa04bf994f13690177e7275589393397e1426bf0b31002da635",
+    "network-rerun.xml": "f109550e2dfe92a2c95592189a7bebee7fa12584a6debca291cabd5539f00c91",
+    "verify.log": "fc9eda3da603bdd249e92d5204df0255e8685478416876e22191a636d3adc48e"
+  }
+}

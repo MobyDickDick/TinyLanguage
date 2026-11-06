@@ -197,7 +197,7 @@ def _load_registry_index(registry_url: str, manifest_dir: Path) -> Mapping[str, 
 
 
 def _resolve_registry_index_path(registry_url: str, manifest_dir: Path) -> Path | None:
-    env_path = Path.cwd() / "tiny_registry.json"
+    env_path = manifest_dir / "tiny_registry.json"
     if env_path.is_file():
         return env_path
     if registry_url.startswith("file://"):
@@ -237,7 +237,7 @@ def _select_registry_version(
         raise SystemExit(f"No registry versions found for {name} matching constraint.")
     best = max(candidates)
     entry = versions.get(str(best), {})
-    checksum = entry.get("checksum")
+    checksum = entry.get("sha256") or entry.get("checksum")
     return str(best), checksum
 
 
@@ -345,6 +345,8 @@ def resolve_manifest(
             constraint_value = entry.get("version", "*")
             constraint = _parse_constraint(str(constraint_value))
             registry = entry.get("registry") or default_registry
+            if registry and registry not in registry_indexes:
+                registry_indexes[registry] = _load_registry_index(registry, manifest_dir)
             registry_index = registry_indexes.get(registry, {})
             version, registry_checksum = _select_registry_version(name, constraint, registry_index)
             checksum = registry_checksum or _hash_string(f"{name}@{version}")

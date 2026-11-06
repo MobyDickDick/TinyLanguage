@@ -7,9 +7,9 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
-from urllib.parse import urlparse
 
 from tiny_errors import SourcePos, SourceSpan, TinyLangError
+from tiny_pkg_sources import registry_cache_component as _registry_host
 
 if importlib.util.find_spec("tomllib"):
     import tomllib
@@ -69,15 +69,6 @@ def _lockfile_entries(lock_path: Path) -> list[dict[str, Any]]:
     for section in ("dependencies", "dev-dependencies", "build-dependencies"):
         entries.extend(lock_data.get(section, []))
     return entries
-
-
-def _registry_host(registry: Optional[str]) -> str:
-    if not registry:
-        return "registry"
-    parsed = urlparse(registry)
-    host = parsed.netloc or parsed.path
-    host = host.strip("/").replace(":", "_")
-    return host or "registry"
 
 
 def _pkg_module_rel_paths(parts: list[str]) -> list[Path]:

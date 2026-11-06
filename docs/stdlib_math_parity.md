@@ -4,6 +4,12 @@ This parity map enumerates the subset of Python's `math` module that TinyLanguag
 mirrors today. Each entry lists the Python API and the corresponding TinyLanguage
 function or constant exposed by `stdlib.math`.
 
+This map describes scalar numeric parity. The separate `NumberIntervall` class
+has a [set and rounding contract](interval_arithmetic_contract.md) for `+`, `-`,
+`*`, `/` on the reference interpreter. Legacy `Math` interval overloads return
+explicit `approximate` estimates and are excluded from enclosure guarantees;
+scalar math parity does not establish interval correctness.
+
 ## Core constants
 
 | Python `math` | TinyLanguage `stdlib.math` | Notes |

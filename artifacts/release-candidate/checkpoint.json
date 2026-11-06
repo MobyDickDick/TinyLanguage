@@ -1,0 +1,93 @@
+{
+  "date": "2026-11-02",
+  "status": "working-tree-checkpoint-not-release-qualification",
+  "source": {
+    "commit": "34ed85aa53ede0c2466833a5ae94691465a6da51",
+    "files_sha256": "dec8859b28f8c234ecbb5cf39b37c76e31efd6fd158d4c796f85a127f724d386",
+    "clean": false
+  },
+  "candidate_gate_exit_code": 1,
+  "candidate_gate_errors": [
+    "docstrings: failed check, changed source, or mismatched command/identity",
+    "unsigned-source: source archive builds HEAD; commit candidate changes before qualification"
+  ],
+  "test_summaries": {
+    "lsp": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "interpreter-contract": {
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "native-parity": {
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "regression": {
+      "tests": 871,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 6
+    }
+  },
+  "compiled_subset_summary": {
+    "tests": 19,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "compiled_subset_command": [
+    "python",
+    "-m",
+    "pytest",
+    "--require-backend-toolchains",
+    "-q",
+    "-ra",
+    "tests/test_c_backend.py",
+    "tests/detailtests/test_llvm_conformance_smoke.py",
+    "tests/test_tiny_language_compiler_cli.py",
+    "--junitxml=artifacts/release-candidate/compiled-subsets.xml"
+  ],
+  "additional_checks": {
+    "formatter_lint": "passed",
+    "workflow_yaml": "passed",
+    "git_diff_check": "passed"
+  },
+  "limitations": [
+    "Ruff is not installed; local pip could not obtain a distribution. Docstring check remains failed.",
+    "The successful source-archive build uses HEAD and excludes uncommitted changes; it does not qualify the working tree.",
+    "Six full-suite skips: optional llvmlite JIT, two POSIX executable-mode checks, two Linux-only sandbox checks, one Windows symlink-privilege check.",
+    "Four existing pytest warnings concern record_property with xunit2 output.",
+    "Delivery packages 1 and 3 still require candidate CI, independent pinned builders and release-key qualification; package 2 retains its earlier Windows checkpoint.",
+    "No release tag, publication, CI dispatch or release approval was performed."
+  ],
+  "retained_files_sha256": {
+    "compiled-subsets.xml": "3fa7a46a446eebef36297446c885fcfe91eeef3cd0de41c55aa97f98f41f690e",
+    "docstrings.json": "098e989a0f354e8cde36bf18db82e4d2e8debd770a2ac73bef376194e9f391ce",
+    "docstrings.log": "cbd55b438df7d95cae059ea952e660806435c9f37b4ddf9786e286c69f951ca9",
+    "format-lint.json": "eb04e99980f438768a4ab35f32f9d26acf0886632591edf00a21507631f23742",
+    "format-lint.log": "254a15bf2a701f8150dc7b9d4aba97438195508ed4b10d5cc8cb9717e5549f00",
+    "interpreter-contract.json": "4074a7b737e5695ed3c0ddfe7a4e162db1fdeb9fe070f2bdcbe2ac32e4a7d596",
+    "interpreter-contract.log": "9302b5fe43c37a2359c1ea9dd8d8ac89a1e4a14c40d9a423c896f7b7775040d6",
+    "interpreter-contract.xml": "c15d7184dace78def60c2ab371f0bca172311962679a5fcad12018c5c028bc3a",
+    "lsp.json": "ccae54eb026141626b9f05dd62ad1102f7673156062d25bb2519fabe1b0975a1",
+    "lsp.log": "a6aa82bbe8d4d83a3e62695decd5a9a0fb5234478b5657b7076a3c69d5442d6a",
+    "lsp.xml": "bee7a3b1e4c59652f93f90bc4517b935cb6274eac4d25d61dad7cb91af84c202",
+    "native-parity.json": "f275ad3f4a73eb5903817963fb68908ae8597e149286b5de69bc24c48a651da4",
+    "native-parity.log": "630e568cc6e2724dc6767cd0f63749774d187e2c70bf3dfe2db237e1bced83d2",
+    "native-parity.xml": "d9e223ae791ba7489f2d0f73979ef76af9b927ebdcd8a3016c396ca24e24658b",
+    "regression.json": "7202c295e662acbc582fdde05f7c7ca38111966623b4d49fa96d2838c7685b73",
+    "regression.log": "9d0eebeb6bd19b64d2a91c506f04c184cbe8132fd89a7b5332bd5cecedb2b350",
+    "regression.xml": "c273b484b4360c33f8001d44ace20d2a7191905f3576a137f34ed667321d80c2",
+    "unsigned-source.json": "0b2df3a20d05e699cd6cccaf9d7c23d44b2e67db4cf44668a05380b23311d8b2",
+    "unsigned-source.log": "5ccfba58a8484943ac0b4fa44455cc865692402051252b17636c3e47028f06dd",
+    "validation.log": "907f375d2f5b4082fe9f4ace318f1712a5b229e2bbaff15956d9f7cec098a3ca"
+  }
+}

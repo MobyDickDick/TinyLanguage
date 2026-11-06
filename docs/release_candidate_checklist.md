@@ -1,36 +1,50 @@
 # Release candidate checklist
 
-This checklist is the CI-gated baseline for release-candidate readiness. Update
-it whenever release criteria change, and keep every CI-gated item checked.
+Release qualification is pending. The canonical scope, evidence map and commands
+are in [release_scope_v1.md](release_scope_v1.md). Boxes are a review aid; CI
+verifies executed commands, source identity, JUnit/log hashes and artifacts.
+Historical checked boxes did not retain sufficient candidate evidence and have
+been reopened.
 
 ## CI gate checklist
-- [x] Docstring lint passes for the required CLI/API entry points.
-- [x] Formatter + lint gate passes.
-- [x] LSP workflow tests pass (rename, references, code actions).
-- [x] Full pytest suite passes (`--assert-no-heap-leaks`).
-- [x] Release artifacts build successfully (unsigned).
-- [x] Interpreter/C backend/native backend parity smoke suite passes with
-      identical stdout/stderr snapshots and matching process exit codes for
-      each scenario.
+- [ ] Required CLI/API docstring lint and formatter/lint checks pass.
+- [ ] LSP workflow tests pass without skips.
+- [ ] Interpreter contract/specification and executable documentation pass
+      without skips, including independent arithmetic expectations.
+- [ ] Experimental interpreter/native VM parity checks pass without skips.
+- [ ] Full pytest suite passes (`--assert-no-heap-leaks`); optional/platform
+      skips remain explicitly reported and are not passing backend evidence.
+- [ ] Unsigned HEAD source archive builds; version, commit, checksums and payload
+      hashes verify. Candidate sources are committed and match the test records.
 
 ### Required parity smoke scenarios
 
-Run each scenario via all execution paths (`tiny run`, `tiny c run`,
-`tiny native run`) and compare output + exit status before sign-off:
+Compare only implemented subsets. Canonical CLI options are in
+[cli_workflows.md](cli_workflows.md); the native VM uses `--native-backend`.
+`tiny run` and `tiny native run` are not the documented interpreter entry points.
 
-- [x] Happy-path program execution for arithmetic + control-flow basics.
-- [x] Stdlib-heavy script covering file I/O and JSON parse/serialize round-trip.
-- [x] Deterministic runtime error case (e.g. out-of-bounds access) verifying
-      identical diagnostic code/message class and non-zero exit code.
-- [x] CLI argument forwarding case that confirms argument ordering/escaping is
-      preserved across backends.
+- [ ] Native VM execution and error parity for fixtures in `tests/parity/`
+      and `test_native_backend_error_parity.py`.
+- [ ] Required C/LLVM subset compilation and execution in all sixteen platform
+      qualification jobs; no missing-tool skips count as success.
+- [ ] Installed argument forwarding, file/JSON and multi-file workflows pass
+      within the installed interpreter scope. C has no imports or heap support;
+      do not claim interpreter/C parity for those operations.
 
-## Manual follow-ups (not CI-gated)
-- [x] Confirm release notes are updated and linked in `CHANGELOG.md`.
-- [x] Verify demo commands in `docs/release_candidate_runthrough.md`.
-- [x] Capture any new follow-up fixes with dates + commit links.
-- [x] Attach the parity-run command transcript (or CI job URL) to the release
-      sign-off ticket for auditability.
+## Delivery and release approval
+
+- [ ] Package 1: all target artifacts, immutable inputs, independent rebuilds,
+      complete inventory, release-key signatures and retained provenance pass.
+- [ ] Package 2: installed/editor acceptance identifies the actual candidate
+      artifacts (existing Windows checkpoint is linked in open tasks).
+- [ ] Package 3: all sixteen platform jobs pass for the candidate commit.
+- [ ] Attach candidate commit, CI run/artifact IDs and manual acceptance records.
+- [ ] Approve release notes, migration guidance, tag and publication only after
+      the candidate and delivery evidence has been reviewed.
 
 ### Follow-up fixes log
-- 2026-02-08: No follow-up fixes identified for this release candidate.
+- 2026-02-08: Historical checklist claimed no follow-up fixes; that statement
+  does not qualify the current candidate.
+- 2026-11-02: Replaced checkbox-only validation with source-bound executed
+  checks; reconciled experimental backend scope and reopened unproven delivery
+  and publication claims. Package 5 remains open for candidate qualification.

@@ -39,8 +39,8 @@ def test_basic_interval_operations_and_formatting(run_tiny_source):
     assert out == "2.0 +/- 1.0\n1.0 +/- 1.0\n1.0 +/- 1.0\n2.5 +/- 1.5\n"
 
 
-def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result(run_tiny_source):
-    """Test that wrapped intervals and zero division expand to wrapped result."""
+def test_wrapped_intervals_and_zero_division_follow_set_semantics(run_tiny_source):
+    """[2,3]/[-1,1] has rays ending at -2 and starting at 2."""
     interval_def = load_number_intervall()
     extra = """
     def wrapped = NumberIntervall(1, 0);
@@ -57,7 +57,7 @@ def test_wrapped_intervals_and_zero_division_expand_to_wrapped_result(run_tiny_s
 
     out = run_tiny_source(interval_def + "\n" + extra)
 
-    assert out == "0.5 +/- -0.5\nany_number\n[3.0, -3.0]\n"
+    assert out == "[1.0, 0.0]\nany_number\n[2.0, -2.0]\n"
 
 
 def test_interval_number_uses_neighboring_floats(run_tiny_source):
@@ -77,8 +77,10 @@ def test_interval_number_uses_neighboring_floats(run_tiny_source):
     out = run_tiny_source(interval_def + "\n" + extra)
 
     def expected_line(value: float) -> str:
-        lower = math.nextafter(value, value - 1)
-        upper = math.nextafter(value, value + 1)
+        lower = math.nextafter(value, -math.inf)
+        upper = math.nextafter(value, math.inf)
+        if value == 0:
+            return f"[{lower}, {upper}]\n"
         center = (lower + upper) / 2
         radius = (upper - lower) / 2
         return f"{center} +/- {radius}\n"
@@ -108,8 +110,8 @@ def test_dividing_infinities_by_zero_spanning_interval_yields_any_number(run_tin
     assert out == "any_number\nany_number\n"
 
 
-def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_source):
-    """Test that dividing zero spanning intervals yields wrapped interval."""
+def test_dividing_zero_spanning_intervals_yields_entire_real_line(run_tiny_source):
+    """For any real q choose nonzero y near zero such that q*y is in [-2,3]."""
     interval_def = load_number_intervall()
 
     extra = """
@@ -121,7 +123,7 @@ def test_dividing_zero_spanning_intervals_yields_wrapped_interval(run_tiny_sourc
 
     out = run_tiny_source(interval_def + "\n" + extra)
 
-    assert out == "[6.0, -4.0]\n"
+    assert out == "any_number\n"
 
 
 def test_division_results_with_infinite_bounds(run_tiny_source):
@@ -148,7 +150,7 @@ def test_division_results_with_infinite_bounds(run_tiny_source):
 
     out = run_tiny_source(interval_def + "\n" + extra)
 
-    assert out == "[1.0, -1.0]\n[1.0, infinity]\n[-infinity, -1.0]\n[-1.0, 1.0]\n[0, 1.0]\n[-1.0, 0]\n"
+    assert out == "[1.0, -1.0]\n[1.0, infinity]\n[-infinity, -1.0]\n0.0 +/- 1.0\n0.5 +/- 0.5\n-0.5 +/- 0.5\n"
 
 
 def test_python_numbers_promote_to_intervals(run_tiny_source):

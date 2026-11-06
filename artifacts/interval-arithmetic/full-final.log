@@ -1,0 +1,55 @@
+........................................................................ [  7%]
+........................................................................ [ 14%]
+........................................................................ [ 21%]
+........................................................................ [ 28%]
+........................................................................ [ 35%]
+...............................................s........................ [ 42%]
+........................................................................ [ 49%]
+........................................................................ [ 56%]
+..............F......................................................... [ 64%]
+....................................................................s... [ 71%]
+.................................ss..................................... [ 78%]
+........................................................................ [ 85%]
+........................................................................ [ 92%]
+............................................................ss.......... [ 99%]
+s...                                                                     [100%]
+================================== FAILURES ===================================
+_______________________ test_stdlib_time_now_and_sleep ________________________
+tests\detailtests\test_stdlib_time.py:74: in test_stdlib_time_now_and_sleep
+    assert elapsed >= sleep_ms
+E   assert 0.0 >= 10
+---------------------------- Captured stdout call -----------------------------
+1793914154329.2427
+1793914154339.8555
+1738101734.0
+1738101734.0
+0.0
+2026-11-05T21:29:14.339855Z
+============================== warnings summary ===============================
+tests/detailtests/test_benchmark_and_fuzz.py::test_recursive_fibonacci_benchmark
+  tests\detailtests\test_benchmark_and_fuzz.py:122: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_recursive_fibonacci_benchmark(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_randomized_programs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:252: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_randomized_programs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_lexer_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:282: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_lexer_random_inputs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_parser_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:303: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_parser_random_inputs_do_not_crash(record_property) -> None:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\interval-arithmetic\full-final.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] tests\detailtests\test_pkg_sources.py:317: Host does not grant symlink creation privileges
+SKIPPED [1] tests\test_llvm_jit.py:20: llvmlite not available
+SKIPPED [2] tests\test_release_packaging.py:53: Executable permission bits require POSIX
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:25: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:37: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_scan.py:73: Windows symlink creation requires Developer Mode or symlink privilege
+FAILED tests/detailtests/test_stdlib_time.py::test_stdlib_time_now_and_sleep
+1 failed, 1004 passed, 7 skipped, 8 deselected, 4 warnings in 213.72s (0:03:33)

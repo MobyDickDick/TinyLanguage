@@ -88,6 +88,27 @@ CPython 3.14 qualification evidence.
 
 ## Outstanding acceptance
 
+### CI follow-up — 2026-11-02
+
+Run [41518845379](https://github.com/MobyDickDick/TinyLanguage/actions/runs/41518845379)
+passed the Linux platform regression suite (870 passed, one optional JIT skip)
+but failed fresh-wheel qualification: `verify_installed_workflows.py` linked
+LLVM IR exporting `tiny_main` without a C `main` launcher. Windows reported the
+equivalent missing-entry-point error. The upload step itself succeeded.
+The installed helper and public `compile_to_executable`/module CLI now supply
+the launcher; executable regression tests cover the API and CLI.
+
+The separate candidate-contract job passed all 33 tests but rejected its source
+identity because four tracked `.tiny.summary` files were rewritten from CRLF to
+LF. Unchanged summary contents now preserve their exact bytes and timestamp;
+new/changed summaries use LF. New LF/CRLF regression cases run in the candidate
+contract check. Source identity enforcement is retained, and a changed source
+now prints its before/after identities in the job log.
+
+Local follow-up results and their limits are retained in
+[`2026-11-02-link-entrypoint.json`](../artifacts/ci-fixes/2026-11-02-link-entrypoint.json).
+A corrected candidate run is still required for platform sign-off.
+
 Keep work package 3 unchecked until the committed candidate has successful
 retained reports for all sixteen jobs, including required compiled backend
 execution, and package 1 release-artifact qualification is complete. Link the

@@ -151,6 +151,31 @@ def test_python_build_from_archived_sources_produces_both_formats(tmp_path):
         assert "stdlib/math.tiny" in archive.namelist()
         assert "src_tiny/tiny_language_parser.tiny" in archive.namelist()
         assert "tiny_language_runtime.py" in archive.namelist()
+        assert "tiny_intervals.py" in archive.namelist()
         assert "tiny_language_stitched.py" not in archive.namelist()
         entry_points = archive.read("tinylanguage-1.0.0.dist-info/entry_points.txt").decode()
         assert "tiny = tiny_language_cli:main" in entry_points
+        installed = tmp_path / "installed"
+        archive.extractall(installed)
+    # The host kernel and Tiny class must work using only the built wheel.
+    # Isolated mode ignores the source checkout and inherited PYTHONPATH.
+    result = subprocess.run([sys.executable, "-I", "-c", """
+import sys
+from importlib.resources import files
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+import tiny_intervals
+from tiny_language import compile_and_run
+assert Path(tiny_intervals.__file__).parent == Path(sys.argv[1])
+source = files('src_tiny').joinpath('number_intervall.tiny').read_text(encoding='utf-8')
+source += '''
+def q = NumberIntervall(-2, 3) / NumberIntervall(-5, 0.5);
+print(q.error);
+def s = NumberIntervall(1, 1) + NumberIntervall(2 ^ -53, 2 ^ -53);
+print(s.lower); print(s.upper);
+'''
+assert compile_and_run(source, stream_output=False).splitlines() == [
+    'any_number', '1.0', '1.0000000000000002']
+print('Isolated wheel interval acceptance passed.')
+""", str(installed)], cwd=tmp_path, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stdout + result.stderr

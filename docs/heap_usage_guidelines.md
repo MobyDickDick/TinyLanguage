@@ -24,6 +24,23 @@ heap lints enforce.
 
 These guidelines keep heap aliasing predictable without adding runtime tracking.
 
+## Runtime heap failure results
+
+Static lifetime lints reject evident invalid operations before execution.
+At runtime, the interpreter and native VM's `delete` and `heap_set` return a
+record with `e.code = 0` on success or `e.code = 1` and a diagnostic on failure.
+`heap_get` returns `Null` on an invalid read and records the diagnostic exposed
+as `errorMessage`; these heap failures do not universally throw an exception.
+For calls hidden behind helpers, check the result rather than assuming that
+the lifetime linter has proved safety. The LLVM prototype has a different,
+terminating heap-error path and does not yet support the reference error-record
+contract; see [AUD-007](independent_correctness_audit.md#bounded-follow-up-work).
+
+These ownership conventions describe default borrowed arguments. With opt-in
+copy-on-call, explicit arguments and returned aliases follow the
+[copy isolation contract](copy_on_call_contract.md); an alias return does not
+transfer the original caller storage or authorize mutations of it.
+
 ## Prefer fixed-size buffers when size is known
 
 If the size is known up front, allocate a fixed-size buffer via `new(size)` and

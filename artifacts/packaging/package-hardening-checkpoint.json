@@ -1,0 +1,76 @@
+{
+  "date": "2026-11-04",
+  "base_commit": "0b48b85532890129e9ddd11ece50c3898a1b88be",
+  "scope": "Working-tree snapshot; not release qualification",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "runner": "pytest.main in native Windows CPython, with pure pytest from .venv/Lib/python3.14/site-packages and pinned build tools from dist/release-tools",
+  "pytest_arguments": [
+    "-q",
+    "-ra",
+    "--basetemp=<checkout>/.pytest_cache/package-hardening-full",
+    "--junitxml=artifacts/packaging/package-hardening-full.xml"
+  ],
+  "tests": {
+    "collected": 939,
+    "passed": 932,
+    "skipped": 7,
+    "failures": 0,
+    "errors": 0
+  },
+  "skips": [
+    {
+      "test": "tests.detailtests.test_pkg_sources.test_links_in_source_or_destination_are_rejected",
+      "reason": "Host does not grant symlink creation privileges"
+    },
+    {
+      "test": "tests.test_llvm_jit.test_llvm_jit_executes_program",
+      "reason": "llvmlite not available"
+    },
+    {
+      "test": "tests.test_release_packaging.test_release_preserves_executable_permissions[built]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_release_packaging.test_release_preserves_executable_permissions[included]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox.test_runs_approved_port_and_records_passing_assessment",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox.test_records_runtime_failure_without_promoting_program",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_scan.test_symlinked_source_is_not_scanned",
+      "reason": "Windows symlink creation requires Developer Mode or symlink privilege"
+    }
+  ],
+  "files_sha256": {
+    "src/tiny_pkg_sources.py": "0410938b5a27d4807c5f648c607bcc0c1dee8da9a2363686e5984cb20b031d58",
+    "src/tiny_pkg_cli.py": "a458848ac3a75c8c4abefde939533a4953f0e6f943fe09fd161c73ca69bcb165",
+    "src/tiny_pkg_resolution.py": "e64c6288200d24cb2e62e1cb3da0afcd8452392c872f9f48a5b8c8daa2d962b2",
+    "src/tiny_language_module_resolution.py": "97aa3a63e6d333c09e02653a940a490a7739000a6e6fc2637e2ac1546b3fd2c7",
+    "tests/detailtests/test_pkg_sources.py": "c6ccdc0ee778470bfa22d7ba77e8d8d0d2660b7182c0ee7867f3e8c4d1403bc2",
+    "tests/detailtests/test_application_boundaries.py": "8b1b5f1810770c92318b487a7312dd8e221d04c9ed94bfdbb8f57422891600dc",
+    "tools/release/verify_application_workflows.py": "8c09f5dce3ee6f8a911dc826da9d3bd767ae2e34ed6ad4ca76ebfe55160af07d",
+    "examples/package_acceptance/main.tiny": "428d1d533b8b1953cd592c8b3ffb443b71587c255510d9d368acc26b78190879",
+    "examples/package_acceptance/boundaries.tiny": "fece038245659007e693a709aaccc6d2339c299fa2674fba7a13d755eda1e792",
+    ".github/workflows/ci.yml": "e90ea3c0ad1cf0366b873109beebe98bb4fc42e349d1c40eda23a62566647352"
+  },
+  "evidence_sha256": {
+    "artifacts/packaging/package-hardening-full.xml": "016e54e015daa452c355fef222aebef06e3ad553efc4de9eac6ced739780beec",
+    "artifacts/packaging/windows-application-workflows.json": "b4902d03645861547a9433f8d650bf4e855f8a3dc6282e61e76d8cae6045b0dc"
+  },
+  "wheel": {
+    "name": "tinylanguage-1.0.0-py3-none-any.whl",
+    "sha256": "93a14a788f7c5487c6f0b948817f1aa178f06db21239df338b5ed8d9de2862a1"
+  },
+  "wheel_sources_match": true,
+  "runtime_upgrade": {
+    "status": "not-run",
+    "reason": "No previous release wheel supplied"
+  }
+}

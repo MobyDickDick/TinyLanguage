@@ -303,7 +303,7 @@ class Parser {
                 return_type = self.parse_type_annotation();
             }
             def body = self.parse_block();
-            def return_params = self._collect_return_param_usage(body, params);
+            def return_params = Set.to_list(Set.new());
             return self._attach_span(
                 Fn(name_tok.text, params, body, return_params, Null, return_type, Null, is_async, fn_kw.start, Null),
                 fn_kw.start,
@@ -380,7 +380,7 @@ class Parser {
                         return_type = self.parse_type_annotation();
                     }
                     def body = self.parse_block();
-                    def return_params = self._collect_return_param_usage(body, params);
+                    def return_params = Set.to_list(Set.new());
                     Collections.push(
                         methods,
                         MethodDef(cname_tok.text, mname_tok.text, params, body, return_params, return_type, Null, cname_tok.text, is_async, fn_kw.start, Null)
@@ -475,137 +475,6 @@ class Parser {
         }
         def _eat_status = self._eat("SYM", ")");
         return params;
-    }
-
-    fn _collect_return_param_usage(self, stmts, params) -> any {
-        def names_set = Set.new();
-        def idx = 0;
-        while (idx < len(params)) {
-            def p = heap_get(params, idx);
-            Set.add(names_set, p.name);
-            idx = idx + 1;
-        }
-        def used = Set.new();
-
-        fn visit_expr(expr) {
-            if (expr == Null) { return Null; }
-            if (expr.__tag__ == "Var") {
-                if (Set.has(names_set, expr.name)) { Set.add(used, expr.name); }
-                return Null;
-            }
-            if (expr.__tag__ == "Field") { return visit_expr(expr.obj); }
-            if (expr.__tag__ == "MethodCall") {
-                def i = 0;
-                visit_expr(expr.obj);
-                while (i < len(expr.args)) { visit_expr(heap_get(expr.args, i)); i = i + 1; }
-                return Null;
-            }
-            if (expr.__tag__ == "Call") {
-                if (Set.has(names_set, expr.name)) { Set.add(used, expr.name); }
-                def i = 0;
-                while (i < len(expr.args)) { visit_expr(heap_get(expr.args, i)); i = i + 1; }
-                return Null;
-            }
-            if (expr.__tag__ == "Spawn") {
-                def i = 0;
-                while (i < len(expr.args)) { visit_expr(heap_get(expr.args, i)); i = i + 1; }
-                return Null;
-            }
-            if (expr.__tag__ == "Await") { return visit_expr(expr.expr); }
-            if (expr.__tag__ == "Bin") {
-                visit_expr(expr.a);
-                visit_expr(expr.b);
-                return Null;
-            }
-            if (expr.__tag__ == "ObjLit") {
-                def i = 0;
-                while (i < len(expr.fields)) {
-                    def pair = heap_get(expr.fields, i);
-                    visit_expr(heap_get(pair, 1));
-                    i = i + 1;
-                }
-                return Null;
-            }
-            if (expr.__tag__ == "VariantCtor") {
-                def i = 0;
-                while (i < len(expr.fields)) {
-                    def pair = heap_get(expr.fields, i);
-                    visit_expr(heap_get(pair, 1));
-                    i = i + 1;
-                }
-                return Null;
-            }
-            if (expr.__tag__ == "ClassNew") {
-                def i = 0;
-                while (i < len(expr.init)) {
-                    def pair = heap_get(expr.init, i);
-                    visit_expr(heap_get(pair, 1));
-                    i = i + 1;
-                }
-                return Null;
-            }
-            if (expr.__tag__ == "NewLit") {
-                def i = 0;
-                while (i < len(expr.items)) {
-                    visit_expr(heap_get(expr.items, i));
-                    i = i + 1;
-                }
-                return Null;
-            }
-            if (expr.__tag__ == "Match") {
-                visit_expr(expr.expr);
-                def i = 0;
-                while (i < len(expr.cases)) {
-                    def mc = heap_get(expr.cases, i);
-                    visit_expr(mc.body);
-                    i = i + 1;
-                }
-                return Null;
-            }
-            return Null;
-        }
-
-        fn visit_stmt(stmt) {
-            if (stmt.__tag__ == "Return") { return visit_expr(stmt.expr); }
-            if (stmt.__tag__ == "If") {
-                def i = 0;
-                while (i < len(stmt.then)) { def ignored_visit = visit_stmt(heap_get(stmt.then, i)); i = i + 1; }
-                i = 0;
-                while (i < len(stmt.els)) { def ignored_visit = visit_stmt(heap_get(stmt.els, i)); i = i + 1; }
-                return Null;
-            }
-            if (stmt.__tag__ == "While") {
-                def i = 0;
-                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
-                return Null;
-            }
-            if (stmt.__tag__ == "TryCatch") {
-                def i = 0;
-                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
-                i = 0;
-                while (i < len(stmt.handler)) { def ignored_visit = visit_stmt(heap_get(stmt.handler, i)); i = i + 1; }
-                return Null;
-            }
-            if (stmt.__tag__ == "TaskBlock") {
-                def i = 0;
-                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
-                return Null;
-            }
-            if (stmt.__tag__ == "Namespace") {
-                def i = 0;
-                while (i < len(stmt.body)) { def ignored_visit = visit_stmt(heap_get(stmt.body, i)); i = i + 1; }
-                return Null;
-            }
-            if (stmt.__tag__ == "Fn" || stmt.__tag__ == "MethodDef") { return Null; }
-            return Null;
-        }
-
-        def i = 0;
-        while (i < len(stmts)) {
-            def ignored_visit = visit_stmt(heap_get(stmts, i));
-            i = i + 1;
-        }
-        return Set.to_list(used);
     }
 
     fn parse_type_annotation(self) -> any {

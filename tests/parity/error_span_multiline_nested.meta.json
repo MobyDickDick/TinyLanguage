@@ -1,0 +1,5 @@
+{
+  "expected_exit_code": 1,
+  "error_contains": ".unknown_function",
+  "basis": "Name resolution must reject the undeclared callee; the expression produces no stdout."
+}

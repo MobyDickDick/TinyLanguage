@@ -23,6 +23,10 @@ python src/tiny_language.py --emit-llvm - src_tiny/demo.tiny
 Notes:
 
 - Requires `clang` to be available on `PATH` (override with `--compiler` if needed).
+- Raw `--emit-llvm` output exports `tiny_main` for embedding/JIT use. To link
+  it manually, include a C launcher with `extern int tiny_main(void);` and
+  `int main(void) { return tiny_main(); }`. `--emit-exe` and
+  `compile_to_executable` supply this launcher automatically.
 - The LLVM prototype supports basic control flow, functions, and heap helpers (`new`, `heap_get`, `heap_set`, `delete`), but does not include the interpreter-style safety checks for invalid pointers or indices.
 
 ## Prerequisites

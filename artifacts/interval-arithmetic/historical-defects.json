@@ -1,0 +1,23 @@
+{
+  "historical_commit": "1d82366206af7129f7bacb305eeb1ec3b3118a92",
+  "checks": {
+    "quotient": {
+      "historical_fields": [
+        "6.0",
+        "-4.0",
+        "wrapped_interval"
+      ],
+      "independent_exact_counterexample": "0",
+      "oracle_rejects_historical_result": true
+    },
+    "addition": {
+      "historical_fields": [
+        "1.0",
+        "1.0",
+        "normal"
+      ],
+      "independent_exact_counterexample": "9007199254740993/9007199254740992",
+      "oracle_rejects_historical_result": true
+    }
+  }
+}

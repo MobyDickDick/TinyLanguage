@@ -697,7 +697,10 @@ def _parse_and_lint(
     summary = build_module_summary(stmts, module_name or "")
     if summary and module_path is not None:
         summary_path = module_path.with_suffix(module_path.suffix + ".summary")
-        summary_path.write_text(summary, encoding="utf-8")
+        # Preserve an unchanged summary byte-for-byte (including legacy CRLF).
+        # Imports must not dirty tracked sources solely because the host changes.
+        if not summary_path.exists() or summary_path.read_text(encoding="utf-8") != summary:
+            summary_path.write_text(summary, encoding="utf-8", newline="\n")
     return stmts
 
 
@@ -1235,7 +1238,15 @@ def compile_to_executable(
     with tempfile.TemporaryDirectory() as tmpdir:
         ll_path = Path(tmpdir) / "tiny_program.ll"
         ll_path.write_text(llvm_ir, encoding="utf-8")
-        cmd = [compiler_path, str(ll_path), "-o", str(output_path)]
+        # LLVM modules export tiny_main for embedding/JIT use. Executables also
+        # need the platform's ordinary C entry point; keep it out of emitted IR.
+        runner_path = Path(tmpdir) / "runner.c"
+        runner_path.write_text(
+            "extern int tiny_main(void);\n"
+            "int main(void) { return tiny_main(); }\n",
+            encoding="utf-8",
+        )
+        cmd = [compiler_path, str(ll_path), str(runner_path), "-o", str(output_path)]
         cmd.extend(_compiler_opt_args(opt_level))
         if extra_args:
             cmd.extend(extra_args)
@@ -1881,7 +1892,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_copy_on_call_default(),
-        help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+        help="Deep-copy mutable arguments before Tiny calls (method receivers stay shared) (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
         "--v1-only",

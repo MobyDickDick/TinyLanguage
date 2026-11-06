@@ -1,0 +1,346 @@
+{
+  "schema": 1,
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "base_commit": "973cebfa6a40d06e0dfbfc0775573a87cfccecf8",
+  "scope": "working-tree call-binding measurements, not release qualification",
+  "repeat": 7,
+  "sizes": [
+    16,
+    64,
+    256,
+    1024
+  ],
+  "source_sha256": {
+    "src/tiny_language_runtime.py": "ed4862562559d0baa9df8c9ed8044642914a3f8b88c12859fb7f2779356bb77d",
+    "src/tiny_language_parser.py": "fc5370c20222c1c4bda6a07939d62751078bd9a04423fd02549eac88a0290282",
+    "src/tiny_language_api.py": "4f39138307c0d2b15c0a7230919cf2203d21763e22d2c1432b47a75efe488180",
+    "src/tiny_language_cli.py": "fbe2437612b23fc4409510bc6be91fa6c12d720b821463c9a56cb5fcf3b7cdb6",
+    "src/tiny_language_ast.py": "9d54597be99f6b7688774c4cd5d1e92751d4ff6f997677e24ef001500f77db0f",
+    "src_tiny/tiny_language_parser.tiny": "1235d28faaf6c2696ee706d2fe0544867025587c9aa14a44055c72091bf5caf2",
+    "tests/detailtests/test_copy_on_call.py": "aadff3901cacfe098d783d4b6ea7b8df076069de720cc17e5b297bff08a292ce",
+    "benchmarks/copy_on_call.py": "428c48d0915fc2bf561d7e3424d8d42eb55c72c3284ed577ceb9200db59e8c61"
+  },
+  "results": [
+    {
+      "graph": "object",
+      "size": 16,
+      "copy_on_call": false,
+      "samples_ns": [
+        29600,
+        22500,
+        22100,
+        20700,
+        21500,
+        21400,
+        22400
+      ],
+      "median_ns": 22100,
+      "traced_retained_bytes": 338,
+      "traced_peak_bytes": 1791,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 16,
+      "copy_on_call": true,
+      "samples_ns": [
+        133000,
+        94900,
+        95200,
+        118600,
+        136300,
+        100600,
+        212900
+      ],
+      "median_ns": 118600,
+      "traced_retained_bytes": 7714,
+      "traced_peak_bytes": 10487,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 64,
+      "copy_on_call": false,
+      "samples_ns": [
+        19600,
+        20500,
+        18600,
+        18000,
+        20300,
+        25700,
+        18900
+      ],
+      "median_ns": 19600,
+      "traced_retained_bytes": 338,
+      "traced_peak_bytes": 1439,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 64,
+      "copy_on_call": true,
+      "samples_ns": [
+        275600,
+        262000,
+        275200,
+        361400,
+        263700,
+        262200,
+        244500
+      ],
+      "median_ns": 263700,
+      "traced_retained_bytes": 27394,
+      "traced_peak_bytes": 34775,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 256,
+      "copy_on_call": false,
+      "samples_ns": [
+        23400,
+        18400,
+        19300,
+        37800,
+        19300,
+        17900,
+        21000
+      ],
+      "median_ns": 19300,
+      "traced_retained_bytes": 338,
+      "traced_peak_bytes": 1415,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 256,
+      "copy_on_call": true,
+      "samples_ns": [
+        873900,
+        889200,
+        903900,
+        868000,
+        1253000,
+        866400,
+        1255500
+      ],
+      "median_ns": 889200,
+      "traced_retained_bytes": 106722,
+      "traced_peak_bytes": 133431,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 1024,
+      "copy_on_call": false,
+      "samples_ns": [
+        18600,
+        27600,
+        18800,
+        19800,
+        20100,
+        20200,
+        19900
+      ],
+      "median_ns": 19900,
+      "traced_retained_bytes": 338,
+      "traced_peak_bytes": 1415,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "object",
+      "size": 1024,
+      "copy_on_call": true,
+      "samples_ns": [
+        3618800,
+        3108500,
+        3127400,
+        3325500,
+        3176100,
+        3114800,
+        3197100
+      ],
+      "median_ns": 3176100,
+      "traced_retained_bytes": 423650,
+      "traced_peak_bytes": 527159,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 16,
+      "copy_on_call": false,
+      "samples_ns": [
+        13800,
+        14100,
+        19100,
+        16000,
+        14000,
+        13400,
+        14400
+      ],
+      "median_ns": 14100,
+      "traced_retained_bytes": 240,
+      "traced_peak_bytes": 1104,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 16,
+      "copy_on_call": true,
+      "samples_ns": [
+        196600,
+        329900,
+        181700,
+        199800,
+        185500,
+        188100,
+        184600
+      ],
+      "median_ns": 188100,
+      "traced_retained_bytes": 13784,
+      "traced_peak_bytes": 15728,
+      "copied_heap_allocations": 17,
+      "copied_heap_cells": 49,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 64,
+      "copy_on_call": false,
+      "samples_ns": [
+        11900,
+        13700,
+        12900,
+        21400,
+        12800,
+        12600,
+        15200
+      ],
+      "median_ns": 12900,
+      "traced_retained_bytes": 240,
+      "traced_peak_bytes": 1104,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 64,
+      "copy_on_call": true,
+      "samples_ns": [
+        679200,
+        936500,
+        1120700,
+        661000,
+        1047800,
+        1139400,
+        1247000
+      ],
+      "median_ns": 1047800,
+      "traced_retained_bytes": 52632,
+      "traced_peak_bytes": 57744,
+      "copied_heap_allocations": 65,
+      "copied_heap_cells": 193,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 256,
+      "copy_on_call": false,
+      "samples_ns": [
+        13400,
+        12700,
+        19900,
+        12900,
+        12700,
+        14200,
+        12900
+      ],
+      "median_ns": 12900,
+      "traced_retained_bytes": 240,
+      "traced_peak_bytes": 1104,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 256,
+      "copy_on_call": true,
+      "samples_ns": [
+        2807900,
+        2792900,
+        2615500,
+        3475000,
+        3870600,
+        4339300,
+        4317100
+      ],
+      "median_ns": 3475000,
+      "traced_retained_bytes": 222452,
+      "traced_peak_bytes": 240748,
+      "copied_heap_allocations": 257,
+      "copied_heap_cells": 769,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 1024,
+      "copy_on_call": false,
+      "samples_ns": [
+        16000,
+        16000,
+        19700,
+        26300,
+        18800,
+        25000,
+        22000
+      ],
+      "median_ns": 19700,
+      "traced_retained_bytes": 240,
+      "traced_peak_bytes": 1104,
+      "copied_heap_allocations": 0,
+      "copied_heap_cells": 0,
+      "identity_checks": "passed"
+    },
+    {
+      "graph": "heap",
+      "size": 1024,
+      "copy_on_call": true,
+      "samples_ns": [
+        11414600,
+        11953300,
+        11175000,
+        12470800,
+        11522600,
+        13882400,
+        13127000
+      ],
+      "median_ns": 11953300,
+      "traced_retained_bytes": 909236,
+      "traced_peak_bytes": 979756,
+      "copied_heap_allocations": 1025,
+      "copied_heap_cells": 3073,
+      "identity_checks": "passed"
+    }
+  ]
+}

@@ -46,21 +46,26 @@ This draft outlines the target architecture for an alternative backend that exec
 
 ## Stability status and known gaps
 
-The native VM and LLVM pipeline are prototype backends. They are stable for the
-subset described in this document but remain experimental beyond that scope.
+The native VM and LLVM pipeline are experimental prototype backends. The
+[independent execution audit](independent_correctness_audit.md) records known
+numeric, output, boolean evaluation, heap and linking gaps even within the
+previously advertised subset; implementation and emitted IR do not establish parity.
 Use them for performance experiments and native builds, not as a full
 interpreter replacement.
 
-**What is stable today**
+**Implemented coverage (subject to the audit limitations)**
 
-- Deterministic output for arithmetic, control flow, and simple function calls.
-- Consistent `NotImplementedError` surface for unsupported constructs.
-- LLVM emission for numeric/control-flow-heavy programs when `clang` is present.
+- Executed control-flow, recursion and simple function-call examples.
+- Basic heap, class/method, ADT, collection and module examples, with the
+  boundaries and known failures recorded in the backend matrix.
+- LLVM IR emission and separate compilation/execution evidence; emission alone
+  does not require clang and does not prove that the module links or runs.
 
 **What is not covered yet**
 
-- Heap operations, collections, classes, pattern matching, concurrency, and
-  advanced stdlib modules.
+- Full semantic parity for heap error results, user-class operator overloads,
+  boolean evaluation, numeric division and advanced stdlib modules.
+- Parallel scheduling/cancellation equivalence for the synchronous LLVM workers.
 - Rich diagnostic spans (line/column ranges) on the LLVM path.
 - Debugger/LSP integrations (the REPL stays interpreter-backed).
 
@@ -100,8 +105,9 @@ Check that the major versions match (for example, all report `15.x` or `16.x`).
 # 1) Emit LLVM IR from TinyLanguage.
 PYTHONPATH=src python src/tiny_language.py --emit-llvm out.ll path/to/program.tiny
 
-# 2) Build a native executable with clang.
-clang -O0 -g -o out out.ll
+# 2) Supply the executable entry point: emitted IR exports tiny_main.
+printf 'extern int tiny_main(void); int main(void) { return tiny_main(); }\n' > runner.c
+clang -O0 -g -o out out.ll runner.c
 
 # 3) Run the binary.
 ./out

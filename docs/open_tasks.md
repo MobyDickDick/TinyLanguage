@@ -262,7 +262,7 @@ they are not a claim that every feature or backend has been audited.
 
 ### 9. Independent correctness evidence
 
-- [ ] **Audit test expectations and verify backend behavior by execution**
+- [x] **Audit test expectations and verify backend behavior by execution**
   (Owner: Testing/Language; priority: P1; supports package 5)
   - Motivation: the interval regression above demonstrates that a passing test
     can preserve an incorrect expected result. Agreement between backends that
@@ -288,6 +288,21 @@ they are not a claim that every feature or backend has been audited.
     bindings and executable Markdown coverage in
     `tests/test_release_scope_contract.py`. The documented caller-buffer value
     of `1` is asserted; the wider aliasing/numeric/backend audit remains open.
+  - Acceptance checkpoint (2026-11-06): the
+    [independent correctness audit](independent_correctness_audit.md) reviews
+    exact numeric, interval, aliasing, ownership and error expectations against
+    explicit contracts. Generated rational comparisons and shared-graph models
+    supplement existing boundary/cycle checks; mutation witnesses reject both
+    historical interval defects. A source-bound 24-case/four-route audit retains
+    frontend, generation, compilation and execution separately: 65 entries pass,
+    15 fail in ten explicit issue groups, 16 are outside the backend subset, and
+    no tool is missing. Incorrect supported cells and stable-subset wording are
+    corrected. CI monitors the narrow known failures without counting them as
+    passes, and rejects new failures, missing tools and incomplete evidence.
+    [Commands and validation evidence](../artifacts/correctness-audit/checkpoint.json).
+    This completes the audit, not the discovered backend repairs; see the
+    [bounded AUD-001–010 follow-up](independent_correctness_audit.md#bounded-follow-up-work).
+    Release and platform qualification remain open.
 
 ### 10. Maintainable runtime module boundaries
 

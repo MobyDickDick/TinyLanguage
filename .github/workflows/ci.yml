@@ -62,6 +62,14 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Run platform regression suite with required backend execution
         run: python -m pytest --require-backend-toolchains -ra --junitxml=artifacts/platform-tests.xml
+      - name: Execute independent backend contract audit
+        env:
+          PYTHONPATH: src
+        run: python -m tools.correctness_audit --allow-known-gaps --report artifacts/platform-correctness.json
+      - name: Verify complete source-bound backend evidence
+        env:
+          PYTHONPATH: src
+        run: python -m tools.correctness_audit --verify artifacts/platform-correctness.json
       - name: Build the current source wheel
         run: python -m pip wheel --no-deps --no-build-isolation . --wheel-dir dist/platform
       - name: Qualify a fresh installation outside the checkout
@@ -77,6 +85,7 @@ jobs:
           name: platform-${{ matrix.os }}-python-${{ matrix.python }}
           path: |
             artifacts/platform-tests.xml
+            artifacts/platform-correctness.json
             artifacts/platform-install.json
             artifacts/platform-application.json
           if-no-files-found: error

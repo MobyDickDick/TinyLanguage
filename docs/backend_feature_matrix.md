@@ -3,8 +3,11 @@
 This matrix summarizes which TinyLanguage language/runtime features are available in each execution backend. It focuses on runtime support; the parser, linter, and type checker are shared across backends and run before code generation.
 
 All non-interpreter backends are **experimental**, including C and the native
-VM. A supported cell describes implementation coverage, not a stable release
-commitment or retained compilation/execution evidence for the candidate.
+VM. Supported cells below refer to the bounded executable examples in the
+[independent correctness audit](independent_correctness_audit.md), not complete
+language support or a stable release commitment. Its retained report separates
+frontend acceptance, generation, compilation and execution; known failures are
+never counted as support evidence. The 2026-11-06 run covers Windows x86-64 only.
 See the [candidate contract and evidence map](release_scope_v1.md) and
 [platform qualification status](platform_verification_acceptance.md).
 
@@ -18,34 +21,35 @@ Legend:
 
 | Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
 | --- | --- | --- | --- | --- |
-| Literals (`number`, `string`, `bool`, `null`) | ✅ | ✅ | ✅ | ✅ |
+| Literals (`number`, `string`, `bool`, `Null`) | ✅ | ⚠️ `Null` prints `null` (AUD-003) | ⚠️ Boolean spelling and Windows large-integer output (AUD-002/003) | ⚠️ `Null` prints `null` (AUD-003) |
 | Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) | ✅ |
-| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ✅ (numeric subset) | ✅ (basic subset) |
+| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ⚠️ Integer division truncates; zero division traps (AUD-001/010) | ⚠️ Nonzero basic subset; zero division continues with infinity (AUD-010) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) | ✅ (basic subset) |
 | `if` / `else` | ✅ | ✅ | ✅ (simple control flow) | ✅ |
 | `while` loops | ✅ | ✅ | ✅ (simple control flow) | ✅ |
 | Functions + `return` | ✅ | ✅ | ✅ (simple, typed by inference) | ✅ |
 | Recursion | ✅ | ✅ | ✅ (within numeric subset) | ✅ |
-| `print` | ✅ | ✅ | ✅ (simple output) | ✅ (simple output) |
+| `print` | ✅ | ⚠️ `Null` spelling (AUD-003) | ⚠️ Boolean spelling and Windows integer truncation (AUD-002/003) | ⚠️ `Null` spelling (AUD-003) |
+| Short-circuit boolean evaluation | ✅ | ⚠️ Eager RHS evaluation (AUD-004) | ❌ Rejected during lowering (AUD-004) | ⚠️ Eager RHS evaluation (AUD-004) |
 
 ## Data structures and advanced language features
 
 | Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
 | --- | --- | --- | --- | --- |
-| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ✅ | ❌ |
+| Heap (`new`, `heap_get`, `heap_set`, `delete`) | ✅ | ✅ | ⚠️ Basic operations execute; error records, `len` and file-context builtins fail (AUD-005/007/008) | ❌ |
 | Array literals (`new[ a, b, c ]`) | ✅ | ✅ | ✅ | ❌ |
 | Classes / methods | ✅ | ✅ | ✅ | ❌ |
-| Operator overloading | ✅ | ✅ | ✅ | ❌ |
+| Operator overloading | ✅ | ✅ | ⚠️ User-class overload rejected during lowering (AUD-006) | ❌ |
 | Pattern matching + ADTs | ✅ | ✅ | ✅ | ❌ |
 | Collections (`Map`, `Set`, `Deque`) | ✅ | ✅ | ✅ | ❌ |
-| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ✅ | ❌ |
+| Concurrency (`spawn`, `join`, tokens) | ✅ | ✅ | ⚠️ Synchronous worker result and token state verified; parallel scheduling/cancellation equivalence unqualified | ❌ |
 
 ## Interop and tooling
 
 | Feature | Interpreter | Native VM (`--native-backend`) | Native LLVM pipeline (`--emit-llvm`, `--emit-exe`) | C backend (`tinyc_cli`) |
 | --- | --- | --- | --- | --- |
-| Module imports (`import`, namespaces) | ✅ | ✅ | ⚠️ Module names must be compile-time string literals; module field access is limited to functions | ❌ |
-| Python interop (`Python.import_module`, `Python.call`) | ✅ | ✅ | ⚠️ Basic allowlist-aware calls (numeric/string args, numeric return) | ❌ |
+| Module imports (`import`, namespaces) | ✅ | ✅ | ⚠️ Static function import executes; file-context builtin qualification fails (AUD-008) | ❌ |
+| Python interop (`Python.import_module`, `Python.call`) | ✅ | ✅ | ⚠️ IR emits external calls, but standalone linking lacks Python bridge symbols (AUD-009) | ❌ |
 | Formatter / lints | ✅ | ✅ (shared frontend) | ✅ (shared frontend) | ✅ (shared frontend) |
 
 ## Notes
@@ -63,7 +67,8 @@ These task lists capture the remaining feature gaps for the non-interpreter back
 
 ### Open tasks
 
-_None_
+See [AUD-003/004](independent_correctness_audit.md#bounded-follow-up-work):
+literal rendering and short-circuit evaluation remain open.
 
 ### Closed tasks
 
@@ -109,7 +114,8 @@ _None_
 
 ### Open tasks
 
-_None_
+See [AUD-001 through AUD-010](independent_correctness_audit.md#bounded-follow-up-work).
+The historical completed implementation entries below are not execution acceptance.
 
 ### Closed tasks
 

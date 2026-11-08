@@ -8,67 +8,60 @@ source text.
 
 # ----- Parser -----
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
-if "Lexer" not in globals():
-    from tiny_language_lexer import Lexer, Token
+from tiny_language_lexer import Lexer, Token
 
-if "IR" not in globals():
-    from tiny_language_ast import (
-        Assign,
-        Await,
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        ClassDef,
-        ClassNew,
-        DestructAssign,
-        Dict,
-        Field,
-        FieldAssign,
-        Flush,
-        Fn,
-        If,
-        Import,
-        IR,
-        Let,
-        Match,
-        MatchCase,
-        MethodCall,
-        MethodDef,
-        Namespace,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        OpDef,
-        Param,
-        Pattern,
-        Print,
-        Return,
-        Set,
-        Spawn,
-        Str,
-        Switch,
-        SwitchCase,
-        TaskBlock,
-        TryCatch,
-        Tuple,
-        TypeDef,
-        TypeVariant,
-        Var,
-        VariantCtor,
-        VariantPattern,
-        While,
-        WildcardPattern,
-    )
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    IR,
+    Let,
+    Match,
+    MatchCase,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Param,
+    Pattern,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    SwitchCase,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    TypeVariant,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
 
-if "SourcePos" not in globals():
-    from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan
 
-if "TinyLangError" not in globals():
-    from tiny_language_preamble import TinyLangError, _classify_error, format_error
+from tiny_language_preamble import TinyLangError, _classify_error, format_error
 
 
 class Parser:

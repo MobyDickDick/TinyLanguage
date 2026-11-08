@@ -1,7 +1,7 @@
-// TinyLanguage wrapper for src/tiny_language_stitched.py.
-// Delegates CLI handling to the Python implementation.
+// Legacy Tiny entry point, retained after removal of the generated Python file.
+// Delegates CLI handling to the canonical Python implementation.
 
-def stitched = Python.import_module("tiny_language_stitched", new["main"]);
+def stitched = Python.import_module("tiny_language", new["main"]);
 def os = Python.import_module("os", new["getenv"]);
 def builtins = Python.import_module("builtins", new["exit"]);
 

@@ -15,7 +15,31 @@ now and will raise ``NotImplementedError`` during generation.
 """
 
 import ast
-from typing import TYPE_CHECKING, Iterable, List
+from typing import Iterable, List
+
+from tiny_language_ast import (
+    Assign,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    Flush,
+    Fn,
+    IR,
+    Let,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    Print,
+    Return,
+    Str,
+    Var,
+    While,
+    If,
+    MethodCall,
+    Field,
+)
 
 
 class PythonCodeGenerator:
@@ -465,28 +489,3 @@ class PythonCodeGenerator:
         if op in mapping:
             return mapping[op]
         raise NotImplementedError(f"binary operator {op} is not supported in Python backend yet")
-
-
-if TYPE_CHECKING:  # pragma: no cover - only used for type checking
-    from tiny_language_ast import (
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        Flush,
-        Fn,
-        IR,
-        Let,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        Print,
-        Return,
-        Str,
-        Var,
-        While,
-        If,
-        MethodCall,
-        Field,
-    )

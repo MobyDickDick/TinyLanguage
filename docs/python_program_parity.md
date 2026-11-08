@@ -18,7 +18,7 @@ future conversion work.
 | `src/tiny_language_api.py` | `src_tiny/tiny_language_api.tiny` | Tiny API wrapper available. |
 | `src/tiny_language_cli.py` | `src_tiny/tiny_language_cli.tiny` | Tiny CLI available. |
 | `src/tiny_language_compiler_cli.py` | `src_tiny/tiny_language_compiler_cli.tiny` | Tiny compiler CLI available. |
-| `src/tiny_language_stitched.py` | `src_tiny/tiny_language_stitched.tiny` | Tiny wrapper delegates to the stitched Python runtime. |
+| `src/tiny_language.py` | `src_tiny/tiny_language_stitched.tiny` | Legacy Tiny entry point delegates to the public Python facade; generated stitched Python source has been removed. |
 | `src/tiny_project_cli.py` | `src_tiny/tiny_project_cli.tiny` | Tiny wrapper delegates to the project scaffolding CLI. |
 | `src/tinyc_cli.py` | `src_tiny/tinyc_cli.tiny` | Tiny C compiler CLI available. |
 | `src/transpile_rosetta.py` | `src_tiny/transpile_rosetta.tiny` | Tiny transpiler entrypoint available. |

@@ -101,14 +101,15 @@ def test_import_and_stdlib_do_not_require_generated_source(tmp_path):
         shutil.copyfile(path, installed / "stdlib" / path.name)
     environment = {**os.environ, "PYTHONPATH": str(installed), "PYTHONDONTWRITEBYTECODE": "1"}
     result = subprocess.run([sys.executable, "-c", """
-import linecache
+import inspect
 from pathlib import Path
 import tiny_language
 output = tiny_language.compile_and_run('import stdlib.math as m; print(m.sqrt(81));', stream_output=False)
 assert output.strip() == '9'
 generated = Path(tiny_language.__file__).parent / 'tiny_language_stitched.py'
 assert not generated.exists()
-assert linecache.getlines(str(generated))
+assert Path(inspect.getsourcefile(tiny_language.compile_and_run)).name == 'tiny_language_api.py'
+assert Path(inspect.getsourcefile(tiny_language.Runtime.eval_stmt)).name == 'tiny_language_eval.py'
 """], cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=60)
     assert result.returncode == 0, result.stderr
 

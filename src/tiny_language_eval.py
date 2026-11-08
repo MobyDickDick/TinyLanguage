@@ -2,73 +2,79 @@
 
 These functions execute TinyLanguage IR nodes against the runtime environment,
 handling control flow, function calls, heap operations, and async primitives.
-They are stitched into the original monolithic interpreter so other modules can
-share the same execution semantics without duplicating the evaluator logic.
+Runtime inherits the evaluator interface; importing this module does not mutate
+Runtime or require the public API to initialize it.
 """
 
 # ----- Evaluation -----
 # AST evaluator that executes statements against the runtime environment.
 #
-# These helpers interpret TinyLanguage IR directly, handling control flow,
-# function calls, heap operations, and async primitives. They are stitched
-# into the original monolithic interpreter so other modules can share the
-# same execution semantics.
+# Runtime supplies state and heap/call operations through the Evaluator interface.
 
-from typing import Any, List, Optional, Union
+import math
+from typing import Any, Dict, List, Optional, Union
 
-if "IR" not in globals():
-    from tiny_language_ast import (
-        Assign,
-        Await,
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        ClassDef,
-        ClassNew,
-        DestructAssign,
-        Field,
-        FieldAssign,
-        Flush,
-        Fn,
-        If,
-        Import,
-        IR,
-        Let,
-        Match,
-        MethodCall,
-        MethodDef,
-        Namespace,
-        New,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        OpDef,
-        Print,
-        Return,
-        Spawn,
-        Str,
-        Switch,
-        TaskBlock,
-        TryCatch,
-        TypeDef,
-        Var,
-        VariantCtor,
-        While,
-    )
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    IR,
+    Let,
+    Match,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    New,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    Var,
+    VariantCtor,
+    While,
+)
 
-if "Runtime" not in globals():
-    from tiny_language_runtime import NamespaceRef, ReturnSignal, Runtime
+from tiny_language_runtime_modules import NamespaceRef, _import_binding_name
 
-if "Environment" not in globals():
-    from tiny_language_runtime_environment import Environment
+from tiny_language_runtime_environment import Environment
 
-if "TinyLangError" not in globals():
-    from tiny_language_preamble import TinyLangError
+from tiny_language_preamble import TinyLangError
 
-if "SourcePos" not in globals():
-    from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan
+
+
+class ReturnSignal(Exception):
+    """Carry a Tiny return value across nested evaluation blocks."""
+
+    def __init__(self, value: Any):
+        super().__init__()
+        self.value = value
+
+
+class _SpawnCancelled(Exception):
+    """Stop a worker after its spawn handle has been cancelled."""
+
 
 def _span_or_pos(node: IR) -> Union[SourcePos, SourceSpan]:
     """Return the most precise span information available for ``node``."""
@@ -492,6 +498,14 @@ def eval_expr(self, e: IR, env: "Environment") -> Any:
         raise self._error(str(exc), e) from exc
 
 
-Runtime.eval_block = eval_block
-Runtime.eval_stmt = eval_stmt
-Runtime.eval_expr = eval_expr
+class Evaluator:
+    """AST execution interface inherited by the stateful Runtime.
+
+    Implementations supply environments, calls, heap access and diagnostics.
+    Binding these functions here keeps standalone evaluator hooks compatible
+    without patching another module's class during import.
+    """
+
+    eval_block = eval_block
+    eval_stmt = eval_stmt
+    eval_expr = eval_expr

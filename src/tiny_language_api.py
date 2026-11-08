@@ -8,6 +8,7 @@ to keep a small, ergonomic surface area.
 
 # ----- Public API -----
 
+import argparse
 import ast
 import ctypes
 import importlib
@@ -37,94 +38,86 @@ from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
 from tiny_pkg_cli import main as pkg_main
 
-if "IR" not in globals():
-    from tiny_language_ast import (
-        Await,
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        ClassDef,
-        ClassNew,
-        DestructAssign,
-        Field,
-        FieldAssign,
-        Flush,
-        Fn,
-        If,
-        Import,
-        IR,
-        Let,
-        Match,
-        MatchCase,
-        MethodCall,
-        MethodDef,
-        Namespace,
-        New,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        OpDef,
-        Param,
-        Print,
-        Return,
-        Spawn,
-        Str,
-        Switch,
-        SwitchCase,
-        TaskBlock,
-        TryCatch,
-        TypeDef,
-        TypeVariant,
-        Var,
-        VariantCtor,
-        VariantPattern,
-        While,
-        WildcardPattern,
-    )
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    IR,
+    Let,
+    Match,
+    MatchCase,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    New,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Param,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    SwitchCase,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    TypeVariant,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
 
-if "Environment" not in globals():
-    from tiny_language_eval import Environment
+from tiny_language_runtime_environment import Environment
 
-if "Lexer" not in globals():
-    from tiny_language_lexer import Lexer
+from tiny_language_lexer import Lexer
 
-if "Parser" not in globals():
-    from tiny_language_parser import Parser
+from tiny_language_parser import Parser
 
-if "Runtime" not in globals():
-    from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
+from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
 
-if "TinyLangError" not in globals():
-    from tiny_language_preamble import TinyLangError, format_error
-    from tiny_language_lexer import BUILTINS, KEYWORDS
+from tiny_language_preamble import TinyLangError, format_error, readline, _FallbackReadline
+from tiny_language_lexer import BUILTINS, KEYWORDS
 
-if "lint_import_style" not in globals():
-    from tiny_language_linter import (
-        _collect_function_signatures,
-        build_module_summary,
-        lint_annotation_enforcement,
-        lint_assignment_types,
-        lint_bare_call_results,
-        lint_call_validation,
-        lint_destruct_call_outputs,
-        lint_fn_params_used,
-        lint_heap_lifetimes,
-        lint_import_style,
-        lint_locals_used,
-        lint_method_params_used,
-        lint_no_consecutive_definitions,
-        lint_no_underscore_bindings,
-        lint_return_validation,
-        lint_unreachable_code,
-    )
+from tiny_language_linter import (
+    _collect_function_signatures,
+    build_module_summary,
+    lint_annotation_enforcement,
+    lint_assignment_types,
+    lint_bare_call_results,
+    lint_call_validation,
+    lint_destruct_call_outputs,
+    lint_fn_params_used,
+    lint_heap_lifetimes,
+    lint_import_style,
+    lint_locals_used,
+    lint_method_params_used,
+    lint_no_consecutive_definitions,
+    lint_no_underscore_bindings,
+    lint_return_validation,
+    lint_unreachable_code,
+)
 
-if "PythonCodeGenerator" not in globals():
-    from tiny_language_codegen_py import PythonCodeGenerator
+from tiny_language_codegen_py import PythonCodeGenerator
 
-if "NativeCodeGenerator" not in globals():
-    from tiny_language_codegen_native import NativeCodeGenerator
+from tiny_language_codegen_native import NativeCodeGenerator
 
 
 def _copy_on_call_default() -> bool:

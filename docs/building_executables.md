@@ -43,15 +43,15 @@ Notes:
    python -m pip install -r tools/release/requirements.txt
    ```
 
-2. **Run the maintained spec from the repo root**. It includes Python source
-segments, the Tiny standard library, and parser bootstrap assets:
+2. **Run the maintained spec from the repo root**. It collects Python modules,
+the Tiny standard library, and parser bootstrap assets:
 
    ```bash
    python -m PyInstaller --clean --noconfirm tools/release/tinylanguage.spec
    ```
 
-The spec produces a single console executable and disables UPX. Imports keep
-stitched source in memory. Pick up `dist/tiny-language.exe` on Windows or
+The spec produces a single console executable and disables UPX. Python modules
+load from the PYZ archive through ordinary imports. Pick up `dist/tiny-language.exe` on Windows or
 `dist/tiny-language` on macOS/Linux.
 
 ## Verify the executable
@@ -73,5 +73,5 @@ qualification remains recorded in [packaging acceptance](release_packaging_accep
 
 ## Troubleshooting
 
-- **Missing source segments**: Build with the maintained spec, which includes source files as data at the frozen loader's expected location.
+- **Missing modules or assets**: Build with the maintained spec, which collects Python modules and includes Tiny stdlib/bootstrap data. The runtime no longer reads loose Python source segments.
 - **Native backend dependencies**: The interpreter and native bytecode backend are pure Python. If you later extend the LLVM/`llvmlite` path, add the corresponding shared libraries via additional `--add-binary` flags.

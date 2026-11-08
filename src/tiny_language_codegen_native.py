@@ -9,6 +9,45 @@ flow, simple functions, and `print`). Unsupported constructs raise
 
 from typing import Dict, List, Optional
 
+from tiny_language_ast import (
+    IR,
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    Let,
+    Match,
+    MethodCall,
+    MethodDef,
+    New,
+    NewLit,
+    Null,
+    Num,
+    OpDef,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    TaskBlock,
+    TypeDef,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
+
 from native_ir import ClassIR, FunctionIR, Instruction, Opcode, OperatorOverloadIR, ProgramIR, TypeIR
 from tiny_errors import SourcePos, SourceSpan, format_error
 

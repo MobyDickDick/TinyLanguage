@@ -1,0 +1,390 @@
+{
+  "date": "2026-11-08",
+  "scope": "Work package 10 local Windows module architecture acceptance; not release/platform qualification or backend gap repair",
+  "source_identity": {
+    "commit": "2e7af9940294a9467a72f9ac79183cbfbf3cf346",
+    "source_sha256": "fa2f6f54519bf88044a85643c010be2aea6bf85bbfd912cb28fcde9789b2d91a",
+    "source_changed_during_final_audit": false,
+    "implementation_unchanged_across_validation": true,
+    "documentation_finalized_after_full_and_focused_runs": [
+      "docs/open_tasks.md",
+      "docs/runtime_module_boundaries.md"
+    ]
+  },
+  "runner": {
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "environment": {
+    "PYTHONPATH": [
+      ".venv/Lib/python3.14/site-packages",
+      "src",
+      "dist/release-tools"
+    ],
+    "TEMP_and_TMP_tests": ".pytest_cache/module-temp",
+    "TEMP_and_TMP_installed_and_frozen": "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation",
+    "stdin": "Native CPython parent launches children with a valid DEVNULL standard-input handle.",
+    "network": "Only the eight loopback HTTP tests rerun outside the network sandbox; no external registry is contacted."
+  },
+  "commands": {
+    "full": {
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "-ra",
+        "--require-backend-toolchains",
+        "--tb=short",
+        "--basetemp=.pytest_cache/modules-full",
+        "--junitxml=artifacts/runtime-modules/full.xml"
+      ],
+      "exit_code": 1
+    },
+    "network-rerun": {
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_pkg_sources.py",
+        "-k",
+        "verified_download_and_offline_cache or failed_transfer_keeps_cache_and_installation or registry_digest_is_locked",
+        "--tb=short",
+        "--basetemp=.pytest_cache/modules-network",
+        "--junitxml=artifacts/runtime-modules/network-rerun.xml"
+      ],
+      "exit_code": 0
+    },
+    "focused": {
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_runtime_module_boundaries.py",
+        "tests/test_tiny_wrapper_imports.py",
+        "tests/test_tiny_language_preamble.py",
+        "tests/test_release_packaging.py",
+        "tests/detailtests/test_python_codegen.py",
+        "tests/detailtests/test_native_codegen.py",
+        "tests/detailtests/test_llvm_codegen.py",
+        "--tb=short",
+        "--basetemp=.pytest_cache/modules-final",
+        "--junitxml=artifacts/runtime-modules/focused.xml"
+      ],
+      "exit_code": 0
+    },
+    "build": {
+      "argv": [
+        "-m",
+        "build",
+        "--no-isolation",
+        "--wheel",
+        "--sdist",
+        "--outdir",
+        "dist/module-boundaries"
+      ],
+      "exit_code": 0
+    },
+    "installed-workflows": {
+      "argv": [
+        "tools/release/verify_installed_workflows.py",
+        "dist\\module-boundaries\\tinylanguage-1.0.0-py3-none-any.whl",
+        "--require-compiler",
+        "--report",
+        "artifacts/runtime-modules/installed-workflows.json"
+      ],
+      "exit_code": 0
+    },
+    "frozen-build": {
+      "argv": [
+        "-m",
+        "PyInstaller",
+        "--clean",
+        "--noconfirm",
+        "--distpath",
+        "dist/module-frozen",
+        "--workpath",
+        "build/module-frozen",
+        "tools/release/tinylanguage.spec"
+      ],
+      "exit_code": 0
+    },
+    "frozen-acceptance": {
+      "argv": [
+        "artifacts/runtime-modules/frozen-driver.py"
+      ],
+      "exit_code": 0
+    },
+    "root-wrapper": {
+      "argv": [
+        "artifacts/runtime-modules/root-wrapper-driver.py"
+      ],
+      "exit_code": 0
+    },
+    "backend-audit": {
+      "argv": [
+        "-m",
+        "tools.correctness_audit",
+        "--allow-known-gaps",
+        "--report",
+        "artifacts/runtime-modules/backend-results.json"
+      ],
+      "exit_code": 0
+    },
+    "verify-audit": {
+      "argv": [
+        "-m",
+        "tools.correctness_audit",
+        "--verify",
+        "artifacts/runtime-modules/backend-results.json"
+      ],
+      "exit_code": 0
+    },
+    "format-lint": {
+      "argv": [
+        "tools/check_format_lint.py"
+      ],
+      "exit_code": 0
+    },
+    "diff-check": {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  },
+  "tests": {
+    "full_initial_passed": 1059,
+    "full_initial_failed": 8,
+    "full_skipped": [
+      {
+        "case": "tests.detailtests.test_pkg_sources::test_links_in_source_or_destination_are_rejected",
+        "reason": "Host does not grant symlink creation privileges"
+      },
+      {
+        "case": "tests.test_llvm_jit::test_llvm_jit_executes_program",
+        "reason": "llvmlite not available"
+      },
+      {
+        "case": "tests.test_release_packaging::test_release_preserves_executable_permissions[built]",
+        "reason": "Executable permission bits require POSIX"
+      },
+      {
+        "case": "tests.test_release_packaging::test_release_preserves_executable_permissions[included]",
+        "reason": "Executable permission bits require POSIX"
+      },
+      {
+        "case": "tests.test_tiny_program_source_sandbox::test_runs_approved_port_and_records_passing_assessment",
+        "reason": "source-port execution requires Linux resource limits"
+      },
+      {
+        "case": "tests.test_tiny_program_source_sandbox::test_records_runtime_failure_without_promoting_program",
+        "reason": "source-port execution requires Linux resource limits"
+      },
+      {
+        "case": "tests.test_tiny_program_source_scan::test_symlinked_source_is_not_scanned",
+        "reason": "Windows symlink creation requires Developer Mode or symlink privilege"
+      }
+    ],
+    "network_rerun_passed": 8,
+    "all_initial_failures_resolved": true,
+    "effective_full_passed": 1067,
+    "focused_passed": 90,
+    "focused_skipped": 2,
+    "nine_fresh_import_orders": true,
+    "reproducible_wheel_and_sdist_test_passed": true
+  },
+  "backend_audit": {
+    "counts": {
+      "passed": 65,
+      "failed": 15,
+      "not_applicable": 16
+    },
+    "known_gaps": [
+      {
+        "case": "exact-arithmetic",
+        "backend": "llvm",
+        "issue": "AUD-001"
+      },
+      {
+        "case": "integer-boundary",
+        "backend": "llvm",
+        "issue": "AUD-002"
+      },
+      {
+        "case": "literals",
+        "backend": "native",
+        "issue": "AUD-003"
+      },
+      {
+        "case": "literals",
+        "backend": "llvm",
+        "issue": "AUD-003"
+      },
+      {
+        "case": "literals",
+        "backend": "c",
+        "issue": "AUD-003"
+      },
+      {
+        "case": "short-circuit",
+        "backend": "native",
+        "issue": "AUD-004"
+      },
+      {
+        "case": "short-circuit",
+        "backend": "llvm",
+        "issue": "AUD-004"
+      },
+      {
+        "case": "short-circuit",
+        "backend": "c",
+        "issue": "AUD-004"
+      },
+      {
+        "case": "heap-length",
+        "backend": "llvm",
+        "issue": "AUD-005"
+      },
+      {
+        "case": "operator",
+        "backend": "llvm",
+        "issue": "AUD-006"
+      },
+      {
+        "case": "file-builtins",
+        "backend": "llvm",
+        "issue": "AUD-008"
+      },
+      {
+        "case": "python-interop",
+        "backend": "llvm",
+        "issue": "AUD-009"
+      },
+      {
+        "case": "division-error",
+        "backend": "llvm",
+        "issue": "AUD-010"
+      },
+      {
+        "case": "division-error",
+        "backend": "c",
+        "issue": "AUD-010"
+      },
+      {
+        "case": "heap-error-status",
+        "backend": "llvm",
+        "issue": "AUD-007"
+      }
+    ]
+  },
+  "installation": {
+    "outside_checkout": true,
+    "quickstart_commands": 10,
+    "checks": [
+      "clean-wheel-install",
+      "stdlib-import",
+      "python-module",
+      "console-entry-points",
+      "bootstrap-assets",
+      "no-source-write",
+      "release-version",
+      "os-read-only-imports",
+      "concurrent-fresh-processes",
+      "canonical-module-identity",
+      "maintained-tracebacks",
+      "installed-c-compile-execute",
+      "installed-llvm-compile-execute",
+      "installed-llvm-executable-api",
+      "project-scaffolding",
+      "unrelated-working-directory",
+      "unicode-space-paths",
+      "lf-and-crlf-imports",
+      "literal-argument-path",
+      "local-and-stdlib-import",
+      "typecheck",
+      "package-init-resolve",
+      "execution-backends",
+      "c-module-and-subcommand-emission",
+      "lsp-format-diagnostics",
+      "extension-helper-format-diagnostics",
+      "breakpoint-stack-continue-terminate"
+    ],
+    "immutable_imports": {
+      "processes": [
+        {
+          "os_write_denied": true,
+          "stdlib": true,
+          "native": true,
+          "python": true,
+          "canonical_identity": true,
+          "maintained_traceback": true
+        },
+        {
+          "os_write_denied": true,
+          "stdlib": true,
+          "native": true,
+          "python": true,
+          "canonical_identity": true,
+          "maintained_traceback": true
+        },
+        {
+          "os_write_denied": true,
+          "stdlib": true,
+          "native": true,
+          "python": true,
+          "canonical_identity": true,
+          "maintained_traceback": true
+        },
+        {
+          "os_write_denied": true,
+          "stdlib": true,
+          "native": true,
+          "python": true,
+          "canonical_identity": true,
+          "maintained_traceback": true
+        }
+      ],
+      "files_unchanged": 1063,
+      "permission_restored": true
+    }
+  },
+  "artifact_sha256": {
+    "dist\\module-boundaries\\tinylanguage-1.0.0-py3-none-any.whl": "4140a9905b34d7f7f50897b8ea00b27b99190037ca2c259a822a1eed6e2f1a0b",
+    "dist\\module-boundaries\\tinylanguage-1.0.0.tar.gz": "7934e1222d67037b9ec92578e433c6103e1159fc63c11a0cb1cd09f1fcd491f4",
+    "dist\\module-frozen\\tiny-language.exe": "f6e37db059786e782689f9d18294c536d7eebe02f61aa582f4846733d0f7178b"
+  },
+  "wheel_matches_maintained_sources": 153,
+  "limitations": [
+    "Windows x86_64 acceptance only; other supported platforms remain unqualified.",
+    "Seven optional/platform full-suite skips remain explicit.",
+    "Fifteen known backend audit failures remain; allow-known-gaps does not turn them into passing pairs.",
+    "No actual VS Code extension-host run, signed release, reproducible frozen binary, or release runtime-upgrade pair is claimed."
+  ],
+  "evidence_sha256": {
+    "backend-results.json": "2986b628aa0a7951f37a661fcccb1480944229b2e46a45e019f3da3fbd59be10",
+    "backend-run.log": "de854cf40954b8df8f2b6e23839a3f3c4c57ca856dfda5e82c047f7f25612df5",
+    "build.log": "d55790c73450f2d0f872e821be2fa9d74772739aa8fa6b7d4fd0fd3967277930",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "focused.log": "5e6bab846325fb551b82b14eaa6b5e79b41901db3fe9a0173462c82d0a12a4e8",
+    "focused.xml": "25759d89b0b4af7f2c6f67162bebcb2bec944cb628e8aca96979ab4614660900",
+    "format-lint.log": "e51e85d0cd34866cd88914490fb888d124a7b2b282f08dc2e193e00a83ff1cbf",
+    "frozen-acceptance.json": "367e96be546e7c61973d8d8d18436f7141d903b5b5de4842f80a37ea88de9c30",
+    "frozen-acceptance.log": "367e96be546e7c61973d8d8d18436f7141d903b5b5de4842f80a37ea88de9c30",
+    "frozen-build.log": "8b443aa24fe45ca26c48c5af4b224b8aed39aa9c94aae86e3b6db2a1ce7e8997",
+    "frozen-driver.py": "d72944550efebd60652322d774f5502546710c515f019f69785ed710fa275c67",
+    "full.log": "13821c7d3f6fcc847b45cbb0b12390424706c7f0d8bb03a1ca1a231cb2b813a8",
+    "full.xml": "a8e8ecc80b3bb58da34b99dfcd8907d69341c032776e2b52747c26202031fb8e",
+    "installed-workflows.json": "97c65e04982bd77869a722c5f09dd1cfe59645069bc072e71937a5c16aea1581",
+    "installed-workflows.log": "97c65e04982bd77869a722c5f09dd1cfe59645069bc072e71937a5c16aea1581",
+    "network-rerun.log": "d8cd38760b1f99b60229c97c87f955c8eb6aec4e3eca643493288b2dda4174f8",
+    "network-rerun.xml": "59c1e84fbf8aafc11bf837f5078c3d70a5717185b0da637db7215a68f22c4747",
+    "root-wrapper-driver.py": "bdd969627335c5953550cfa36e0af8d23db0748c6be4c05588b01f82caa80915",
+    "root-wrapper.json": "ba0f65aa29915635682238aea53449af2f5fd70d5533ce10f9f1496378c90379",
+    "root-wrapper.log": "ba0f65aa29915635682238aea53449af2f5fd70d5533ce10f9f1496378c90379",
+    "verify-audit.log": "3b1143e780acfc69b37e91cbfe80f0691eb367022dc4d72bbd818d30a0e88e29"
+  },
+  "evidence_line_endings": "CRLF normalized to LF before commit; evidence hashes refer to the retained LF files."
+}

@@ -12,10 +12,11 @@ not a signed release qualification record for a tagged candidate commit.
   `tiny --version` identifies the installed or frozen runtime release.
   Existing public modules, including `python -m tiny_language` and
   `python -m tinyc_cli`, remain available.
-- Wheels contain the Python source segments, Tiny standard library, and
+- Wheels contain the Python implementation modules, Tiny standard library, and
   `src_tiny` sources, including the parser bootstrap. Module lookup uses bundled
-  assets without a checkout. Imports keep synthesized traceback source in memory
-  and do not write `tiny_language_stitched.py` in the installation directory.
+  assets without a checkout. Following
+  [work package 10](runtime_module_boundaries.md), imports use ordinary module
+  dependencies and maintained traceback filenames, without synthesizing source.
 - The PEP 517 backend normalizes sdist ordering, ownership, modes, timestamps and
   gzip headers. Wheel timestamps use `SOURCE_DATE_EPOCH`.
 - The release helper builds from an archived commit, validates versions, builds

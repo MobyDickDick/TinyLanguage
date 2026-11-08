@@ -1,0 +1,26 @@
+{
+  "wrapper": "C:\\Users\\marku\\myCloud\\TinyLanguage\\tiny_language.py",
+  "outside_working_directory": "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance",
+  "canonical_identity": true,
+  "public_exports": [
+    "compile_and_run",
+    "compile_to_c_executable",
+    "compile_to_c_source",
+    "compile_to_executable",
+    "compile_to_llvm_ir",
+    "compile_to_llvm_bitcode_via_c",
+    "compile_to_llvm_ir_via_c",
+    "compile_to_python_ast",
+    "compile_to_python_source",
+    "run_with_python_backend",
+    "run_with_native_backend",
+    "run_with_llvm_jit",
+    "run_with_python_bytecode_backend",
+    "run_file",
+    "main",
+    "ModuleResolver",
+    "NativeModuleResolver",
+    "LLVMModuleResolver"
+  ],
+  "output": "42"
+}

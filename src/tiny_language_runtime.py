@@ -1,12 +1,14 @@
 """Runtime helpers: module resolution, heap management, and async utilities.
 
-This segment contains the import mechanics, concurrency primitives, and the core
+This module contains the import mechanics, concurrency primitives, and the core
 runtime container used by the evaluator. Docstrings focus on public-facing
-behaviors so integrators can navigate the stitched module without reading the
+behaviors so integrators can navigate the runtime module without reading the
 entire implementation.
 """
 
 import logging
+import math
+import sys
 import os
 import threading
 import time
@@ -18,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_error_codes import classify_error
+from tiny_language_eval import Evaluator, ReturnSignal, _SpawnCancelled
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
 from tiny_language_runtime_environment import Environment
@@ -27,15 +30,6 @@ from tiny_language_runtime_modules import ModuleResolver, NamespaceRef, _import_
 
 LOGGER = logging.getLogger(__name__)
 
-
-class ReturnSignal(Exception):
-    def __init__(self, value: Any):
-        super().__init__()
-        self.value = value
-
-
-class _SpawnCancelled(Exception):
-    """Stop a worker after its spawn handle has been cancelled."""
 
 
 @dataclass
@@ -120,7 +114,7 @@ class _ParsedType:
     optional: bool = False
 
 
-class Runtime:
+class Runtime(Evaluator):
     """Interpreter runtime state and helpers for executing TinyLanguage code."""
 
     def __init__(self, source: str):
@@ -2091,9 +2085,7 @@ class Runtime:
 def compile_and_run(*args: Any, **kwargs: Any) -> str:
     """Proxy to the public API compile helper to preserve legacy imports."""
 
-    # The public loader owns the shared evaluator namespace. A generated source
-    # file is neither present in wheels nor a reliable second runtime instance.
-    from tiny_language import compile_and_run as api_compile_and_run
+    # Resolve the orchestration layer at call time to keep imports acyclic.
+    from tiny_language_api import compile_and_run as api_compile_and_run
 
     return api_compile_and_run(*args, **kwargs)
-    

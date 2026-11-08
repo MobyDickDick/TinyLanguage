@@ -1,0 +1,167 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 26%]
+......................................................................F. [ 33%]
+.....FFFFFF...........................................Fs................ [ 40%]
+........................................................................ [ 46%]
+........................................................................ [ 53%]
+........................................................................ [ 60%]
+........................................................................ [ 67%]
+..........................................s............................. [ 73%]
+............ss.......................................................... [ 80%]
+........................................................................ [ 87%]
+........................................................................ [ 93%]
+..................................................ss..........s...       [100%]
+================================== FAILURES ===================================
+__________________ test_verified_download_and_offline_cache ___________________
+tests\detailtests\test_pkg_sources.py:84: in test_verified_download_and_offline_cache
+    sources.vendor_from_dist(url, tmp_path / version, force=False, cache_path=cache,
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+_________ test_failed_transfer_keeps_cache_and_installation[checksum] _________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'Checksum mismatch'
+E    Input: 'Package download failed or timed out.'
+_______ test_failed_transfer_keeps_cache_and_installation[interrupted] ________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'interrupted'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[length] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'size limit'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[stream] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'size limit'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[stall] ___________
+tests\detailtests\test_pkg_sources.py:123: in test_failed_transfer_keeps_cache_and_installation
+    assert len(requests) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_________ test_failed_transfer_keeps_cache_and_installation[trickle] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'time limit'
+E    Input: 'Package download failed or timed out.'
+______ test_registry_digest_is_locked_and_metadata_changes_are_rejected _______
+C:\Users\marku\myCloud\TinyLanguage\tests\detailtests\test_pkg_sources.py:300: in test_registry_digest_is_locked_and_metadata_changes_are_rejected
+    assert pkg_main(["vendor", "--manifest", str(manifest)]) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:527: in main
+    return args.func(args)
+           ^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:426: in _cmd_vendor
+    _vendor_dependency(
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:265: in _vendor_dependency
+    _vendor_from_dist(dist, dest, force=force, cache_path=cache_path, checksum=checksum)
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+============================== warnings summary ===============================
+tests/detailtests/test_benchmark_and_fuzz.py::test_recursive_fibonacci_benchmark
+  tests\detailtests\test_benchmark_and_fuzz.py:122: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_recursive_fibonacci_benchmark(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_randomized_programs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:252: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_randomized_programs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_lexer_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:282: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_lexer_random_inputs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_parser_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:303: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_parser_random_inputs_do_not_crash(record_property) -> None:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\runtime-modules\full.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] tests\detailtests\test_pkg_sources.py:317: Host does not grant symlink creation privileges
+SKIPPED [1] tests\test_llvm_jit.py:20: llvmlite not available
+SKIPPED [2] tests\test_release_packaging.py:53: Executable permission bits require POSIX
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:25: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:37: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_scan.py:73: Windows symlink creation requires Developer Mode or symlink privilege
+FAILED tests/detailtests/test_pkg_sources.py::test_verified_download_and_offline_cache
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[checksum]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[interrupted]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[length]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[stream]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[stall]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[trickle]
+FAILED tests/detailtests/test_pkg_sources.py::test_registry_digest_is_locked_and_metadata_changes_are_rejected
+8 failed, 1059 passed, 7 skipped, 4 warnings in 133.14s (0:02:13)

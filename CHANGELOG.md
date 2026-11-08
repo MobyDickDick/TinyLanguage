@@ -17,8 +17,8 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
   multi-file programs.
 - Installable Python wheel/sdist metadata and `tiny`, `tiny-project`, `tiny-pkg`,
   `tinyc`, and `tiny-lsp` commands with bundled runtime and Tiny stdlib assets.
-- `tiny --version` for installed and frozen runtimes; runtime imports keep
-  stitched traceback source in memory without rewriting installation files.
+- `tiny --version` for installed and frozen runtimes; ordinary runtime module
+  imports work without generating or compiling concatenated source.
 - Artifact build/rebuild checks, standalone packaging spec, normalized VSIX
   generation, dependency inventories and platform artifact CI (qualification pending).
 - Candidate interpreter + core language stability target for 1.0.0
@@ -26,6 +26,10 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Fixed
+- Runtime modules now declare their own dependencies and share canonical AST
+  classes. The compatible public facade replaces source stitching; tracebacks
+  identify maintained files, and read-only concurrent installed imports are
+  exercised by the package verifier. See `docs/runtime_module_boundaries.md`.
 - Interval `+`, `-`, `*`, `/` now enclose pointwise real results with directed
   outward rounding, correct division across zero, explicit empty/unbounded and
   exterior sets, and safe integer/Number conversion. Neighbor envelopes use

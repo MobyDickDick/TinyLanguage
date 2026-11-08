@@ -306,12 +306,14 @@ they are not a claim that every feature or backend has been audited.
 
 ### 10. Maintainable runtime module boundaries
 
-- [ ] **Replace import-time source stitching with explicit module dependencies**
+- [x] **Replace import-time source stitching with explicit module dependencies**
   (Owner: Runtime/Architecture; priority: P2; coordinate with packages 1 and 2)
-  - Observed architecture: importing `src/tiny_language.py` reads source
+  - Observed architecture at review time: importing `src/tiny_language.py` reads source
     segments, concatenates them, writes `tiny_language_stitched.py` beside the
     sources, and executes the result in a shared global namespace. This makes
     imports depend on writable source directories and hides module dependencies.
+    Package 1 subsequently removed disk writes but retained concatenation and
+    the shared implementation namespace.
   - Scope: introduce explicit interfaces between AST, parser, analysis, runtime,
     evaluator, and backend modules. Preserve the public wrapper API while
     removing the runtime requirement to generate source files in the install
@@ -321,8 +323,27 @@ they are not a claim that every feature or backend has been audited.
     installed package and concurrent fresh processes without rewriting source
     files. Tracebacks identify the maintained implementation files, and the
     supported public imports remain compatible or have migration guidance.
-  - References: `src/tiny_language.py`, `src/tiny_language_stitched.py`,
-    `tiny_language.py`, `tests/test_tiny_wrapper_imports.py`.
+  - References: `src/tiny_language.py`, `tiny_language.py`,
+    `tests/test_runtime_module_boundaries.py`, `tests/test_tiny_wrapper_imports.py`.
+  - Acceptance checkpoint (2026-11-08): ordinary modules now declare their
+    dependencies and share canonical AST/runtime identities. The compatible
+    facade uses explicit named re-exports; Runtime inherits evaluator methods
+    without import-time patching. The generated Python file is removed, legacy
+    Tiny entry points use the facade, and tracebacks identify maintained files.
+    Nine fresh import orders pass. Four concurrent processes execute against
+    an OS-protected installation without modifying any of its 1,063 files.
+    A fresh wheel outside the checkout passes all ten quickstart commands,
+    multi-file imports, installed C/LLVM compilation/execution, LSP and debug
+    adapter helpers. The frozen Windows executable passes five command checks
+    without loose Python source data. The full Windows run and eight
+    sandbox-corrected loopback reruns yield 1,067 passes and seven explicit
+    platform/optional skips; 90 focused checks pass with two POSIX skips.
+    The independent backend audit retains 65 passes, the same 15 known gaps,
+    and 16 non-applicable combinations. See the
+    [module interfaces and migration guidance](runtime_module_boundaries.md) and
+    [source, command and result checkpoint](../artifacts/runtime-modules/checkpoint.json).
+    This closes package 10 without closing release/platform qualification or
+    the package 9 backend repair follow-up.
 
 ### 11. Demonstrated value of a focused language experiment
 

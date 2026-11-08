@@ -12,7 +12,50 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
-from tiny_language_ast import *
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    IR,
+    If,
+    Import,
+    Let,
+    Match,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    New,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Param,
+    Pattern,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
 from tiny_language_preamble import TinyLangError, format_error
 from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths
 from tiny_errors import SourcePos, SourceSpan

@@ -9,12 +9,8 @@ history and completion hooks when available.
 
 from __future__ import annotations
 
-import argparse  # required to keep stitched globals available
-import importlib.util  # required to keep stitched globals available
-import math  # required to keep stitched globals available
-import os  # required to keep stitched globals available
+import os
 import sys
-import threading  # required to keep stitched globals available
 from pathlib import Path
 try:  # pragma: no cover - platform-specific imports
     import termios  # type: ignore
@@ -30,8 +26,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_error_codes import _closest_match as _closest_match_impl
 from tiny_language_error_codes import classify_error
-
-from stdlib import register_stdlib
 
 class _FallbackReadline:
     """Minimal in-memory readline replacement for platforms without it."""

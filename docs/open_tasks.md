@@ -347,7 +347,7 @@ they are not a claim that every feature or backend has been audited.
 
 ### 11. Demonstrated value of a focused language experiment
 
-- [ ] **Evaluate one distinctive idea against established alternatives**
+- [x] **Evaluate one distinctive idea against established alternatives**
   (Owner: Language Design/Documentation; priority: P2)
   - Review conclusion: the project contains implemented language experiments,
     but this review did not establish a fundamental novelty or a demonstrated
@@ -370,6 +370,22 @@ they are not a claim that every feature or backend has been audited.
   - References: [math_syntax_exploration.md](math_syntax_exploration.md),
     [strict_by_default_safety_profile.md](strict_by_default_safety_profile.md),
     [runtime_performance_goals.md](runtime_performance_goals.md), `README.md`.
+  - Acceptance checkpoint (2026-11-10): a
+    [protocol fixed before measurement](argument_isolation_protocol.md) and
+    [reproducible price-preview experiment](argument_isolation_experiment.md)
+    compare opt-in argument copying with Python deepcopy, shallow copying and
+    direct reconstruction, plus two shared-mutation negative controls. An exact
+    rational oracle checks all 18 route/size cells; nine retained counterexample
+    observations cover global aliases, receivers, nested adoption, mutable rows
+    and discarded heap copies. All 67 focused checks pass without skips.
+    Raw runtime samples and separate traced allocation peaks show no efficiency
+    advantage for this implementation; source inspection does not establish a
+    human comprehension or defect-rate advantage. The decision retains a bounded
+    opt-in learning experiment and revises README positioning without a novelty
+    or practical-superiority claim. See the
+    [source, commands and retained evidence](../artifacts/argument-isolation/checkpoint.json).
+    This closes the evaluation, including its negative advantage finding;
+    release/platform qualification and backend repairs remain open.
 
 ## First release milestone
 

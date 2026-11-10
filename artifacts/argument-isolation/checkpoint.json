@@ -1,0 +1,144 @@
+{
+  "date": "2026-11-10",
+  "scope": "Work package 11 evaluation; opt-in interpreter experiment, not delivery/platform qualification",
+  "base_commit": "1fcfc7398d305878745c6f74b8f88daa25680a24",
+  "runner": {
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "environment": {
+    "PYTHONPATH": ".venv/Lib/python3.14/site-packages;src",
+    "tests_basetemp": ".pytest_cache/argument-isolation-final"
+  },
+  "commands": [
+    {
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_argument_isolation_experiment.py",
+        "tests/detailtests/test_copy_on_call.py",
+        "tests/test_release_scope_contract.py",
+        "tests/test_spec_conformance.py",
+        "--tb=short",
+        "--basetemp=.pytest_cache/argument-isolation-final",
+        "--junitxml=artifacts/argument-isolation/focused.xml"
+      ],
+      "exit_code": 0,
+      "counts": {
+        "tests": 67,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "argv": [
+        "benchmarks/argument_isolation.py"
+      ],
+      "exit_code": 0,
+      "measurement_cells": 18,
+      "counterexample_observations": 9
+    },
+    {
+      "argv": [
+        "tools/check_format_lint.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "verification": {
+    "measurement_source_hashes_match_current_files": true,
+    "raw_medians_and_exact_oracles_verified": true,
+    "whitespace_checks_include_untracked_files": true
+  },
+  "documentation_finalized_after_measurement": [
+    "README.md",
+    "docs/open_tasks.md",
+    "docs/argument_isolation_experiment.md"
+  ],
+  "source_sha256": {
+    "src/formatter.py": "2f8ea457f5c0c60885659d3ebbc848987502b2bec7ac2aee4bad3db15243fb74",
+    "src/language_server.py": "2229168c7239b99823124f7ff9523b7c2a4aa811c88d0142427c057287f09723",
+    "src/language_server_cli.py": "4f1d473dbfe99d18467f86a2f61f5156a61bf8f2573433c61a51959aec4acc3b",
+    "src/native_ir.py": "0dee7f355c7661c3f55527dc2571d47c0dcdcd740b56f1d5111620065561122f",
+    "src/native_python_bytecode.py": "a2ee6d9ff2ba6881deafcc4987a57ea8335709aecf132680c927b79a7fadfdd6",
+    "src/native_vm.py": "72b388c69076c9a2bb62b98d10a2722b17d3af08f690b7771b55755c5effe837",
+    "src/rosetta_python_downloader.py": "33b204eb06b8291cec42a5c1e36f06ee18572c74af9a96783ab7a27114e99225",
+    "src/run_all.py": "759d40047ba6d848ba942dd48ea426e1c59e3038b5b5a422f166f784d5c344b7",
+    "src/stdlib/__init__.py": "bd9dc86673c04d9f331a211ce7c22984c95d8ee7f3fd99cdde84d74cc3876276",
+    "src/stdlib_csv.py": "f3778ba854fc285ccda11cb4ad6b74d33f6c5caaa0f2b5bb697de1069f4b5730",
+    "src/stdlib_datetime.py": "8e911211c5bcfb47ecd7642feb97c26e4bd74eb1f10f13c6a12d20bfaf7cce21",
+    "src/stdlib_gui.py": "2b2927b6649eb2a09a83e854e3d4e27d1f159d4bb4f00c5a4278bbd1f5850159",
+    "src/tiny_errors.py": "bd5d9a68f3c48d9972d594e99d026d0c236f449d91e0619f154034b143b34f87",
+    "src/tiny_intervals.py": "f3cd9be847dc492104c39960e917159f49e090be5f47491bb4a7d49f5a6abfbb",
+    "src/tiny_lang_cli.py": "9a69062e6ae86d9c4447d66e0937145ac559eb443cfb8eca0e2f2d06ea263aa1",
+    "src/tiny_language.py": "3f6b49932eda64c096944fa7e12aefade163aed4bff9f0426b92f9b718f8dac2",
+    "src/tiny_language_api.py": "ecfe2809245da392a832be874a5ab75ae29ddc21537d93bf59cdad779dbaaabb",
+    "src/tiny_language_ast.py": "9d54597be99f6b7688774c4cd5d1e92751d4ff6f997677e24ef001500f77db0f",
+    "src/tiny_language_cli.py": "fbe2437612b23fc4409510bc6be91fa6c12d720b821463c9a56cb5fcf3b7cdb6",
+    "src/tiny_language_codegen_c.py": "98f08370a27ba00b4552e2d0b8471b6c8a35d9321b497c4c378992378520070f",
+    "src/tiny_language_codegen_llvm.py": "ce4d0a8cda6244c6d5c041f57cfaaf1fcd1bbdf7e70997e2d7ed16800e547f7b",
+    "src/tiny_language_codegen_native.py": "ac3418aa8fd6072d020d43364235503123a453aa63114f1e9f63059aba4bc545",
+    "src/tiny_language_codegen_py.py": "3c01630a990318999358cc0822451ea05fcd5d0a6de93a08914f480de9712c80",
+    "src/tiny_language_compiler_cli.py": "407574ad0bca2495e8f0d3c5a65700bb1a5c8e21e32ee8c126df84ed181bfd57",
+    "src/tiny_language_error_codes.py": "c9fff016451d9610a2062e6b33b760441dc8c5a8f965ea83ba6d91b31d9b6135",
+    "src/tiny_language_eval.py": "7089bddad5666c69ae8ad155797c4b33da538c5aadd96307f9b8740c9cd16d13",
+    "src/tiny_language_highlighting.py": "6dd8674969a876cff3662ffe32785f2020ba02ed502e2ef68f08f3d136f58c3d",
+    "src/tiny_language_lexer.py": "7080d5516ebd745159afe3696301c83440c9fe410606f01896cb1d7eb52edbd5",
+    "src/tiny_language_linter.py": "9219a2c436fb90512e58275f0f1214b81503421bc13ec5b58633439243b397bf",
+    "src/tiny_language_module_resolution.py": "97aa3a63e6d333c09e02653a940a490a7739000a6e6fc2637e2ac1546b3fd2c7",
+    "src/tiny_language_parser.py": "4da4a9bf9a69406c2d444bb5625faf14e9b78b3212c3aff0855e90d8f5a8b7f9",
+    "src/tiny_language_preamble.py": "59c9ebce011926dab05abc60026b2a743f3db9a1b3e7d9ecc550fe927a946cd6",
+    "src/tiny_language_runtime.py": "6a37e1f04f2752829f2f02c96ad59c37915f7582492f65a5ef4610e028f929c3",
+    "src/tiny_language_runtime_debugger.py": "f5dba3408855b6f0f35b56d6736ff45a939509b54dd3413d617d2d46a95c5c4b",
+    "src/tiny_language_runtime_environment.py": "143ce26653ce8ed1347a0b72c7fa84c7cb9066c75165245a875d691524e2493a",
+    "src/tiny_language_runtime_modules.py": "1e5e5101e35aeb12ae4301a5721e1d70601a7e94d03003a031a2370fcf77a7ca",
+    "src/tiny_language_transpilers.py": "3ea0e2146f23b2e4dd4d48548b5de1764e296d335338f80e440004b098a6dabe",
+    "src/tiny_language_version.py": "1b24d5495c9be2dbca2e8198c98aad140ee9cdcf0624e09f360804cf7f8c2f2c",
+    "src/tiny_pkg_cli.py": "a458848ac3a75c8c4abefde939533a4953f0e6f943fe09fd161c73ca69bcb165",
+    "src/tiny_pkg_resolution.py": "e64c6288200d24cb2e62e1cb3da0afcd8452392c872f9f48a5b8c8daa2d962b2",
+    "src/tiny_pkg_sources.py": "0410938b5a27d4807c5f648c607bcc0c1dee8da9a2363686e5984cb20b031d58",
+    "src/tiny_program_daemon.py": "0d544a0f7fcd848ea33f2e84bf6311cb17c6141877e31b301187219d7cdb6cf5",
+    "src/tiny_program_gui_wrapper.py": "fcbd029b51b0e1689cd7542de21b456a5ce76fb4a02dbbf3953ff536facffa92",
+    "src/tiny_program_repository_db_adapter.py": "64c3258727f0b036e40e2695dd5e841af865ff86ee7843fe547335aa97c26a88",
+    "src/tiny_program_source_import.py": "ac398af2d72b7b02ddc4d6bcd95bb5cd5933307f53a012946831d182c1949005",
+    "src/tiny_program_source_port.py": "eea56daebe4d8c47c3a945b6339168251124d583b72c8764aae504977cf012f8",
+    "src/tiny_program_source_sandbox.py": "e1a412bd78d0f14413a3cc7995fddeb6c30b02abe2b1d98457582b808fdb9355",
+    "src/tiny_program_source_scan.py": "f029b3662fa2a4c2d8529db14aad4eed6cf9602125768226466f50c4577df5ea",
+    "src/tiny_project_cli.py": "a2f0eb4ac57d08b605ee3b9511dee37a256c0dcc160e7b778b76b7635e09edae",
+    "src/tinyc_cli.py": "f3742f7de826c7a25916279655d5afc026a4d27460b28aa0c8c5a627c35b6359",
+    "src/transpile_rosetta.py": "dacaacfdce5527d76118bbd249b6c63a1b6d4a4220ab82a09682d119c218114d",
+    "examples/argument_isolation/counterexamples.py": "41d1a443dfbadf69ef0490760f314c425aa67bec03482a3387edfeee037ddec1",
+    "examples/argument_isolation/price_preview.py": "432e61fbb00d58129db3b48200c9e77000debf9bfb39c706318aa697476c9d5b",
+    "examples/argument_isolation/price_preview.tiny": "3dcc1372d67af82a71ef233dc444380cf99f2b7cf68068054dbdc3fd9ad47332",
+    "docs/argument_isolation_protocol.md": "e211db1a434d9d95ebbf2882178ece8f981a8a7904bce46099a9723c3f4de840",
+    "benchmarks/argument_isolation.py": "e265f8fe63136a1d35a6c5c9ccbadb82fb7dc118e3e9dc7f0ca326ca213c7547",
+    "tests/test_argument_isolation_experiment.py": "bee069f158de2b7507e7790f4526a7973261d9d1de56eff44af9ed488f3857fd",
+    "README.md": "e3d23109b534913633b72a1373036ab460b772e56dfda6d86824eb370eac9ff7",
+    "docs/open_tasks.md": "1db0602f4827049bfd18769029002ba6ca279fa02c347e25dc40122ca826f2d9",
+    "docs/argument_isolation_experiment.md": "a5d8fa138e62721cd11ad1287446f548f4e5694d33d26c9606b3ae6e01b05f7f"
+  },
+  "evidence_sha256": {
+    "artifacts/argument-isolation/experiment.json": "00df64e6a6fbc8c205e4fa5439aea50a9b5a3845c3af4c87ed60c8a4f6e0202b",
+    "artifacts/argument-isolation/experiment.log": "b3031b0eb58ab26b2803301ef875e08b34f67dd5b7d1dcdc199ba3604ad4378e",
+    "artifacts/argument-isolation/focused.log": "e4c45503af0cd6e8321313945ba131f4237db5a6ab8661737f31f9e6a489c65b",
+    "artifacts/argument-isolation/focused.xml": "b3806d9eb02b2d347576279aadbb84bf03aa8d16e4b032fbe44d7487222ab73b",
+    "artifacts/argument-isolation/format-lint.log": "254a15bf2a701f8150dc7b9d4aba97438195508ed4b10d5cc8cb9717e5549f00"
+  },
+  "limitations": [
+    "One Windows CPython host, seven descriptive timing samples",
+    "No human comprehension study, exhaustive novelty search, or general isolation guarantee",
+    "Intentional retained-allocation witness is recorded as a limitation, not successful resource cleanup",
+    "Full repository suite not rerun; 67 relevant checks pass and runtime implementation is unchanged"
+  ]
+}

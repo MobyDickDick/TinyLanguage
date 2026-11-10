@@ -1,0 +1,43 @@
+// Run with --copy-on-call to keep the original prices unchanged.
+// The experiment runner overrides these two default input declarations.
+def size = 16;
+def rounds = 3;
+fn preview(prices) {
+    def i = 0;
+    while (i < len(prices)) {
+        def ignored = heap_set(prices, i, heap_get(prices, i) + 0.5);
+        i = i + 1;
+    }
+    return prices;
+}
+
+def original = new(size);
+def i = 0;
+while (i < size) {
+    def ignored = heap_set(original, i, 1000.25 + i);
+    i = i + 1;
+}
+def unchanged = true;
+def round = 0;
+while (round < rounds) {
+    def trial = preview(original);
+    def total = 0;
+    i = 0;
+    while (i < size) {
+        total = total + heap_get(trial, i);
+        if (heap_get(original, i) != 1000.25 + i) { unchanged = false; }
+        i = i + 1;
+    }
+    print(total);
+    if (trial != original) { def ignored = delete(trial); }
+    round = round + 1;
+}
+print(unchanged);
+def total = 0;
+i = 0;
+while (i < size) {
+    total = total + heap_get(original, i);
+    i = i + 1;
+}
+print(total);
+def ignored = delete(original);

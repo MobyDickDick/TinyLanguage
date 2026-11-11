@@ -1516,9 +1516,16 @@ class _StdLibRegistrar:
         if math.isnan(duration_ms) or math.isinf(duration_ms):
             raise RuntimeError("sleep_ms expects a finite number")
         duration_ms = max(0.0, duration_ms)
-        start = time.monotonic()
-        time.sleep(duration_ms / 1000.0)
-        elapsed = time.monotonic() - start
+        duration = duration_ms / 1000.0
+        # On Windows/Python 3.11, monotonic() can have a ~15.6ms tick. Use the
+        # high-resolution monotonic performance clock for short sleeps, and
+        # retry an early wakeup instead of returning less than requested.
+        start = time.perf_counter()
+        time.sleep(duration)
+        elapsed = time.perf_counter() - start
+        while elapsed < duration:
+            time.sleep(duration - elapsed)
+            elapsed = time.perf_counter() - start
         return elapsed * 1000.0
 
     def _time_now_iso(self) -> str:

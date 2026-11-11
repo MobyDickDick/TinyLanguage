@@ -120,6 +120,21 @@ def test_known_gap_does_not_hide_a_new_failure_or_count_as_passing():
     assert known_gap(case, "native", record) is None
 
 
+@pytest.mark.parametrize("stream", ["stdout", "stderr"])
+def test_missing_python_bridge_is_recognized_in_either_linker_stream(stream):
+    """MSVC stdout and Unix stderr describe the same still-failed AUD-009 gap."""
+    case = next(case for case in CASES if case.name == "python-interop")
+    record = dict(backend="llvm", stages={"frontend": "passed", "codegen": "passed", "compile": "failed"},
+                  failure_stage="compile", exit_code=1,
+                  build={stream: "unresolved external __py_import_module\nunresolved external __py_call"})
+    assert assess(case, record) == "failed"
+    assert known_gap(case, "llvm", record) == "AUD-009"
+    record["build"][stream] = "unresolved external __unrelated_symbol"
+    assert known_gap(case, "llvm", record) is None
+    record["build"][stream] = "unresolved external __py_call"
+    assert known_gap(case, "llvm", record) is None
+
+
 def complete_synthetic_report():
     """Synthetic data exercises the verifier; it is never retained as audit evidence."""
     results = []

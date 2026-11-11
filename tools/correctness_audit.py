@@ -79,9 +79,11 @@ def known_gap(case, backend, result):
             return "AUD-006"
         if case.name == "file-builtins" and "main.heap_set" in diagnostic and "unknown function" in diagnostic:
             return "AUD-008"
+    # MSVC's linker writes unresolved symbols to stdout; Unix linkers use stderr.
+    build = result.get("build", {})
+    linker_output = build.get("stdout", "") + "\n" + build.get("stderr", "")
     if (case.name == "python-interop" and backend == "llvm" and stage == "compile"
-            and "__py_import_module" in result.get("build", {}).get("stderr", "")
-            and "__py_call" in result.get("build", {}).get("stderr", "")):
+            and "__py_import_module" in linker_output and "__py_call" in linker_output):
         return "AUD-009"
     if case.name == "division-error":
         if backend == "c" and executed and output == "inf\nunreachable\n":
@@ -272,7 +274,8 @@ def run_audit(backends=BACKENDS, compiler="clang", timeout=65, cases=CASES):
                     if record["status"] == "failed":
                         record["known_gap"] = known_gap(case, backend, detail)
             results.append(record)
-            print(f"{case.name}/{backend}: {record['status']}", flush=True)
+            gap = f" (known {record['known_gap']})" if record.get("known_gap") else ""
+            print(f"{case.name}/{backend}: {record['status']}{gap}", flush=True)
     return results
 
 
@@ -354,6 +357,12 @@ def main(argv=None):
     args.report.parent.mkdir(parents=True, exist_ok=True)
     write_json(args.report, report)
     print(json.dumps(report["counts"]))
+    if report["source_changed_during_run"]:
+        print("Audit failed: maintained source files changed during execution.")
+    for result in results:
+        if result["status"] == "failed" and not (args.allow_known_gaps and result.get("known_gap")):
+            diagnostic = result.get("diagnostic") or result.get("failure_stage") or "output/exit-code mismatch"
+            print(f"Audit rejected: {result['case']}/{result['backend']}: {diagnostic}")
     return int(report["source_changed_during_run"] or any(
         r["status"] == "unavailable" or (r["status"] == "failed" and
         not (args.allow_known_gaps and r.get("known_gap"))) for r in results))

@@ -70,6 +70,10 @@ def _registry(payloads):
 
 def verify(wheel: Path, work: Path, *, previous_wheel: Path | None = None) -> dict:
     """Install, process files, enforce boundaries, upgrade and reproduce offline."""
+    # macOS temporary directories may start with the system /var -> /private/var
+    # alias. Anchor this helper's own paths before creating its package cache;
+    # the package manager must still reject links inside destination trees.
+    work = work.resolve()
     report = verify_package(wheel, work)
     scripts = work / "environment" / ("Scripts" if os.name == "nt" else "bin")
     python = scripts / ("python.exe" if os.name == "nt" else "python")

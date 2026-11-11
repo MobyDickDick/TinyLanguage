@@ -26,6 +26,10 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Fixed
+- Platform qualification recognizes known LLVM Python-bridge linker errors on
+  MSVC stdout, canonicalizes the application helper's macOS temporary root, and
+  measures short sleeps with a high-resolution monotonic clock plus early-wakeup
+  retries. Known backend gaps remain failed audit results.
 - LLVM division now preserves fractional results for integer operands, including
   inferred function returns and later numeric operations. Integer and floating
   zero divisors report an error and exit predictably. The bounded AUD-001 repair

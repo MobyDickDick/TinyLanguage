@@ -105,7 +105,10 @@ Both readings use milliseconds and may be fractional.
 
 `sleep_ms(ms)` clamps negative durations to zero, rejects non-finite or
 non-numeric inputs, and measures the returned elapsed duration with the
-monotonic clock. Scheduler delays may make the result larger than requested.
+high-resolution monotonic performance clock. Early wakeups are retried until
+the requested duration has elapsed; scheduler delays may make the result larger
+than requested. This avoids zero elapsed measurements for short sleeps on hosts
+whose general-purpose monotonic clock has coarse ticks.
 `now_iso()` represents the wall clock as an ISO 8601 UTC timestamp ending in
 `Z`. These guarantees depend only on clock properties provided by the host
 runtime, not on a platform-specific epoch for monotonic time.

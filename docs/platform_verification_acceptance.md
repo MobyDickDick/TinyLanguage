@@ -88,6 +88,34 @@ CPython 3.14 qualification evidence.
 
 ## Outstanding acceptance
 
+### CI portability follow-up — 2026-11-11
+
+[Run 43074450754](https://github.com/MobyDickDick/TinyLanguage/actions/runs/43074450754)
+for `af2cc041` exposed three concrete failures, not an artifact-upload outage:
+
+- Windows' MSVC linker reports the known missing `__py_import_module` and
+  `__py_call` bridge symbols on **stdout**. The audit looked only at stderr,
+  leaving AUD-009 unclassified and returning 1 under `--allow-known-gaps`.
+  Both linker streams are now inspected, while the case remains failed.
+  Unexpected failures and strict runs still return 1. Per-case output names
+  the recognized issue, and rejected cases/source changes receive a diagnostic.
+- On macOS, the application's explicitly configured cache inherited the host's
+  `/var` to `/private/var` temporary-directory alias. The acceptance helper now
+  canonicalizes its own work root before deriving paths. Package extraction and
+  destination link checks remain enforced; a regression exercises a real
+  symlink or Windows junction and verifies that the package guard still rejects it.
+- Windows/Python 3.11 returned zero elapsed milliseconds for a 10 ms sleep
+  because `time.monotonic()` had a coarser clock tick. Elapsed sleep measurement
+  now uses `perf_counter()` and retries early wakeups. A deterministic coarse-clock
+  regression covers the failure without weakening the minimum-duration assertion.
+
+The [follow-up checkpoint](../artifacts/ci-followup/checkpoint.json) retains the
+original Windows artifact, focused/full tests and a new source-bound local audit.
+The 13 known backend failures are distinct from the passing pytest regression
+suite; recognition of AUD-009 does not implement the absent standalone bridge.
+A successful new CI run on the committed changes is still required for platform
+sign-off. The remaining AUD-002–009/C AUD-010 repairs stay open.
+
 ### CI follow-up — 2026-11-02
 
 Run [41518845379](https://github.com/MobyDickDick/TinyLanguage/actions/runs/41518845379)

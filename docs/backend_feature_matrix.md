@@ -23,7 +23,7 @@ Legend:
 | --- | --- | --- | --- | --- |
 | Literals (`number`, `string`, `bool`, `Null`) | ✅ | ⚠️ `Null` prints `null` (AUD-003) | ⚠️ Boolean spelling and Windows large-integer output (AUD-002/003) | ⚠️ `Null` prints `null` (AUD-003) |
 | Variables (`def`, assignment) | ✅ | ✅ | ✅ (numeric subset) | ✅ |
-| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ⚠️ Integer division truncates; zero division traps (AUD-001/010) | ⚠️ Nonzero basic subset; zero division continues with infinity (AUD-010) |
+| Arithmetic (`+`, `-`, `*`, `/`) | ✅ | ✅ | ⚠️ True binary64 division and zero guards verified; precision/output limits remain (see AUD-001 repair) | ⚠️ Nonzero basic subset; zero division continues with infinity (AUD-010) |
 | Comparisons (`==`, `<`, `>`, etc.) | ✅ | ✅ | ✅ (numeric/boolean subset) | ✅ (basic subset) |
 | `if` / `else` | ✅ | ✅ | ✅ (simple control flow) | ✅ |
 | `while` loops | ✅ | ✅ | ✅ (simple control flow) | ✅ |
@@ -114,10 +114,13 @@ literal rendering and short-circuit evaluation remain open.
 
 ### Open tasks
 
-See [AUD-001 through AUD-010](independent_correctness_audit.md#bounded-follow-up-work).
+See [AUD-002 through AUD-009](independent_correctness_audit.md#bounded-follow-up-work).
 The historical completed implementation entries below are not execution acceptance.
 
 ### Closed tasks
+
+- [x] AUD-001 true division and the LLVM part of AUD-010 zero-division handling
+  (2026-11-11; [bounded execution acceptance](independent_correctness_audit.md#aud-001-repair-checkpoint-2026-11-11)).
 
 - [x] Module imports
   - [x] Generate per-module initialization functions in LLVM IR.

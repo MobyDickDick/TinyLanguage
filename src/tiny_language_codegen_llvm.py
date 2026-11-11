@@ -416,9 +416,12 @@ class LLVMCodeGenerator:
         right = self._stack.pop()
         left = self._stack.pop()
         if left.ty != right.ty:
-            self._lowering_error(
-                f"mixed-type arithmetic not supported ({left.ty} vs {right.ty})"
-            )
+            if {left.ty, right.ty} == {"i64", "double"}:
+                left, right = self._as_double(left), self._as_double(right)
+            else:
+                self._lowering_error(
+                    f"mixed-type arithmetic not supported ({left.ty} vs {right.ty})"
+                )
 
         overload_name = self._operator_overloads.get((op, left.ty, right.ty))
         if overload_name is not None:
@@ -450,15 +453,33 @@ class LLVMCodeGenerator:
             return
         self._lowering_error(f"operator {op} not supported")
 
+    def _as_double(self, value: _StackValue) -> _StackValue:
+        """Widen integers numerically, keeping a quotient's fractional part."""
+        if value.ty == "double":
+            return value
+        dest = self._next_tmp()
+        conversion = "uitofp" if value.ty == "i1" else "sitofp"
+        self._body.append(f"  {dest} = {conversion} {value.ty} {value.name} to double")
+        return _StackValue(name=dest, ty="double")
+
     def _emit_arithmetic_op(self, op: str, left: _StackValue, right: _StackValue) -> None:
         ty = left.ty
         if ty not in {"i64", "i1", "double"}:
             self._lowering_error(f"operator {op} not supported for type {ty}")
+        if op == "/":
+            # Tiny's / is true division even when both operands are integers.
+            left, right = self._as_double(left), self._as_double(right)
+            dest = self._next_tmp()
+            self._body.append(
+                f"  {dest} = call double @__tiny_divide(double {left.name}, double {right.name})"
+            )
+            self._stack.append(_StackValue(name=dest, ty="double"))
+            return
         dest = self._next_tmp()
         if ty == "double":
-            instr = {"+": "fadd", "-": "fsub", "*": "fmul", "/": "fdiv", "%": "frem"}.get(op)
+            instr = {"+": "fadd", "-": "fsub", "*": "fmul", "%": "frem"}.get(op)
         else:
-            instr = {"+": "add", "-": "sub", "*": "mul", "/": "sdiv", "%": "srem"}.get(op)
+            instr = {"+": "add", "-": "sub", "*": "mul", "%": "srem"}.get(op)
         if instr is None:
             self._lowering_error(f"operator {op} not supported for type {ty}")
         self._body.append(f"  {dest} = {instr} {ty} {left.name}, {right.name}")
@@ -1542,6 +1563,20 @@ class LLVMCodeGenerator:
             "declare i8* @calloc(i64, i64)",
             "declare void @free(i8*)",
             "declare void @exit(i32)",
+            '@.division_zero = private unnamed_addr constant [18 x i8] c"division by zero\\0A\\00"',
+            "define double @__tiny_divide(double %left, double %right) {",
+            "entry:",
+            "  %zero = fcmp oeq double %right, 0.0",
+            "  br i1 %zero, label %error, label %divide",
+            "error:",
+            "  %message = getelementptr [18 x i8], [18 x i8]* @.division_zero, i64 0, i64 0",
+            "  call i32 (i8*, ...) @printf(i8* %message)",
+            "  call void @exit(i32 1)",
+            "  unreachable",
+            "divide:",
+            "  %quotient = fdiv double %left, %right",
+            "  ret double %quotient",
+            "}",
             "declare i64 @__py_import_module(i8*, i64)",
             "declare i64 @__py_call(i8*, i8*, i64, i64, i64)",
             ]
@@ -2695,9 +2730,12 @@ class LLVMCodeGenerator:
                 left = stack.pop()
                 left_ty = left.ty
                 right_ty = right.ty
-                if left_ty and right_ty and left_ty != right_ty:
+                numeric_mix = {left_ty, right_ty} == {"i64", "double"}
+                if left_ty and right_ty and left_ty != right_ty and not numeric_mix:
                     raise NotImplementedError("mixed-type arithmetic is not yet supported in LLVM prototype")
                 known_ty = left_ty or right_ty
+                if instr.arg == "/" and known_ty is None:
+                    known_ty = "i64"
                 if left_ty is None and left.source and known_ty:
                     set_param_type(left.source, known_ty)
                     left_ty = known_ty
@@ -2715,7 +2753,8 @@ class LLVMCodeGenerator:
                     stack.append(_TypeValue(overload_sig.return_type))
                     continue
                 if op in {"+", "-", "*", "/", "%"}:
-                    stack.append(_TypeValue(known_ty))
+                    result_ty = "double" if op == "/" or numeric_mix else known_ty
+                    stack.append(_TypeValue(result_ty))
                 elif op in {"==", "!=", "<", ">", "<=", ">="}:
                     stack.append(_TypeValue("i1"))
                 else:

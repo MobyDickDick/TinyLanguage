@@ -60,11 +60,15 @@ interpreter replacement.
   boundaries and known failures recorded in the backend matrix.
 - LLVM IR emission and separate compilation/execution evidence; emission alone
   does not require clang and does not prove that the module links or runs.
+- LLVM true division retains fractional quotients, including integer operands
+  and function returns; zero divisors produce a diagnostic and exit 1. The
+  [AUD-001 repair checkpoint](independent_correctness_audit.md#aud-001-repair-checkpoint-2026-11-11)
+  records the exact tested subset and remaining binary64/output limits.
 
 **What is not covered yet**
 
 - Full semantic parity for heap error results, user-class operator overloads,
-  boolean evaluation, numeric division and advanced stdlib modules.
+  boolean evaluation, numeric precision/output and advanced stdlib modules.
 - Parallel scheduling/cancellation equivalence for the synchronous LLVM workers.
 - Rich diagnostic spans (line/column ranges) on the LLVM path.
 - Debugger/LSP integrations (the REPL stays interpreter-backed).

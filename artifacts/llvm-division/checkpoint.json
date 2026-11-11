@@ -1,0 +1,118 @@
+{
+  "date": "2026-11-11",
+  "scope": "AUD-001 closed; LLVM half of AUD-010 repaired. Local Windows execution, not release or cross-platform qualification.",
+  "source": {
+    "commit": "b2c5ddbaa3f920f13620b9b839f058f78a24bc72",
+    "source_sha256": "57ae324a7038fa40d0be2cfabb72ff2e2a25a88138c6033554fbe204a331be86",
+    "source_changed_during_audit": false,
+    "complete_manifest": "backend-results.json:files_sha256"
+  },
+  "runner": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "compiler": "clang version 23.1.4 (https://github.com/llvm/llvm-project.git 7a941dfb2877a0b8cf30323fefa85ad019e0b0f5)\nTarget: x86_64-w64-windows-gnu\nThread model: posix\nInstalledDir: C:/Users/marku/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20261020-ucrt-x86_64/bin\nConfiguration file: C:/Users/marku/AppData/Local/Microsoft/WinGet/Packages/MartinStorsjo.LLVM-MinGW.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/llvm-mingw-20261020-ucrt-x86_64/bin/x86_64-w64-windows-gnu.cfg\n"
+  },
+  "environment": {
+    "PYTHONPATH": [
+      "src",
+      ".venv/Lib/python3.14/site-packages"
+    ],
+    "stdin": "Native CPython parent launches test/audit children with subprocess.DEVNULL; direct host stdin is an invalid Windows handle."
+  },
+  "checks": {
+    "reproduction": {
+      "command": "python -m tools.correctness_audit --case exact-arithmetic --backend llvm --report artifacts/llvm-division/before.json",
+      "exit_code": 1,
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "unavailable": 0,
+        "not_applicable": 0
+      },
+      "scope": "Pre-change single-cell baseline; intentionally not a complete current-source report."
+    },
+    "focused": {
+      "command": "python -m pytest -q tests/test_llvm_division.py tests/detailtests/test_llvm_codegen.py tests/detailtests/test_llvm_conformance_smoke.py tests/test_correctness_audit.py --require-backend-toolchains --basetemp=.pytest_cache/llvm-division-final --junitxml=artifacts/llvm-division/focused.xml --tb=short",
+      "exit_code": 0,
+      "passed": 109,
+      "skipped": 0
+    },
+    "full": {
+      "command": "python -m pytest -q -ra --require-backend-toolchains --tb=short --basetemp=.pytest_cache/llvm-division-full --junitxml=artifacts/llvm-division/full.xml",
+      "exit_code": 1,
+      "passed": 1098,
+      "failed": 9,
+      "skipped": 7
+    },
+    "environment-rerun": {
+      "command": "python -m pytest -q -ra tests/detailtests/test_pkg_sources.py::test_verified_download_and_offline_cache tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation tests/detailtests/test_pkg_sources.py::test_registry_digest_is_locked_and_metadata_changes_are_rejected tests/test_runtime_module_boundaries.py::test_concurrent_imports_cannot_write_installation --tb=short --basetemp=.pytest_cache/llvm-division-env-rerun --junitxml=artifacts/llvm-division/environment-rerun.xml",
+      "exit_code": 0,
+      "passed": 9,
+      "reason": "Rerun outside sandbox to allow eight loopback HTTP checks and the Windows installation ACL check.",
+      "repaired_nodes": [
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[checksum]",
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[interrupted]",
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[length]",
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[stall]",
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[stream]",
+        "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[trickle]",
+        "tests.detailtests.test_pkg_sources::test_registry_digest_is_locked_and_metadata_changes_are_rejected",
+        "tests.detailtests.test_pkg_sources::test_verified_download_and_offline_cache",
+        "tests.test_runtime_module_boundaries::test_concurrent_imports_cannot_write_installation"
+      ]
+    },
+    "combined_full_and_rerun": {
+      "passed": 1107,
+      "failed": 0,
+      "skipped": 7
+    },
+    "backend-audit": {
+      "command": "python -m tools.correctness_audit --allow-known-gaps --report artifacts/llvm-division/backend-results.json",
+      "exit_code": 0,
+      "counts": {
+        "passed": 67,
+        "failed": 13,
+        "unavailable": 0,
+        "not_applicable": 16
+      },
+      "remaining_known_gaps": [
+        "AUD-002",
+        "AUD-003",
+        "AUD-004",
+        "AUD-005",
+        "AUD-006",
+        "AUD-007",
+        "AUD-008",
+        "AUD-009",
+        "AUD-010"
+      ],
+      "note": "Known gaps remain failed; correct oracles were not changed."
+    },
+    "verify-audit": {
+      "command": "python -m tools.correctness_audit --verify artifacts/llvm-division/backend-results.json",
+      "exit_code": 0
+    },
+    "formatter-lint": {
+      "command": "python tools/check_format_lint.py",
+      "exit_code": 0
+    },
+    "whitespace": {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  },
+  "limitations": [
+    "Binary64 conversions and six-decimal output remain prototype limitations.",
+    "Monomorphic function inference and i64 operand range remain unchanged.",
+    "Seven explicit platform/optional skips are not counted as passes.",
+    "AUD-002 through AUD-009 and the C part of AUD-010 remain open."
+  ],
+  "evidence_sha256": {
+    "backend-results.json": "0933a0435ee078923f56d735b835ab4dac3d9d1f79ef5e2bbfa4882bc091e749",
+    "before.json": "707b4f520fbc5d9402afa44ded342eebda74770ada3960ae09b843f8d11bce1b",
+    "environment-rerun.xml": "37890a13219949cc84dd92c308cee6548d1b91e645699ab544693aadb3d67e2b",
+    "focused.xml": "b7283c9e44962d79c410f6973e2d670307c9fcf268f88db0d38fc4ac5eea2d55",
+    "full.xml": "47edc9de727ffc65c53341442c8f8a42bead00ad86389c47c07ca6c1bbd6e803",
+    "verification.txt": "fc9eda3da603bdd249e92d5204df0255e8685478416876e22191a636d3adc48e"
+  }
+}

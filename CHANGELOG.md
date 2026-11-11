@@ -26,6 +26,10 @@ Release notes: [`docs/release_notes_v1.md`](docs/release_notes_v1.md).
 - Baseline documentation covering the language spec, CLI usage, and stdlib.
 
 ### Fixed
+- LLVM division now preserves fractional results for integer operands, including
+  inferred function returns and later numeric operations. Integer and floating
+  zero divisors report an error and exit predictably. The bounded AUD-001 repair
+  and remaining numeric limits are documented in `docs/independent_correctness_audit.md`.
 - Runtime modules now declare their own dependencies and share canonical AST
   classes. The compatible public facade replaces source stitching; tracebacks
   identify maintained files, and read-only concurrent installed imports are

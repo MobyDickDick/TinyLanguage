@@ -54,10 +54,6 @@ def known_gap(case, backend, result):
     diagnostic = result.get("diagnostic", "")
     code = result.get("exit_code")
     executed = not stage and code == 0 and not result.get("stderr")
-    if case.name == "exact-arithmetic" and backend == "llvm" and executed:
-        truncated = "\n".join(str(int(Fraction(line))) for line in case.expected.splitlines()) + "\n"
-        if compare_output(output, truncated):
-            return "AUD-001"
     if case.name == "integer-boundary" and backend == "llvm" and executed:
         if output == "1\n-2147483648\n":
             return "AUD-002"
@@ -89,9 +85,6 @@ def known_gap(case, backend, result):
         return "AUD-009"
     if case.name == "division-error":
         if backend == "c" and executed and output == "inf\nunreachable\n":
-            return "AUD-010"
-        if (backend == "llvm" and not stage and code in {-8, 3221225620}
-                and not output and not result.get("stderr")):
             return "AUD-010"
     return None
 

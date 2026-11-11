@@ -75,7 +75,7 @@ It detects source changes during the run. Verification checks the current source
 manifest, every expected matrix entry, current correct oracles, stage evidence
 and recomputed outcomes. Evidence files are excluded from the source identity.
 
-## Retained local acceptance
+## Retained local acceptance (original audit, 2026-11-06)
 
 The [backend report](../artifacts/correctness-audit/backend-results.json) contains
 24 cases across four routes: **65 passed, 15 failed in ten bounded issue groups,
@@ -106,7 +106,7 @@ these defects is separate work and must not replace the correct audit oracles.
 
 | ID | Observed boundary | Acceptance for repair |
 | --- | --- | --- |
-| AUD-001 (P1) | LLVM integer division truncates nonintegral quotients, including negative inputs. | All 160 exact rational arithmetic observations pass without weakening numeric comparison. |
+| AUD-001 (P1, closed 2026-11-11) | LLVM integer division truncated nonintegral quotients, including negative inputs. | All 160 exact rational arithmetic observations now compile and execute successfully without weakening numeric comparison. See the repair checkpoint below. |
 | AUD-002 (P1) | On Windows, LLVM's integer output prints 2^53+1 as 1 and 2^31 as -2147483648; `%ld` is incompatible with the Windows host `long` width. | Both exact boundary values print intact on Windows and POSIX; cover signed 64-bit boundaries and the emitter's format-string ABI. |
 | AUD-003 (P1) | Native/C print `null`; LLVM prints booleans as 1/0. | All literal outputs match the language's `Null`, `true`, `false` spelling; test mixed print arguments too. |
 | AUD-004 (P1) | Native/C evaluate both RHS side effects; LLVM rejects boolean `and` lowering. | Both `&&`/`and` and `||`/`or` implement skipped and required RHS evaluation, preserving left-to-right effects and errors. |
@@ -115,9 +115,40 @@ these defects is separate work and must not replace the correct audit oracles.
 | AUD-007 (P1) | LLVM cannot read heap operation error records (`field access on unknown class value`). | Execute successful/double delete and freed write, preserving codes (0,1,1); reconcile its terminating heap-error policy with the reference result contract. |
 | AUD-008 (P1) | Supplying a module/file path qualifies LLVM builtin calls as `<module>.heap_set`, which are then unresolved. | With file/module context, compile and run heap builtins and explicit join calls, including imported modules and Unicode paths. |
 | AUD-009 (P2) | LLVM standalone interop emits external Python helper calls but linking fails on `__py_import_module`/`__py_call`. | Link an actual runtime bridge and execute the allowlisted sqrt witness; separately qualify denial and lifetime behavior. JIT symbol registration alone does not qualify a standalone executable. |
-| AUD-010 (P1) | C division by zero prints infinity and reaches the next statement; LLVM terminates with a hardware arithmetic exception and no language diagnostic. | Runtime division by zero reports a language error, exits predictably, and performs no subsequent output/mutation; check integer and floating zero separately. |
+| AUD-010 (P1, C repair open) | C division by zero prints infinity and reaches the next statement. LLVM's former hardware exception is repaired alongside AUD-001. | LLVM integer, floating and signed-zero divisors now report a language error and exit 1 before subsequent effects. The same acceptance remains required for C. |
+
+## AUD-001 repair checkpoint (2026-11-11)
+
+LLVM `/` now converts integer operands to binary64 and uses checked floating
+division. The inferred result is `double`, including in function returns.
+Mixed integer/double arithmetic and comparisons widen the integer operand so
+stored and returned quotients retain their fractional parts in later expressions.
+Other integer arithmetic stays integer. Division by either sign of zero prints
+`division by zero` and exits with status 1 before the next statement. This also
+repairs the LLVM part of AUD-010; its C part remains open.
+
+`tests/test_llvm_division.py` executes the unchanged 160-observation rational
+corpus and checks signs, exact integral quotients, storage, function returns,
+chained arithmetic, comparisons, mixed operands and the signed i64 minimum
+divided by -1. Zero checks cover integer, floating, computed and negative zero.
+The historical truncation output is now an unaccepted regression: the AUD-001
+allowance and LLVM hardware-exception allowance have been removed from the audit.
+
+The [source-bound repair report](../artifacts/llvm-division/backend-results.json)
+retains the complete four-route audit. The
+[validation checkpoint](../artifacts/llvm-division/checkpoint.json) records
+commands, results and evidence hashes. The original audit above remains a
+historical observation; the new report supersedes its two repaired LLVM cells.
+
+This is a bounded local Windows acceptance, not general numeric or cross-platform
+qualification. The exact corpus uses small binary-representable quotients;
+binary64 rounding, i64 operand limits, the existing six-decimal LLVM print format
+and monomorphic function inference still constrain the prototype. Large mixed
+integer/double operations can lose precision during conversion. No arbitrary
+precision or exact rational division is promised, and AUD-002–009 and the C part
+of AUD-010 remain open. The next P1 backend repair is AUD-002.
 
 This audit closes work package 9 by replacing broad implementation assertions
 with independent oracles, executed evidence and explicitly reduced backend
-claims. It does not close these follow-up repairs or release packages 1, 3, 5
+claims. It does not close the remaining follow-up repairs or release packages 1, 3, 5
 and 6, and does not expand the frozen stable interpreter contract.

@@ -303,6 +303,15 @@ they are not a claim that every feature or backend has been audited.
     This completes the audit, not the discovered backend repairs; see the
     [bounded AUD-001–010 follow-up](independent_correctness_audit.md#bounded-follow-up-work).
     Release and platform qualification remain open.
+  - Backend repair checkpoint (2026-11-11): the next P1 follow-up, AUD-001,
+    is closed. LLVM integer operands now produce true-division results; the
+    unchanged 160-observation rational corpus compiles and executes successfully.
+    Fractional results survive storage, inferred function returns and subsequent
+    numeric operations. Integer/floating signed-zero divisors now fail with a
+    diagnostic and exit 1, also closing the LLVM part of AUD-010. Its C repair
+    stays open. See the [bounded repair scope and remaining limits](independent_correctness_audit.md#aud-001-repair-checkpoint-2026-11-11)
+    and [retained validation](../artifacts/llvm-division/checkpoint.json).
+    AUD-002 is the next P1 backend repair; delivery qualification remains open.
 
 ### 10. Maintainable runtime module boundaries
 

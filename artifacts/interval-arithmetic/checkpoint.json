@@ -1,0 +1,287 @@
+{
+  "date": "2026-11-05",
+  "scope": "Work package 8 reference-interpreter working-tree acceptance; not release/platform qualification",
+  "source_identity": {
+    "commit": "1d82366206af7129f7bacb305eeb1ec3b3118a92",
+    "files_sha256": "727e6b4fb2a8eec5c933e5ce57639d280834c4f36a41a279e7a72bc02d71b92a",
+    "clean": false
+  },
+  "runners": {
+    "cp312": {
+      "executable": "C:/Users/marku/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe",
+      "version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26300-SP0"
+    },
+    "cp314": {
+      "executable": "C:/Users/marku/AppData/Local/Python/pythoncore-3.14-64/python.exe",
+      "version": "3.14.4 (tags/v3.14.4:23116f9, Apr  7 2026, 14:10:54) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26300-SP0"
+    }
+  },
+  "environment": {
+    "PYTHONPATH": [
+      ".venv/Lib/python3.14/site-packages",
+      "src",
+      "dist/release-tools"
+    ],
+    "TEMP": ".pytest_cache/interval-runtime-temp",
+    "TMP": ".pytest_cache/interval-runtime-temp",
+    "stdin": "Native CPython 3.12 orchestration supplies a valid stdin pipe; HTTP rerun runs outside the network sandbox against a local test server."
+  },
+  "commands": {
+    "focused": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_number_intervall.py",
+        "tests/detailtests/test_interval_enclosure.py",
+        "tests/detailtests/test_number_class.py",
+        "tests/detailtests/test_number_overflow.py",
+        "tests/detailtests/test_stdlib.py",
+        "tests/test_stdlib_compatibility.py",
+        "tests/detailtests/test_copy_on_call.py",
+        "tests/test_release_scope_contract.py",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-focus-final",
+        "--junitxml=artifacts/interval-arithmetic/focused.xml"
+      ]
+    },
+    "full-initial": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "-ra",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-full",
+        "--junitxml=artifacts/interval-arithmetic/full.xml"
+      ]
+    },
+    "full-final": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "-ra",
+        "--tb=short",
+        "-k",
+        "not (verified_download_and_offline_cache or failed_transfer_keeps_cache_and_installation or registry_digest_is_locked)",
+        "--basetemp=.pytest_cache/interval-full-final",
+        "--junitxml=artifacts/interval-arithmetic/full-final.xml"
+      ]
+    },
+    "network-rerun": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_pkg_sources.py",
+        "-k",
+        "verified_download_and_offline_cache or failed_transfer_keeps_cache_and_installation or registry_digest_is_locked",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-network-rerun",
+        "--junitxml=artifacts/interval-arithmetic/network-rerun.xml"
+      ]
+    },
+    "backend-rerun": {
+      "runner": "cp314",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_llvm_conformance_smoke.py::test_llvm_executable_entrypoint",
+        "tests/test_c_backend.py",
+        "tests/test_tiny_language_compiler_cli.py::test_emit_llvm_bitcode_creates_artifact",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-backend-rerun",
+        "--junitxml=artifacts/interval-arithmetic/backend-rerun.xml"
+      ]
+    },
+    "packaging": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_number_intervall.py",
+        "tests/detailtests/test_interval_enclosure.py",
+        "tests/test_release_packaging.py",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-packaging",
+        "--junitxml=artifacts/interval-arithmetic/packaging.xml"
+      ]
+    },
+    "format-lint": {
+      "runner": "cp312",
+      "argv": [
+        "tools/check_format_lint.py"
+      ]
+    },
+    "whitespace": {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ]
+    },
+    "final-rerun": {
+      "runner": "cp312",
+      "argv": [
+        "-m",
+        "pytest",
+        "-q",
+        "tests/detailtests/test_stdlib_time.py",
+        "--tb=short",
+        "--basetemp=.pytest_cache/interval-timing-rerun",
+        "--junitxml=artifacts/interval-arithmetic/final-rerun.xml"
+      ]
+    }
+  },
+  "reports": {
+    "backend-rerun": {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 10,
+      "seconds": 9.572
+    },
+    "final-rerun": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 3,
+      "seconds": 0.154
+    },
+    "focused": {
+      "tests": 135,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 135,
+      "seconds": 3.673
+    },
+    "full-final": {
+      "tests": 1012,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 7,
+      "passed": 1004,
+      "seconds": 213.634
+    },
+    "full": {
+      "tests": 1020,
+      "failures": 18,
+      "errors": 0,
+      "skipped": 7,
+      "passed": 995,
+      "seconds": 241.195
+    },
+    "network-rerun": {
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 8,
+      "seconds": 4.628
+    },
+    "packaging": {
+      "tests": 66,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 64,
+      "seconds": 28.448
+    }
+  },
+  "combined_final": {
+    "collected": 1020,
+    "passed": 1013,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 7
+  },
+  "skips": [
+    {
+      "test": "tests.detailtests.test_pkg_sources::test_links_in_source_or_destination_are_rejected",
+      "reason": "Host does not grant symlink creation privileges"
+    },
+    {
+      "test": "tests.test_llvm_jit::test_llvm_jit_executes_program",
+      "reason": "llvmlite not available"
+    },
+    {
+      "test": "tests.test_release_packaging::test_release_preserves_executable_permissions[built]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_release_packaging::test_release_preserves_executable_permissions[included]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox::test_runs_approved_port_and_records_passing_assessment",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox::test_records_runtime_failure_without_promoting_program",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_scan::test_symlinked_source_is_not_scanned",
+      "reason": "Windows symlink creation requires Developer Mode or symlink privilege"
+    }
+  ],
+  "source_sha256": {
+    "CHANGELOG.md": "42d879391f0c9599b67fffa1a12ddb841580c3f564c9d2e740b511a5e9ba3d08",
+    "docs/interval_arithmetic_contract.md": "1bb67aaf74f1a9a16b81fedfeebecf55650d99d0bb548f0f90d171052a8fe9d9",
+    "docs/language_spec.md": "47a21f8db0caf23ca6d9bdf98942d1949bb89b8bf1a649f83aa3016fe7ef7e25",
+    "docs/open_tasks.md": "3169f415577d46649dbac0a6766f1a30ecc04532cbd71028ba7c51df71263294",
+    "docs/python_to_tiny_mapping.md": "fb2f7b1ed2c2f0c308070b325f420b8602e20f4000d5fe557f16c397c0c109bc",
+    "docs/release_notes_v1.md": "8fbf7ee48f428dc59ba9d977296fdb8f7db9b28168c4b0750cf8eafb9f8f6ccf",
+    "docs/release_plan_v1.md": "0b55788b203dfc3db9cc30e8fd0e050f13c9e164a66e512944e7455ee318ee76",
+    "docs/release_scope_v1.md": "aed537de0c09aaf24f5eee04b3f18750698ca8bb0be7c23549e617adcc57793d",
+    "docs/stdlib_math_parity.md": "d255fa29f819b65c986404d402b7fda34f7548d0f02821907ff1161b16416c21",
+    "src/stdlib/__init__.py": "3b7fdbe10116bbe6259412b4363869106579f40c30ef50c51b641e5a46cc483d",
+    "src/tiny_intervals.py": "f3cd9be847dc492104c39960e917159f49e090be5f47491bb4a7d49f5a6abfbb",
+    "src/tiny_language_runtime.py": "3e02d884d3026dd19b6b1bf8b8e5f81e813ac742dc7f9c169cfcd62eaf299f62",
+    "src_tiny/number_intervall.tiny": "241fa37202dac778264062c75e280c2df3b1c18b6b0b3a7769190864e9db02a8",
+    "tests/detailtests/test_interval_enclosure.py": "9d4620979b1bcfd0df6b56c14e79fa048619a820c8d2f80100a3c7598043c05b",
+    "tests/detailtests/test_number_intervall.py": "c043197ae9af08bb9696eb3d9c83369fd31a053660f79a06c525fbecb84a5145",
+    "tests/test_release_packaging.py": "848030aa5fde68cbb2b8cc266f45b893b78493b81236a14a3aaa0a7f19763974"
+  },
+  "evidence_sha256": {
+    "backend-rerun.log": "2388042e0ade8e8db409fb07950f7caee63c0e042fab8c4254b67700e9d8329c",
+    "backend-rerun.xml": "0bd663da0e9dc9dad8f6ca0bb5978e73d1e24115757b560a36e263f689666a9b",
+    "collection.log": "46e4863687e3830804ddb3db3b71f8a34bebd6f7711149001ea4c07afa242e4d",
+    "final-rerun.log": "42cef1aedf588c36403531c73cb4f40f39703194cad13c861216e66c695069b0",
+    "final-rerun.xml": "6d9e3ffc323cf890b615ed545967fab34a35b133f0905df0a8394e28e297c6c5",
+    "focused.log": "b729ae1fb8b26315728f97448ffb699d427de7ee92ede8bd89a018dbed86cd98",
+    "focused.xml": "614b05cbfdb6d4d2fa1d5b44f5db4ee8865a5e8f722ba84a017f3cee57b87016",
+    "format-lint.log": "e51e85d0cd34866cd88914490fb888d124a7b2b282f08dc2e193e00a83ff1cbf",
+    "full-final.log": "d7fd44f276be9e473a74294956d0d7954c08c3a2b08ef512b2460a82724c303a",
+    "full-final.xml": "3d905dc686bd59e1468ee19ff0777b4c302cd0491f7f50e6f6df2fe54c943473",
+    "full.log": "f99d3df4da1bb363d2e4ce6a5dc7a51136ca2a9ca357fd730a355b83b7754938",
+    "full.xml": "bd7c060d7b6ed052f35c59060e83c9580ca4cb6e430a260687d9d9a7c2e7879f",
+    "historical-defects.json": "689576265daf8fe8ee4478e3434cf2da8284704eac8b17c074b2e3a9f9a39df5",
+    "network-rerun.log": "e1fbc26f5263eac07f4ebe32893610dae8ad7372e70f596840cf6c218c68367e",
+    "network-rerun.xml": "9cc155b72ad000f081a6b1e50cef0e05063cc7d2347fd91e3c5532fa4d5ce185",
+    "packaging.log": "9048a311475097e244e65b69318ae4ab5e1fc819415b038a0124683769a0c274",
+    "packaging.xml": "0a73807db71fa24fe0209a09512d2a688e9180e91ba0c638d36260e88601e7ee"
+  },
+  "notes": [
+    "The first complete CPython 3.14 run retained 18 sandbox failures: ten system-temp permission failures and eight loopback HTTP failures. All 18 passed in targeted reruns.",
+    "The final CPython 3.12 run includes final scalar-infinity/NaN promotion and enhanced isolated wheel acceptance. Eight local HTTP cases are intentionally deselected and supplied by the separate passing network report.",
+    "One timing-sensitive Time.sleep assertion failed in the final broad run and passed on its targeted repeat; both reports are retained.",
+    "Focused checks run on CPython 3.14 after the last implementation change. Packaging reports include two explicit Windows/POSIX permission skips.",
+    "historical-defects.json records execution of the previous Tiny interval definitions and exact rational counterexamples rejecting both original expected results.",
+    "Historical reproduction: git show 1d82366206af7129f7bacb305eeb1ec3b3118a92:src_tiny/number_intervall.tiny, append the two documented expressions, print lower/upper/error and check membership of 0 and Fraction(9007199254740993,9007199254740992).",
+    "Formatter/lint and git diff --check passed. Four preexisting pytest warnings concern record_property with xunit2.",
+    "Retained text evidence line endings normalized from CRLF to LF and trailing whitespace removed for repository storage before commit; results are unchanged and evidence hashes updated."
+  ]
+}

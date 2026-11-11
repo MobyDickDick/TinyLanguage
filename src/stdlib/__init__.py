@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import datetime
 import importlib
+import importlib.util
 import json
 import math
 import os
@@ -63,6 +64,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Tuple
 
 from tiny_errors import SourcePos
+import tiny_intervals
 
 if importlib.util.find_spec("tomllib"):
     tomllib = importlib.import_module("tomllib")
@@ -268,6 +270,9 @@ class _StdLibRegistrar:
         )
 
         # ---------------------------- Math ---------------------------------
+        self.runtime.register_native("__interval_bounds", self._interval_bounds)
+        self.runtime.register_native("__interval_neighbors", self._interval_neighbors)
+        self.runtime.register_native("__interval_binary", self._interval_binary)
         self.runtime.register_native("abs", self._math_abs, namespace="Math")
         self.runtime.register_native("max", self._math_max, namespace="Math")
         self.runtime.register_native("min", self._math_min, namespace="Math")
@@ -488,6 +493,25 @@ class _StdLibRegistrar:
     # Numeric / interval helpers
     # -----------------------------------------------------------------------
 
+    def _interval_bounds(self, lower: Any, upper: Any, error: str) -> Any:
+        return self.runtime._make_intervall(*tiny_intervals.bounds(lower, upper, error))
+
+    def _interval_neighbors(self, value: Any) -> Any:
+        return self.runtime._make_intervall(*tiny_intervals.neighboring(value))
+
+    def _interval_binary(self, op: str, left: Any, right: Any) -> Any:
+        a = self.runtime._intervall_fields(left)
+        b = self.runtime._intervall_fields(right)
+        if a is None or b is None:
+            raise RuntimeError("interval arithmetic expects two NumberIntervall values")
+        return self.runtime._make_intervall(*tiny_intervals.binary(op, a, b))
+
+    def _approximate_intervall(self, lower: Any, upper: Any, error: str) -> Any:
+        """Keep legacy Math estimates inspectable without an enclosure claim."""
+        if error not in {"any_number", "invalid_number", "empty_interval"}:
+            error = "approximate"
+        return self.runtime._make_intervall(lower, upper, error)
+
     def _resolve_number(self, value: Any) -> tuple[Any, str | None]:
         """Normalize Tiny 'number objects' to (value, error_tag) if present."""
         fields = self.runtime._number_fields(value)  # noqa: SLF001 - internal helper reuse
@@ -531,17 +555,17 @@ class _StdLibRegistrar:
         if interval is not None:
             lower, upper, err = interval
             if err != "normal":
-                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, err)  # noqa: SLF001
 
             if lower > upper:
-                return self.runtime._make_intervall(lower, upper, "wrapped_interval")  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, "wrapped_interval")  # noqa: SLF001
 
             candidates = [abs(lower), abs(upper)]
             if lower <= 0 <= upper:
                 lo, hi = 0, max(candidates)
             else:
                 lo, hi = min(candidates), max(candidates)
-            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+            return self._approximate_intervall(lo, hi, "normal")  # noqa: SLF001
 
         fields = self.runtime._number_fields(value)  # noqa: SLF001 - internal helper reuse
         if fields is not None:
@@ -561,19 +585,19 @@ class _StdLibRegistrar:
                 r_lo, r_hi, r_err = right_interval
                 err = l_err or r_err or "normal"
                 if l_err != "normal" or r_err != "normal":
-                    return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+                    return self._approximate_intervall(0, 0, err)  # noqa: SLF001
 
-                return self.runtime._make_intervall(max(l_lo, r_lo), max(l_hi, r_hi), err)  # noqa: SLF001
+                return self._approximate_intervall(max(l_lo, r_lo), max(l_hi, r_hi), err)  # noqa: SLF001
 
             interval_value = left_interval or right_interval
             other = right if left_interval is not None else left
             lo, hi, err = interval_value
             if err != "normal":
-                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+                return self._approximate_intervall(0, 0, err)  # noqa: SLF001
             try:
-                return self.runtime._make_intervall(max(lo, other), max(hi, other), "normal")  # noqa: SLF001
+                return self._approximate_intervall(max(lo, other), max(hi, other), "normal")  # noqa: SLF001
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
 
         l_val, l_err = self._resolve_number(left)
         r_val, r_err = self._resolve_number(right)
@@ -595,19 +619,19 @@ class _StdLibRegistrar:
                 r_lo, r_hi, r_err = right_interval
                 err = l_err or r_err or "normal"
                 if l_err != "normal" or r_err != "normal":
-                    return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+                    return self._approximate_intervall(0, 0, err)  # noqa: SLF001
 
-                return self.runtime._make_intervall(min(l_lo, r_lo), min(l_hi, r_hi), err)  # noqa: SLF001
+                return self._approximate_intervall(min(l_lo, r_lo), min(l_hi, r_hi), err)  # noqa: SLF001
 
             interval_value = left_interval or right_interval
             other = right if left_interval is not None else left
             lo, hi, err = interval_value
             if err != "normal":
-                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+                return self._approximate_intervall(0, 0, err)  # noqa: SLF001
             try:
-                return self.runtime._make_intervall(min(lo, other), min(hi, other), "normal")  # noqa: SLF001
+                return self._approximate_intervall(min(lo, other), min(hi, other), "normal")  # noqa: SLF001
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
 
         l_val, l_err = self._resolve_number(left)
         r_val, r_err = self._resolve_number(right)
@@ -625,12 +649,12 @@ class _StdLibRegistrar:
 
         if base_interval is not None or exp_interval is not None:
             if base_interval is None or exp_interval is None:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
 
             b_lo, b_hi, b_err = base_interval
             e_lo, e_hi, e_err = exp_interval
             if b_err != "normal" or e_err != "normal":
-                return self.runtime._make_intervall(0, 0, b_err or e_err)  # noqa: SLF001
+                return self._approximate_intervall(0, 0, b_err or e_err)  # noqa: SLF001
 
             try:
                 candidates = [
@@ -642,9 +666,9 @@ class _StdLibRegistrar:
                 lo = min(candidates)
                 hi = max(candidates)
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
 
-            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+            return self._approximate_intervall(lo, hi, "normal")  # noqa: SLF001
 
         num_res = self.runtime._number_power(base, exponent)  # noqa: SLF001
         if num_res is not None:
@@ -660,17 +684,17 @@ class _StdLibRegistrar:
         if interval is not None:
             lower, upper, err = interval
             if err != "normal":
-                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, err)  # noqa: SLF001
             if lower < 0:
-                return self.runtime._make_intervall(lower, upper, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, "any_number")  # noqa: SLF001
             try:
                 lo = math.sqrt(lower)
                 hi = math.sqrt(upper)
                 if lo > hi:
                     lo, hi = hi, lo
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
-            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
+            return self._approximate_intervall(lo, hi, "normal")  # noqa: SLF001
 
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
@@ -697,15 +721,15 @@ class _StdLibRegistrar:
         if interval is not None:
             lower, upper, err = interval
             if err != "normal":
-                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, err)  # noqa: SLF001
             try:
                 lo = round(lower, places) if places is not None else round(lower)
                 hi = round(upper, places) if places is not None else round(upper)
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
             if lo > hi:
                 lo, hi = hi, lo
-            return self.runtime._make_intervall(lo, hi, "normal")  # noqa: SLF001
+            return self._approximate_intervall(lo, hi, "normal")  # noqa: SLF001
         if num_fields is not None:
             err = num_fields.get("error", "normal") or "normal"
             res = (
@@ -722,8 +746,8 @@ class _StdLibRegistrar:
         if interval is not None:
             lower, upper, err = interval
             if err != "normal":
-                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
-            return self.runtime._make_intervall(math.floor(lower), math.floor(upper), "normal")  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, err)  # noqa: SLF001
+            return self._approximate_intervall(math.floor(lower), math.floor(upper), "normal")  # noqa: SLF001
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -737,8 +761,8 @@ class _StdLibRegistrar:
         if interval is not None:
             lower, upper, err = interval
             if err != "normal":
-                return self.runtime._make_intervall(lower, upper, err)  # noqa: SLF001
-            return self.runtime._make_intervall(math.ceil(lower), math.ceil(upper), "normal")  # noqa: SLF001
+                return self._approximate_intervall(lower, upper, err)  # noqa: SLF001
+            return self._approximate_intervall(math.ceil(lower), math.ceil(upper), "normal")  # noqa: SLF001
         fields = self.runtime._number_fields(value)  # noqa: SLF001
         if fields is not None:
             err = fields.get("error", "normal") or "normal"
@@ -778,18 +802,18 @@ class _StdLibRegistrar:
 
             err = val_err or low_err or up_err or "normal"
             if err != "normal":
-                return self.runtime._make_intervall(0, 0, err)  # noqa: SLF001
+                return self._approximate_intervall(0, 0, err)  # noqa: SLF001
 
             try:
                 lower_bound = max(low_lo, min(val_lo, up_hi))
                 upper_bound = max(low_hi, min(val_hi, up_lo))
             except Exception:
-                return self.runtime._make_intervall(0, 0, "any_number")  # noqa: SLF001
+                return self._approximate_intervall(0, 0, "any_number")  # noqa: SLF001
 
             if lower_bound > upper_bound:
                 lower_bound, upper_bound = upper_bound, lower_bound
 
-            return self.runtime._make_intervall(lower_bound, upper_bound, "normal")  # noqa: SLF001
+            return self._approximate_intervall(lower_bound, upper_bound, "normal")  # noqa: SLF001
 
         v_val, v_err = self._resolve_number(value)
         lower_val, lower_err = self._resolve_number(lower)
@@ -1492,9 +1516,16 @@ class _StdLibRegistrar:
         if math.isnan(duration_ms) or math.isinf(duration_ms):
             raise RuntimeError("sleep_ms expects a finite number")
         duration_ms = max(0.0, duration_ms)
-        start = time.monotonic()
-        time.sleep(duration_ms / 1000.0)
-        elapsed = time.monotonic() - start
+        duration = duration_ms / 1000.0
+        # On Windows/Python 3.11, monotonic() can have a ~15.6ms tick. Use the
+        # high-resolution monotonic performance clock for short sleeps, and
+        # retry an early wakeup instead of returning less than requested.
+        start = time.perf_counter()
+        time.sleep(duration)
+        elapsed = time.perf_counter() - start
+        while elapsed < duration:
+            time.sleep(duration - elapsed)
+            elapsed = time.perf_counter() - start
         return elapsed * 1000.0
 
     def _time_now_iso(self) -> str:

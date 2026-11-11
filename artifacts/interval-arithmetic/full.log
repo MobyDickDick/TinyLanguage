@@ -1,0 +1,653 @@
+........................................................................ [  7%]
+........................................................................ [ 14%]
+[2026-11-05T21:21:20.588518Z] No messages received from VS Code (waiting for 'initialize'). If the session does not start, verify the TinyLanguage debug configuration is selected and enable adapter logging with set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log. Idle for 3.2s (session 3.2s).
+[2026-11-05T21:21:20.589658Z] --> {'type': 'event', 'seq': 1, 'event': 'output', 'body': {'category': 'stderr', 'output': "No messages received from VS Code (waiting for 'initialize'). If the session does not start, verify the TinyLanguage debug configuration is selected and enable adapter logging with set TINYLANGUAGE_DAP_LOG=/tmp/tiny_dap.log. Idle for 3.2s (session 3.2s).\n"}}
+........................................................................ [ 21%]
+..........................................FF............................ [ 28%]
+......................................................................F. [ 35%]
+.....FFFFFF...........................................Fs................ [ 42%]
+........................................................................ [ 49%]
+........................................................................ [ 56%]
+........................................................................ [ 63%]
+..............................FFFFFFF................................... [ 70%]
+....s....................................ss............................. [ 77%]
+........................................................................ [ 84%]
+........................................................................ [ 91%]
+..............F.....................................................ss.. [ 98%]
+........s...                                                             [100%]
+================================== FAILURES ===================================
+____________________ test_llvm_executable_entrypoint[api] _____________________
+src\tiny_language_stitched.py:14167: in compile_to_executable
+    ll_path.write_text(llvm_ir, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp13ewkdpl\\tiny_program.ll'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp13ewkdpl'
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_llvm_conformance_smoke.py:192: in test_llvm_executable_entrypoint
+    assert compile_to_executable(source.read_text(), executable, compiler=compiler) == executable
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_language_stitched.py:14165: in compile_to_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp13ewkdpl'
+_________________ test_llvm_executable_entrypoint[module-cli] _________________
+tests\detailtests\test_llvm_conformance_smoke.py:199: in test_llvm_executable_entrypoint
+    assert emitted.returncode == 0, emitted.stderr
+E   AssertionError: Traceback (most recent call last):
+E       File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_stitched.py", line 14167, in compile_to_executable
+E         ll_path.write_text(llvm_ir, encoding="utf-8")
+E         ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 809, in write_text
+E         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+E              ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 771, in open
+E         return io.open(self, mode, buffering, encoding, errors, newline)
+E                ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp1u7o9zb1\\tiny_program.ll'
+E
+E     During handling of the above exception, another exception occurred:
+E
+E     Traceback (most recent call last):
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 707, in _rmtree_unsafe
+E         os.rmdir(path)
+E         ~~~~~~~~^^^^^^
+E     PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp1u7o9zb1'
+E
+E     During handling of the above exception, another exception occurred:
+E
+E     Traceback (most recent call last):
+E       File "<frozen runpy>", line 198, in _run_module_as_main
+E       File "<frozen runpy>", line 88, in _run_code
+E       File "C:\Users\marku\myCloud\TinyLanguage\tiny_language.py", line 65, in <module>
+E         raise SystemExit(_main())
+E                          ~~~~~^^
+E       File "C:\Users\marku\myCloud\TinyLanguage\tiny_language.py", line 59, in _main
+E         return int(_IMPL.main(sys.argv[1:]))
+E                    ~~~~~~~~~~^^^^^^^^^^^^^^
+E       File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_stitched.py", line 15011, in main
+E         compile_to_executable(
+E         ~~~~~~~~~~~~~~~~~~~~~^
+E             source_text,
+E             ^^^^^^^^^^^^
+E         ...<7 lines>...
+E             module_path=Path(args.file),
+E             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E         )
+E         ^
+E       File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_stitched.py", line 14165, in compile_to_executable
+E         with tempfile.TemporaryDirectory() as tmpdir:
+E              ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 971, in __exit__
+E         self.cleanup()
+E         ~~~~~~~~~~~~^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 975, in cleanup
+E         self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+E         ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 955, in _rmtree
+E         _shutil.rmtree(name, onexc=onexc)
+E         ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 852, in rmtree
+E         _rmtree_impl(path, dir_fd, onexc)
+E         ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 711, in _rmtree_unsafe
+E         onexc(os.rmdir, path, err)
+E         ~~~~~^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 927, in onexc
+E         _resetperms(path)
+E         ~~~~~~~~~~~^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 283, in _resetperms
+E         _dont_follow_symlinks(_os.chmod, path, 0o700)
+E         ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+E       File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 272, in _dont_follow_symlinks
+E         func(path, *args, follow_symlinks=False)
+E         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp1u7o9zb1'
+E
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe', '-m', 'tiny_languag...ku\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\\\AC\\\\Temp\\\\tmp1u7o9zb1\'\n').returncode
+__________________ test_verified_download_and_offline_cache ___________________
+tests\detailtests\test_pkg_sources.py:84: in test_verified_download_and_offline_cache
+    sources.vendor_from_dist(url, tmp_path / version, force=False, cache_path=cache,
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+_________ test_failed_transfer_keeps_cache_and_installation[checksum] _________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'Checksum mismatch'
+E    Input: 'Package download failed or timed out.'
+_______ test_failed_transfer_keeps_cache_and_installation[interrupted] ________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'interrupted'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[length] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'size limit'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[stream] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'size limit'
+E    Input: 'Package download failed or timed out.'
+__________ test_failed_transfer_keeps_cache_and_installation[stall] ___________
+tests\detailtests\test_pkg_sources.py:123: in test_failed_transfer_keeps_cache_and_installation
+    assert len(requests) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_________ test_failed_transfer_keeps_cache_and_installation[trickle] __________
+tests\detailtests\test_pkg_sources.py:121: in test_failed_transfer_keeps_cache_and_installation
+    sources.vendor_from_dist(url, dest, force=True, cache_path=cache, checksum=checksum)
+src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+
+During handling of the above exception, another exception occurred:
+tests\detailtests\test_pkg_sources.py:120: in test_failed_transfer_keeps_cache_and_installation
+    with pytest.raises(SystemExit, match=expected_error):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E    Regex: 'time limit'
+E    Input: 'Package download failed or timed out.'
+______ test_registry_digest_is_locked_and_metadata_changes_are_rejected _______
+C:\Users\marku\myCloud\TinyLanguage\tests\detailtests\test_pkg_sources.py:300: in test_registry_digest_is_locked_and_metadata_changes_are_rejected
+    assert pkg_main(["vendor", "--manifest", str(manifest)]) == 0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:527: in main
+    return args.func(args)
+           ^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:426: in _cmd_vendor
+    _vendor_dependency(
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_cli.py:265: in _vendor_dependency
+    _vendor_from_dist(dist, dest, force=force, cache_path=cache_path, checksum=checksum)
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_sources.py:298: in vendor_from_dist
+    dist_path = download_to_cache(dist, cache_path, checksum=checksum)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\marku\myCloud\TinyLanguage\src\tiny_pkg_sources.py:147: in download_to_cache
+    raise SystemExit("Package download failed or timed out.") from None
+E   SystemExit: Package download failed or timed out.
+___________ test_c_compiler_uses_platform_math_library[win32-False] ___________
+src\tiny_language_stitched.py:14119: in compile_to_c_executable
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp58oy5kcn\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp58oy5kcn'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:45: in test_c_compiler_uses_platform_math_library
+    compile_to_c_executable("print(3);", tmp_path / "program")
+src\tiny_language_stitched.py:14117: in compile_to_c_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp58oy5kcn'
+___________ test_c_compiler_uses_platform_math_library[linux-True] ____________
+src\tiny_language_stitched.py:14119: in compile_to_c_executable
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmitx20rv\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmitx20rv'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:45: in test_c_compiler_uses_platform_math_library
+    compile_to_c_executable("print(3);", tmp_path / "program")
+src\tiny_language_stitched.py:14117: in compile_to_c_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmitx20rv'
+___________ test_c_compiler_uses_platform_math_library[darwin-True] ___________
+src\tiny_language_stitched.py:14119: in compile_to_c_executable
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp5msq_u8l\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp5msq_u8l'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:45: in test_c_compiler_uses_platform_math_library
+    compile_to_c_executable("print(3);", tmp_path / "program")
+src\tiny_language_stitched.py:14117: in compile_to_c_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp5msq_u8l'
+_____________ test_c_backend_examples[source_path0-Hello World\n] _____________
+src\tiny_language_stitched.py:14119: in compile_to_c_executable
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmcej15a4\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmcej15a4'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:64: in test_c_backend_examples
+    compile_to_c_executable(source, output_path, compiler=compiler)
+src\tiny_language_stitched.py:14117: in compile_to_c_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpmcej15a4'
+__________________ test_c_backend_examples[source_path1-5\n] __________________
+src\tiny_language_stitched.py:14119: in compile_to_c_executable
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp7bzoys3z\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp7bzoys3z'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:64: in test_c_backend_examples
+    compile_to_c_executable(source, output_path, compiler=compiler)
+src\tiny_language_stitched.py:14117: in compile_to_c_executable
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmp7bzoys3z'
+___________________________ test_emit_llvm_ir_via_c ___________________________
+src\tiny_language_stitched.py:14066: in compile_to_llvm_ir_via_c
+    c_path.write_text(c_source, encoding="utf-8")
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:809: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py:771: in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmppac5n34n\\tiny_program.c'
+
+During handling of the above exception, another exception occurred:
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:707: in _rmtree_unsafe
+    os.rmdir(path)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmppac5n34n'
+
+During handling of the above exception, another exception occurred:
+tests\test_c_backend.py:77: in test_emit_llvm_ir_via_c
+    llvm_ir = compile_to_llvm_ir_via_c(source, compiler=compiler)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\tiny_language_stitched.py:14063: in compile_to_llvm_ir_via_c
+    with tempfile.TemporaryDirectory() as tmpdir:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:971: in __exit__
+    self.cleanup()
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:975: in cleanup
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:955: in _rmtree
+    _shutil.rmtree(name, onexc=onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:852: in rmtree
+    _rmtree_impl(path, dir_fd, onexc)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py:711: in _rmtree_unsafe
+    onexc(os.rmdir, path, err)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:927: in onexc
+    _resetperms(path)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:283: in _resetperms
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py:272: in _dont_follow_symlinks
+    func(path, *args, follow_symlinks=False)
+E   PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmppac5n34n'
+_________________________ test_emit_llvm_ir_via_c_cli _________________________
+tests\test_c_backend.py:95: in test_emit_llvm_ir_via_c_cli
+    subprocess.check_call(
+..\..\AppData\Local\Python\pythoncore-3.14-64\Lib\subprocess.py:420: in check_call
+    raise CalledProcessError(retcode, cmd)
+E   subprocess.CalledProcessError: Command '['C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe', 'C:\\Users\\marku\\myCloud\\TinyLanguage\\src\\tiny_language_compiler_cli.py', 'C:\\Users\\marku\\myCloud\\TinyLanguage\\.pytest_cache\\interval-full\\test_emit_llvm_ir_via_c_cli0\\sample.tiny', '--emit-llvm', 'C:\\Users\\marku\\myCloud\\TinyLanguage\\.pytest_cache\\interval-full\\test_emit_llvm_ir_via_c_cli0\\sample.ll', '--compiler', 'clang']' returned non-zero exit status 1.
+---------------------------- Captured stderr call -----------------------------
+Traceback (most recent call last):
+
+  File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_stitched.py", line 14066, in compile_to_llvm_ir_via_c
+
+    c_path.write_text(c_source, encoding="utf-8")
+
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 809, in write_text
+
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\pathlib\__init__.py", line 771, in open
+
+    return io.open(self, mode, buffering, encoding, errors, newline)
+
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PermissionError: [Errno 13] Permission denied: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpx8h8j1gv\\tiny_program.c'
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 707, in _rmtree_unsafe
+
+    os.rmdir(path)
+
+    ~~~~~~~~^^^^^^
+
+PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpx8h8j1gv'
+
+
+
+During handling of the above exception, another exception occurred:
+
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_compiler_cli.py", line 175, in <module>
+
+    raise SystemExit(main())
+
+                     ~~~~^^
+
+  File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_compiler_cli.py", line 150, in main
+
+    llvm_ir = compile_to_llvm_ir_via_c(source, compiler=args.compiler, extra_args=extra_args)
+
+  File "C:\Users\marku\myCloud\TinyLanguage\src\tiny_language_stitched.py", line 14063, in compile_to_llvm_ir_via_c
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 971, in __exit__
+
+    self.cleanup()
+
+    ~~~~~~~~~~~~^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 975, in cleanup
+
+    self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 955, in _rmtree
+
+    _shutil.rmtree(name, onexc=onexc)
+
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 852, in rmtree
+
+    _rmtree_impl(path, dir_fd, onexc)
+
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\shutil.py", line 711, in _rmtree_unsafe
+
+    onexc(os.rmdir, path, err)
+
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 927, in onexc
+
+    _resetperms(path)
+
+    ~~~~~~~~~~~^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 283, in _resetperms
+
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+
+  File "C:\Users\marku\AppData\Local\Python\pythoncore-3.14-64\Lib\tempfile.py", line 272, in _dont_follow_symlinks
+
+    func(path, *args, follow_symlinks=False)
+
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PermissionError: [WinError 5] Zugriff verweigert: 'C:\\Users\\marku\\AppData\\Local\\Packages\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\AC\\Temp\\tmpx8h8j1gv'
+
+___________________ test_emit_llvm_bitcode_creates_artifact ___________________
+tests\test_tiny_language_compiler_cli.py:51: in test_emit_llvm_bitcode_creates_artifact
+    assert result.returncode == 0
+E   AssertionError: assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['C:\\Users\\marku\\AppData\\Local\\Python\\pythoncore-3.14-64\\python.exe', 'src/tiny_language_...ku\\\\AppData\\\\Local\\\\Packages\\\\sandbox.{de6ee04e-284f-43bb-bb6e-582b28a49994}\\\\AC\\\\Temp\\\\tmpcyt5vma1\'\n').returncode
+============================== warnings summary ===============================
+tests/detailtests/test_benchmark_and_fuzz.py::test_recursive_fibonacci_benchmark
+  tests\detailtests\test_benchmark_and_fuzz.py:122: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_recursive_fibonacci_benchmark(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_randomized_programs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:252: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_randomized_programs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_lexer_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:282: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_lexer_random_inputs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_parser_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:303: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_parser_random_inputs_do_not_crash(record_property) -> None:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\interval-arithmetic\full.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] tests\detailtests\test_pkg_sources.py:317: Host does not grant symlink creation privileges
+SKIPPED [1] tests\test_llvm_jit.py:20: llvmlite not available
+SKIPPED [2] \mnt\c\Users\marku\myCloud\TinyLanguage\tests\test_release_packaging.py:53: Executable permission bits require POSIX
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:25: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:37: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_scan.py:73: Windows symlink creation requires Developer Mode or symlink privilege
+FAILED tests/detailtests/test_llvm_conformance_smoke.py::test_llvm_executable_entrypoint[api]
+FAILED tests/detailtests/test_llvm_conformance_smoke.py::test_llvm_executable_entrypoint[module-cli]
+FAILED tests/detailtests/test_pkg_sources.py::test_verified_download_and_offline_cache
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[checksum]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[interrupted]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[length]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[stream]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[stall]
+FAILED tests/detailtests/test_pkg_sources.py::test_failed_transfer_keeps_cache_and_installation[trickle]
+FAILED tests/detailtests/test_pkg_sources.py::test_registry_digest_is_locked_and_metadata_changes_are_rejected
+FAILED tests/test_c_backend.py::test_c_compiler_uses_platform_math_library[win32-False]
+FAILED tests/test_c_backend.py::test_c_compiler_uses_platform_math_library[linux-True]
+FAILED tests/test_c_backend.py::test_c_compiler_uses_platform_math_library[darwin-True]
+FAILED tests/test_c_backend.py::test_c_backend_examples[source_path0-Hello World\n]
+FAILED tests/test_c_backend.py::test_c_backend_examples[source_path1-5\n] - P...
+FAILED tests/test_c_backend.py::test_emit_llvm_ir_via_c - PermissionError: [W...
+FAILED tests/test_c_backend.py::test_emit_llvm_ir_via_c_cli - subprocess.Call...
+FAILED tests/test_tiny_language_compiler_cli.py::test_emit_llvm_bitcode_creates_artifact
+18 failed, 995 passed, 7 skipped, 4 warnings in 241.28s (0:04:01)

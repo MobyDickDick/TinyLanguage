@@ -2,6 +2,12 @@
 
 TinyLanguage is a small Julia-inspired language with a Python implementation (interpreter + tooling) and multiple experimental backends (native/C, LLVM prototype, transpilers). The project is primarily a **learning playground** for language design, IR experiments, and cross-language interoperability—not a production SDK.
 
+The [argument-isolation experiment](docs/argument_isolation_experiment.md)
+compares opt-in copy-on-call with working Python alternatives. Automatic argument
+copies preserve the tested inputs, with explicit receiver, nesting and heap
+lifetime limits. The study supports keeping a bounded learning experiment;
+it establishes neither practical superiority nor a new underlying concept.
+
 Note: The ideas largely come from me, but the code was generated with ChatGPT.
 
 If you want a compact reference first:
@@ -333,7 +339,7 @@ tests. Their scope and acceptance criteria are recorded in that task list.
 - Formatter + lints + stable language-server workflows.
 
 ### Native backends
-- Keep the C backend stable and documented (see [docs/c_backend.md](docs/c_backend.md)).
+- Keep the experimental C subset documented and tested (see [docs/c_backend.md](docs/c_backend.md)).
 - Continue LLVM emission experiments as a separate track.
 
 ---

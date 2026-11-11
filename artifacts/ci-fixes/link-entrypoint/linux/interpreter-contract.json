@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "check": "interpreter-contract",
+  "source": {
+    "commit": "5ee28d99019da626057ca2d2ca86658b12a5e36b",
+    "files_sha256": "2f2f81bb092749c0833c46ff86d0515399085e65f8d160ee8d7e6d576809af4f",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "source_after": {
+    "commit": "5ee28d99019da626057ca2d2ca86658b12a5e36b",
+    "files_sha256": "2f2f81bb092749c0833c46ff86d0515399085e65f8d160ee8d7e6d576809af4f",
+    "clean": false
+  },
+  "command": [
+    "-m",
+    "pytest",
+    "tests/test_spec_conformance.py",
+    "tests/test_release_scope_contract.py",
+    "tests/test_module_summary_persistence.py",
+    "tests/detailtests/test_semantics_suite.py",
+    "tests/detailtests/test_stdlib_doc_examples.py",
+    "--junitxml=build/linux-link-fix-evidence/interpreter-contract.xml"
+  ],
+  "returncode": 0,
+  "environment": {
+    "python": "3.14.4 (main, Jun 18 2026, 14:25:02) [GCC 15.2.0]",
+    "executable": "/usr/bin/python3",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.43"
+  },
+  "files": {
+    "evidence/interpreter-contract.log": "0091efa8d9421157f7af257fd4aa0e5cd59a8fb27e29f738940ff68a1a8f7937",
+    "evidence/interpreter-contract.xml": "057d3d12b2444ea821777e0a88c410d150bbc8bf4a9062e30135c9c129dd0cba"
+  }
+}

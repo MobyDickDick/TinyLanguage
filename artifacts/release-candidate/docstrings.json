@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "check": "docstrings",
+  "source": {
+    "commit": "34ed85aa53ede0c2466833a5ae94691465a6da51",
+    "files_sha256": "dec8859b28f8c234ecbb5cf39b37c76e31efd6fd158d4c796f85a127f724d386",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "command": [
+    "-m",
+    "ruff",
+    "check",
+    "--select",
+    "D",
+    "src/language_server.py",
+    "src/language_server_cli.py",
+    "src/tiny_language_cli.py",
+    "src/tiny_language_api.py",
+    "src/tiny_errors.py"
+  ],
+  "returncode": 1,
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "files": {
+    "evidence/docstrings.log": "cbd55b438df7d95cae059ea952e660806435c9f37b4ddf9786e286c69f951ca9"
+  }
+}

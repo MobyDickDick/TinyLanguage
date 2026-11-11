@@ -9,6 +9,7 @@ import difflib
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -34,6 +35,8 @@ class FixtureMetadata:
 
     backends: tuple[str, ...] | None = None
     skip_backends: tuple[str, ...] = ()
+    expected_exit_code: int = 0
+    error_contains: str = ""
 
 
 @dataclass(frozen=True)
@@ -71,7 +74,16 @@ def _load_metadata(path: pathlib.Path) -> FixtureMetadata:
     raw = json.loads(meta_path.read_text(encoding="utf-8"))
     backends = tuple(raw.get("backends", [])) or None
     skip_backends = tuple(raw.get("skip_backends", []))
-    return FixtureMetadata(backends=backends, skip_backends=skip_backends)
+    expected_exit_code = raw.get("expected_exit_code", 0)
+    error_contains = raw.get("error_contains", "")
+    if (type(expected_exit_code) is not int or expected_exit_code not in (0, 1)
+            or not isinstance(error_contains, str)
+            or (expected_exit_code and not error_contains)):
+        raise ValueError(f"{meta_path}: errors require exit code 1 and a diagnostic substring")
+    if any(name not in DEFAULT_BACKENDS for name in (*(backends or ()), *skip_backends)):
+        raise ValueError(f"{meta_path}: unknown backend")
+    return FixtureMetadata(backends=backends, skip_backends=skip_backends,
+                           expected_exit_code=expected_exit_code, error_contains=error_contains)
 
 
 def _discover_fixtures(paths: Sequence[pathlib.Path]) -> list[Fixture]:
@@ -159,15 +171,15 @@ def _run_llvm(source: str) -> BackendResult:
 
 
 def _run_c_backend(source: str, compiler: str) -> BackendResult:
+    if shutil.which(compiler) is None:
+        return BackendResult(skipped=True, skip_reason=f"compiler {compiler!r} not found on PATH")
     result = BackendResult()
     with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = pathlib.Path(tmpdir) / "tiny_program"
+        output_path = pathlib.Path(tmpdir) / ("tiny_program.exe" if os.name == "nt" else "tiny_program")
         try:
             compile_to_c_executable(source, output_path, compiler=compiler)
         except RuntimeError as exc:
             message = str(exc)
-            if "not found on PATH" in message or "compiler '" in message:
-                return BackendResult(skipped=True, skip_reason=message)
             result.stderr = message
             result.exit_code = 1
             return result
@@ -180,6 +192,7 @@ def _run_c_backend(source: str, compiler: str) -> BackendResult:
             capture_output=True,
             text=True,
             env=os.environ.copy(),
+            timeout=30,
         )
         result.stdout = process.stdout
         result.stderr = process.stderr
@@ -202,6 +215,28 @@ def _render_diff(label: str, expected: str, actual: str) -> str:
 
 def _print_header(title: str) -> None:
     sys.stdout.write(f"\n== {title} ==\n")
+
+
+def _check_expected(fixture: Fixture, backend: str, result: BackendResult) -> list[str]:
+    """Agreement on a crash is not success; compare independent fixture oracles first."""
+    if result.skipped:
+        return []
+    failures = []
+    if result.exit_code != fixture.metadata.expected_exit_code:
+        failures.append(f"{fixture.name}/{backend}: expected exit {fixture.metadata.expected_exit_code}, got {result.exit_code}")
+    if fixture.metadata.error_contains and fixture.metadata.error_contains not in result.stderr:
+        failures.append(f"{fixture.name}/{backend}: missing expected diagnostic {fixture.metadata.error_contains!r}")
+    if not fixture.metadata.expected_exit_code and result.stderr:
+        failures.append(f"{fixture.name}/{backend}: unexpected stderr: {result.stderr}")
+    for stream in ("stdout", "stderr"):
+        snapshot = fixture.path.with_suffix("." + stream)
+        if snapshot.exists():
+            # Snapshots are program output. Broad parity normalization could erase a defect.
+            expected = snapshot.read_text(encoding="utf-8").replace("\r\n", "\n")
+            actual = getattr(result, stream).replace("\r\n", "\n")
+            if expected != actual:
+                failures.append(_render_diff(f"{fixture.name}/{backend} {stream} oracle", expected, actual))
+    return failures
 
 
 def _iter_backends(requested: Iterable[str] | None) -> tuple[str, ...]:
@@ -296,10 +331,12 @@ def main(argv: list[str] | None = None) -> int:
 
     requested_backends = _iter_backends(args.backend)
     overall_failures: list[str] = []
+    executed = 0
 
     for fixture in fixtures:
         source = fixture.path.read_text(encoding="utf-8")
-        backend_list = fixture.metadata.backends or requested_backends
+        backend_list = tuple(b for b in requested_backends
+                             if fixture.metadata.backends is None or b in fixture.metadata.backends)
         backend_list = tuple(b for b in backend_list if b not in fixture.metadata.skip_backends)
         if not backend_list:
             continue
@@ -320,6 +357,9 @@ def main(argv: list[str] | None = None) -> int:
                 results[backend] = BackendResult(skipped=True, skip_reason="unsupported backend")
 
         for backend, result in results.items():
+            if not result.skipped:
+                executed += 1
+                overall_failures.extend(_check_expected(fixture, backend, result))
             if result.skipped:
                 msg = f"{fixture.name}: {backend} skipped ({result.skip_reason})"
                 if args.strict:
@@ -346,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
             if diffs:
                 overall_failures.extend(diffs)
 
+    if not executed:
+        overall_failures.append("No backend executed; no parity evidence was produced.")
     if overall_failures:
         _print_header("Parity failures")
         for failure in overall_failures:

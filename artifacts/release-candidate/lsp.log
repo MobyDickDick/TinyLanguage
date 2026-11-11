@@ -1,0 +1,12 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\marku\myCloud\TinyLanguage
+configfile: pytest.ini
+collected 38 items
+
+tests\detailtests\test_language_server.py ......................         [ 57%]
+tests\detailtests\test_language_server_cli.py .............              [ 92%]
+tests\detailtests\test_tiny_language_server_cli_self_host.py ...         [100%]
+
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\release-candidate\lsp.xml -
+============================= 38 passed in 24.62s =============================

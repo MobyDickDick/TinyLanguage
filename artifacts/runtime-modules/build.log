@@ -1,0 +1,599 @@
+* Getting build dependencies for wheel...
+running egg_info
+writing src\tinylanguage.egg-info\PKG-INFO
+writing dependency_links to src\tinylanguage.egg-info\dependency_links.txt
+writing entry points to src\tinylanguage.egg-info\entry_points.txt
+writing top-level names to src\tinylanguage.egg-info\top_level.txt
+reading manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+warning: no previously-included files found matching 'src\tiny_language_stitched.py'
+writing manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+copying src\tiny_intervals.py -> build\lib
+copying src\tiny_language.py -> build\lib
+copying src\tiny_language_api.py -> build\lib
+copying src\tiny_language_ast.py -> build\lib
+copying src\tiny_language_cli.py -> build\lib
+copying src\tiny_language_codegen_native.py -> build\lib
+copying src\tiny_language_codegen_py.py -> build\lib
+copying src\tiny_language_eval.py -> build\lib
+copying src\tiny_language_linter.py -> build\lib
+copying src\tiny_language_parser.py -> build\lib
+copying src\tiny_language_preamble.py -> build\lib
+copying src\tiny_language_runtime.py -> build\lib
+copying src\stdlib\__init__.py -> build\lib\stdlib
+copying src_tiny\number_intervall.tiny -> build\lib\src_tiny
+copying src_tiny\tiny_language_eval.tiny -> build\lib\src_tiny
+copying src_tiny\tiny_language_parser.tiny -> build\lib\src_tiny
+copying src_tiny\tiny_language_runtime.tiny -> build\lib\src_tiny
+copying src_tiny\tiny_language_stitched.tiny -> build\lib\src_tiny
+installing to build\bdist.win-amd64\wheel
+running install
+running install_lib
+creating build\bdist.win-amd64\wheel
+copying build\lib\formatter.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\language_server.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\language_server_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\native_ir.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\native_python_bytecode.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\native_vm.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\rosetta_python_downloader.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\run_all.py -> build\bdist.win-amd64\wheel\.
+creating build\bdist.win-amd64\wheel\src_tiny
+copying build\lib\src_tiny\all_features.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\class_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\concurrency_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\concurrency_pipeline.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\console_sum.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\copy_rosetta_samples.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\derivatives.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\factorial.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\fibonacci.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\fizzbuzz.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\formatter.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\generate_doc_reference.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\gui_hello_app.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\heap_pointer_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\hello_world.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\language_server.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\language_server_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\match_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\microbenchmarks.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\namespace_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\native_ir.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\native_python_bytecode.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\native_vm.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\number_class.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\number_intervall.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\operator_overloading_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\parallel_map.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\python_fn_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\python_json_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\python_math_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\python_namespace_typed_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\python_proxy_pipeline_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\result_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_factorial.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_fetch_python.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_fibonacci.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_fizzbuzz.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_python_downloader.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\rosetta_word_count.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\run_all.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\simpelst_Python_program.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\Simpelst_Tiny_Language_Programm.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\stdlib_argparse_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\stdlib_collections_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\stdlib_io_random_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\structured_concurrency_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\test_flush.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tinyc_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_debug_adapter.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_errors.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_api.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_ast.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_codegen_c.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_codegen_llvm.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_codegen_native.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_codegen_py.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_compiler_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_eval.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_highlighting.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_lexer.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_linter.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_parser.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_preamble.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_runtime.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_runtime_debugger.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_runtime_environment.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_runtime_modules.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_stitched.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_language_transpilers.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_lang_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_program_repository_db.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tiny_project_cli.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\tools_unused_scan.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\transpile_rosetta.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\try_catch_demo.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+copying build\lib\src_tiny\vscode_helpers.tiny -> build\bdist.win-amd64\wheel\.\src_tiny
+creating build\bdist.win-amd64\wheel\stdlib
+copying build\lib\stdlib\argparse.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\collections.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\csv.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\datetime.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\fs.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\fswatch.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\gui.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\http.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\io.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\json.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\logging.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\math.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\os.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\path.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\pathlib.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\process.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\random.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\regex.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\statistics.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\string.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\time.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\toml.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\yaml.tiny -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib\__init__.py -> build\bdist.win-amd64\wheel\.\stdlib
+copying build\lib\stdlib_csv.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\stdlib_datetime.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\stdlib_gui.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tinyc_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_errors.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_intervals.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_api.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_ast.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_codegen_c.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_codegen_llvm.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_codegen_native.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_codegen_py.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_compiler_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_error_codes.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_eval.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_highlighting.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_lexer.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_linter.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_module_resolution.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_parser.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_preamble.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_runtime.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_runtime_debugger.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_runtime_environment.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_runtime_modules.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_transpilers.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_language_version.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_lang_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_pkg_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_pkg_resolution.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_pkg_sources.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_daemon.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_gui_wrapper.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_repository_db_adapter.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_source_import.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_source_port.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_source_sandbox.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_program_source_scan.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\tiny_project_cli.py -> build\bdist.win-amd64\wheel\.
+copying build\lib\transpile_rosetta.py -> build\bdist.win-amd64\wheel\.
+running install_egg_info
+running egg_info
+writing src\tinylanguage.egg-info\PKG-INFO
+writing dependency_links to src\tinylanguage.egg-info\dependency_links.txt
+writing entry points to src\tinylanguage.egg-info\entry_points.txt
+writing top-level names to src\tinylanguage.egg-info\top_level.txt
+reading manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+warning: no previously-included files found matching 'src\tiny_language_stitched.py'
+writing manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+Copying src\tinylanguage.egg-info to build\bdist.win-amd64\wheel\.\tinylanguage-1.0.0-py3.12.egg-info
+running install_scripts
+creating build\bdist.win-amd64\wheel\tinylanguage-1.0.0.dist-info\WHEEL
+creating 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\module-boundaries\\.tmp-4lujxz4v\\tinylanguage-1.0.0-py3-none-any.whl' and adding 'build\\bdist.win-amd64\\wheel' to it
+adding 'formatter.py'
+adding 'language_server.py'
+adding 'language_server_cli.py'
+adding 'native_ir.py'
+adding 'native_python_bytecode.py'
+adding 'native_vm.py'
+adding 'rosetta_python_downloader.py'
+adding 'run_all.py'
+adding 'stdlib_csv.py'
+adding 'stdlib_datetime.py'
+adding 'stdlib_gui.py'
+adding 'tiny_errors.py'
+adding 'tiny_intervals.py'
+adding 'tiny_lang_cli.py'
+adding 'tiny_language.py'
+adding 'tiny_language_api.py'
+adding 'tiny_language_ast.py'
+adding 'tiny_language_cli.py'
+adding 'tiny_language_codegen_c.py'
+adding 'tiny_language_codegen_llvm.py'
+adding 'tiny_language_codegen_native.py'
+adding 'tiny_language_codegen_py.py'
+adding 'tiny_language_compiler_cli.py'
+adding 'tiny_language_error_codes.py'
+adding 'tiny_language_eval.py'
+adding 'tiny_language_highlighting.py'
+adding 'tiny_language_lexer.py'
+adding 'tiny_language_linter.py'
+adding 'tiny_language_module_resolution.py'
+adding 'tiny_language_parser.py'
+adding 'tiny_language_preamble.py'
+adding 'tiny_language_runtime.py'
+adding 'tiny_language_runtime_debugger.py'
+adding 'tiny_language_runtime_environment.py'
+adding 'tiny_language_runtime_modules.py'
+adding 'tiny_language_transpilers.py'
+adding 'tiny_language_version.py'
+adding 'tiny_pkg_cli.py'
+adding 'tiny_pkg_resolution.py'
+adding 'tiny_pkg_sources.py'
+adding 'tiny_program_daemon.py'
+adding 'tiny_program_gui_wrapper.py'
+adding 'tiny_program_repository_db_adapter.py'
+adding 'tiny_program_source_import.py'
+adding 'tiny_program_source_port.py'
+adding 'tiny_program_source_sandbox.py'
+adding 'tiny_program_source_scan.py'
+adding 'tiny_project_cli.py'
+adding 'tinyc_cli.py'
+adding 'transpile_rosetta.py'
+adding 'src_tiny/Simpelst_Tiny_Language_Programm.tiny'
+adding 'src_tiny/all_features.tiny'
+adding 'src_tiny/class_demo.tiny'
+adding 'src_tiny/concurrency_demo.tiny'
+adding 'src_tiny/concurrency_pipeline.tiny'
+adding 'src_tiny/console_sum.tiny'
+adding 'src_tiny/copy_rosetta_samples.tiny'
+adding 'src_tiny/demo.tiny'
+adding 'src_tiny/derivatives.tiny'
+adding 'src_tiny/factorial.tiny'
+adding 'src_tiny/fibonacci.tiny'
+adding 'src_tiny/fizzbuzz.tiny'
+adding 'src_tiny/formatter.tiny'
+adding 'src_tiny/generate_doc_reference.tiny'
+adding 'src_tiny/gui_hello_app.tiny'
+adding 'src_tiny/heap_pointer_demo.tiny'
+adding 'src_tiny/hello_world.tiny'
+adding 'src_tiny/language_server.tiny'
+adding 'src_tiny/language_server_cli.tiny'
+adding 'src_tiny/match_demo.tiny'
+adding 'src_tiny/microbenchmarks.tiny'
+adding 'src_tiny/namespace_demo.tiny'
+adding 'src_tiny/native_ir.tiny'
+adding 'src_tiny/native_python_bytecode.tiny'
+adding 'src_tiny/native_vm.tiny'
+adding 'src_tiny/number_class.tiny'
+adding 'src_tiny/number_intervall.tiny'
+adding 'src_tiny/operator_overloading_demo.tiny'
+adding 'src_tiny/parallel_map.tiny'
+adding 'src_tiny/python_fn_demo.tiny'
+adding 'src_tiny/python_json_demo.tiny'
+adding 'src_tiny/python_math_demo.tiny'
+adding 'src_tiny/python_namespace_typed_demo.tiny'
+adding 'src_tiny/python_proxy_pipeline_demo.tiny'
+adding 'src_tiny/result_demo.tiny'
+adding 'src_tiny/rosetta_factorial.tiny'
+adding 'src_tiny/rosetta_fetch_python.tiny'
+adding 'src_tiny/rosetta_fibonacci.tiny'
+adding 'src_tiny/rosetta_fizzbuzz.tiny'
+adding 'src_tiny/rosetta_python_downloader.tiny'
+adding 'src_tiny/rosetta_word_count.tiny'
+adding 'src_tiny/run_all.tiny'
+adding 'src_tiny/simpelst_Python_program.tiny'
+adding 'src_tiny/stdlib_argparse_demo.tiny'
+adding 'src_tiny/stdlib_collections_demo.tiny'
+adding 'src_tiny/stdlib_io_random_demo.tiny'
+adding 'src_tiny/structured_concurrency_demo.tiny'
+adding 'src_tiny/test_flush.tiny'
+adding 'src_tiny/tiny_debug_adapter.tiny'
+adding 'src_tiny/tiny_errors.tiny'
+adding 'src_tiny/tiny_lang_cli.tiny'
+adding 'src_tiny/tiny_language.tiny'
+adding 'src_tiny/tiny_language_api.tiny'
+adding 'src_tiny/tiny_language_ast.tiny'
+adding 'src_tiny/tiny_language_cli.tiny'
+adding 'src_tiny/tiny_language_codegen_c.tiny'
+adding 'src_tiny/tiny_language_codegen_llvm.tiny'
+adding 'src_tiny/tiny_language_codegen_native.tiny'
+adding 'src_tiny/tiny_language_codegen_py.tiny'
+adding 'src_tiny/tiny_language_compiler_cli.tiny'
+adding 'src_tiny/tiny_language_eval.tiny'
+adding 'src_tiny/tiny_language_highlighting.tiny'
+adding 'src_tiny/tiny_language_lexer.tiny'
+adding 'src_tiny/tiny_language_linter.tiny'
+adding 'src_tiny/tiny_language_parser.tiny'
+adding 'src_tiny/tiny_language_preamble.tiny'
+adding 'src_tiny/tiny_language_runtime.tiny'
+adding 'src_tiny/tiny_language_runtime_debugger.tiny'
+adding 'src_tiny/tiny_language_runtime_environment.tiny'
+adding 'src_tiny/tiny_language_runtime_modules.tiny'
+adding 'src_tiny/tiny_language_stitched.tiny'
+adding 'src_tiny/tiny_language_transpilers.tiny'
+adding 'src_tiny/tiny_program_repository_db.tiny'
+adding 'src_tiny/tiny_project_cli.tiny'
+adding 'src_tiny/tinyc_cli.tiny'
+adding 'src_tiny/tools_unused_scan.tiny'
+adding 'src_tiny/transpile_rosetta.tiny'
+adding 'src_tiny/try_catch_demo.tiny'
+adding 'src_tiny/vscode_helpers.tiny'
+adding 'stdlib/__init__.py'
+adding 'stdlib/argparse.tiny'
+adding 'stdlib/collections.tiny'
+adding 'stdlib/csv.tiny'
+adding 'stdlib/datetime.tiny'
+adding 'stdlib/fs.tiny'
+adding 'stdlib/fswatch.tiny'
+adding 'stdlib/gui.tiny'
+adding 'stdlib/http.tiny'
+adding 'stdlib/io.tiny'
+adding 'stdlib/json.tiny'
+adding 'stdlib/logging.tiny'
+adding 'stdlib/math.tiny'
+adding 'stdlib/os.tiny'
+adding 'stdlib/path.tiny'
+adding 'stdlib/pathlib.tiny'
+adding 'stdlib/process.tiny'
+adding 'stdlib/random.tiny'
+adding 'stdlib/regex.tiny'
+adding 'stdlib/statistics.tiny'
+adding 'stdlib/string.tiny'
+adding 'stdlib/time.tiny'
+adding 'stdlib/toml.tiny'
+adding 'stdlib/yaml.tiny'
+adding 'tinylanguage-1.0.0.dist-info/METADATA'
+adding 'tinylanguage-1.0.0.dist-info/WHEEL'
+adding 'tinylanguage-1.0.0.dist-info/entry_points.txt'
+adding 'tinylanguage-1.0.0.dist-info/top_level.txt'
+adding 'tinylanguage-1.0.0.dist-info/RECORD'
+removing build\bdist.win-amd64\wheel
+* Getting build dependencies for sdist...
+running egg_info
+writing src\tinylanguage.egg-info\PKG-INFO
+writing dependency_links to src\tinylanguage.egg-info\dependency_links.txt
+writing entry points to src\tinylanguage.egg-info\entry_points.txt
+writing top-level names to src\tinylanguage.egg-info\top_level.txt
+reading manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+warning: no previously-included files found matching 'src\tiny_language_stitched.py'
+writing manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+* Building sdist...
+running sdist
+running egg_info
+writing src\tinylanguage.egg-info\PKG-INFO
+writing dependency_links to src\tinylanguage.egg-info\dependency_links.txt
+writing entry points to src\tinylanguage.egg-info\entry_points.txt
+writing top-level names to src\tinylanguage.egg-info\top_level.txt
+reading manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+warning: no previously-included files found matching 'src\tiny_language_stitched.py'
+writing manifest file 'src\tinylanguage.egg-info\SOURCES.txt'
+running check
+creating tinylanguage-1.0.0
+creating tinylanguage-1.0.0\src
+creating tinylanguage-1.0.0\src\stdlib
+creating tinylanguage-1.0.0\src\tinylanguage.egg-info
+creating tinylanguage-1.0.0\src_tiny
+creating tinylanguage-1.0.0\stdlib
+creating tinylanguage-1.0.0\tests
+creating tinylanguage-1.0.0\tools
+copying files to tinylanguage-1.0.0...
+copying CHANGELOG.md -> tinylanguage-1.0.0
+copying MANIFEST.in -> tinylanguage-1.0.0
+copying README.md -> tinylanguage-1.0.0
+copying VERSION -> tinylanguage-1.0.0
+copying pyproject.toml -> tinylanguage-1.0.0
+copying setup.py -> tinylanguage-1.0.0
+copying src\formatter.py -> tinylanguage-1.0.0\src
+copying src\language_server.py -> tinylanguage-1.0.0\src
+copying src\language_server_cli.py -> tinylanguage-1.0.0\src
+copying src\native_ir.py -> tinylanguage-1.0.0\src
+copying src\native_python_bytecode.py -> tinylanguage-1.0.0\src
+copying src\native_vm.py -> tinylanguage-1.0.0\src
+copying src\rosetta_python_downloader.py -> tinylanguage-1.0.0\src
+copying src\run_all.py -> tinylanguage-1.0.0\src
+copying src\stdlib_csv.py -> tinylanguage-1.0.0\src
+copying src\stdlib_datetime.py -> tinylanguage-1.0.0\src
+copying src\stdlib_gui.py -> tinylanguage-1.0.0\src
+copying src\tiny_errors.py -> tinylanguage-1.0.0\src
+copying src\tiny_intervals.py -> tinylanguage-1.0.0\src
+copying src\tiny_lang_cli.py -> tinylanguage-1.0.0\src
+copying src\tiny_language.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_api.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_ast.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_cli.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_codegen_c.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_codegen_llvm.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_codegen_native.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_codegen_py.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_compiler_cli.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_error_codes.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_eval.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_highlighting.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_lexer.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_linter.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_module_resolution.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_parser.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_preamble.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_runtime.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_runtime_debugger.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_runtime_environment.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_runtime_modules.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_transpilers.py -> tinylanguage-1.0.0\src
+copying src\tiny_language_version.py -> tinylanguage-1.0.0\src
+copying src\tiny_pkg_cli.py -> tinylanguage-1.0.0\src
+copying src\tiny_pkg_resolution.py -> tinylanguage-1.0.0\src
+copying src\tiny_pkg_sources.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_daemon.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_gui_wrapper.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_repository_db_adapter.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_source_import.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_source_port.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_source_sandbox.py -> tinylanguage-1.0.0\src
+copying src\tiny_program_source_scan.py -> tinylanguage-1.0.0\src
+copying src\tiny_project_cli.py -> tinylanguage-1.0.0\src
+copying src\tinyc_cli.py -> tinylanguage-1.0.0\src
+copying src\transpile_rosetta.py -> tinylanguage-1.0.0\src
+copying src\stdlib\__init__.py -> tinylanguage-1.0.0\src\stdlib
+copying src\tinylanguage.egg-info\PKG-INFO -> tinylanguage-1.0.0\src\tinylanguage.egg-info
+copying src\tinylanguage.egg-info\SOURCES.txt -> tinylanguage-1.0.0\src\tinylanguage.egg-info
+copying src\tinylanguage.egg-info\dependency_links.txt -> tinylanguage-1.0.0\src\tinylanguage.egg-info
+copying src\tinylanguage.egg-info\entry_points.txt -> tinylanguage-1.0.0\src\tinylanguage.egg-info
+copying src\tinylanguage.egg-info\top_level.txt -> tinylanguage-1.0.0\src\tinylanguage.egg-info
+copying src_tiny\Simpelst_Tiny_Language_Programm.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\all_features.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\class_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\concurrency_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\concurrency_pipeline.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\console_sum.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\copy_rosetta_samples.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\derivatives.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\factorial.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\fibonacci.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\fizzbuzz.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\formatter.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\generate_doc_reference.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\gui_hello_app.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\heap_pointer_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\hello_world.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\language_server.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\language_server_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\match_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\microbenchmarks.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\namespace_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\native_ir.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\native_python_bytecode.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\native_vm.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\number_class.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\number_intervall.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\operator_overloading_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\parallel_map.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\python_fn_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\python_json_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\python_math_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\python_namespace_typed_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\python_proxy_pipeline_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\result_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_factorial.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_fetch_python.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_fibonacci.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_fizzbuzz.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_python_downloader.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\rosetta_word_count.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\run_all.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\simpelst_Python_program.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\stdlib_argparse_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\stdlib_collections_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\stdlib_io_random_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\structured_concurrency_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\test_flush.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_debug_adapter.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_errors.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_lang_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_api.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_ast.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_codegen_c.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_codegen_llvm.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_codegen_native.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_codegen_py.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_compiler_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_eval.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_highlighting.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_lexer.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_linter.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_parser.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_preamble.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_runtime.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_runtime_debugger.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_runtime_environment.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_runtime_modules.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_stitched.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_language_transpilers.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_program_repository_db.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tiny_project_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tinyc_cli.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\tools_unused_scan.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\transpile_rosetta.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\try_catch_demo.tiny -> tinylanguage-1.0.0\src_tiny
+copying src_tiny\vscode_helpers.tiny -> tinylanguage-1.0.0\src_tiny
+copying stdlib\argparse.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\collections.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\csv.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\datetime.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\fs.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\fswatch.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\gui.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\http.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\io.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\json.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\logging.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\math.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\os.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\path.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\pathlib.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\process.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\random.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\regex.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\statistics.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\string.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\time.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\toml.tiny -> tinylanguage-1.0.0\stdlib
+copying stdlib\yaml.tiny -> tinylanguage-1.0.0\stdlib
+copying tests\test_c_backend.py -> tinylanguage-1.0.0\tests
+copying tests\test_correctness_audit.py -> tinylanguage-1.0.0\tests
+copying tests\test_import_output_workflow.py -> tinylanguage-1.0.0\tests
+copying tests\test_language_spec_grammar.py -> tinylanguage-1.0.0\tests
+copying tests\test_linter_parity.py -> tinylanguage-1.0.0\tests
+copying tests\test_llvm_jit.py -> tinylanguage-1.0.0\tests
+copying tests\test_module_summary_persistence.py -> tinylanguage-1.0.0\tests
+copying tests\test_output_normalization.py -> tinylanguage-1.0.0\tests
+copying tests\test_parity_runner.py -> tinylanguage-1.0.0\tests
+copying tests\test_performance_budget_checker.py -> tinylanguage-1.0.0\tests
+copying tests\test_release_candidate_gate.py -> tinylanguage-1.0.0\tests
+copying tests\test_release_packaging.py -> tinylanguage-1.0.0\tests
+copying tests\test_release_scope_contract.py -> tinylanguage-1.0.0\tests
+copying tests\test_run_all.py -> tinylanguage-1.0.0\tests
+copying tests\test_runtime_module_boundaries.py -> tinylanguage-1.0.0\tests
+copying tests\test_smoke.py -> tinylanguage-1.0.0\tests
+copying tests\test_spec_conformance.py -> tinylanguage-1.0.0\tests
+copying tests\test_src_tiny_regressions.py -> tinylanguage-1.0.0\tests
+copying tests\test_standalone_tiny_regressions.py -> tinylanguage-1.0.0\tests
+copying tests\test_stdlib_compatibility.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_language.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_language_cli.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_language_compiler_cli.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_language_preamble.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_lexer_self_host.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_parser_self_host.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_daemon.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_gui_wrapper.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_repository_db_adapter.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_source_import.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_source_port.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_source_sandbox.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_program_source_scan.py -> tinylanguage-1.0.0\tests
+copying tests\test_tiny_wrapper_imports.py -> tinylanguage-1.0.0\tests
+copying tests\test_typecheck_ci_gate.py -> tinylanguage-1.0.0\tests
+copying tools\packaging_backend.py -> tinylanguage-1.0.0\tools
+Writing tinylanguage-1.0.0\setup.cfg
+Creating tar archive
+removing 'tinylanguage-1.0.0' (and everything under it)
+Successfully built tinylanguage-1.0.0-py3-none-any.whl and tinylanguage-1.0.0.tar.gz

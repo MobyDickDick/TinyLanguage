@@ -1,4 +1,7 @@
-// Interval number class capturing lower and upper bounds for a value.
+// Closed real sets with outward-rounded binary64 bounds. See
+// docs/interval_arithmetic_contract.md for exterior, empty and unbounded sets.
+// Exact bound/rounding primitives are provided by the reference interpreter.
+// Compiler backends and standalone self-hosting are not qualified for this API.
 
 class NumberIntervall {
   lower: number;
@@ -11,441 +14,43 @@ class NumberIntervall {
 }
 
 fn __intervall_with_error(code) {
-  return new NumberIntervall { lower: 0, upper: 0, error: code };
+  return __interval_bounds(0, 0, code);
 }
 
 fn __intervall_with_bounds_and_error(l, u, code) {
-  return new NumberIntervall { lower: l, upper: u, error: code };
+  return __interval_bounds(l, u, code);
 }
 
 fn __intervall_from_bounds(l, u) {
-  return new NumberIntervall { lower: l, upper: u, error: "normal" };
-}
-
-fn __expand_bounds_outwards(lo, hi) {
-  def lower_neighbor = __nextafter(lo, lo - 1);
-  def upper_neighbor = __nextafter(hi, hi + 1);
-
-  def lo_neighbor_ov = __overflowed(lower_neighbor);
-  if (lo_neighbor_ov != "normal") { return __intervall_with_error(lo_neighbor_ov); }
-
-  def hi_neighbor_ov = __overflowed(upper_neighbor);
-  if (hi_neighbor_ov != "normal") { return __intervall_with_error(hi_neighbor_ov); }
-
-  def delta_lower = lo - lower_neighbor;
-  def delta_upper = upper_neighbor - hi;
-
-  def delta = delta_lower;
-  if (delta_upper > delta) { delta = delta_upper; }
-
-  def expanded_lower = lo - delta;
-  def expanded_upper = hi + delta;
-
-  def lo_ov = __overflowed(expanded_lower);
-  if (lo_ov != "normal") { return __intervall_with_error(lo_ov); }
-
-  def hi_ov = __overflowed(expanded_upper);
-  if (hi_ov != "normal") { return __intervall_with_error(hi_ov); }
-
-  return __intervall_from_bounds(expanded_lower, expanded_upper);
+  return __interval_bounds(l, u, "normal");
 }
 
 fn NumberIntervall(l, u) {
   return __intervall_from_bounds(l, u);
 }
 
+// An explicit neighbor envelope; ordinary constructors and Number promotion
+// enclose the stored value without adding this extra uncertainty.
 fn interval_number(v) {
-  if (v == v) {
-    def ov = __overflowed(v);
-    if (ov == "normal") {
-      def lower = __nextafter(v, v - 1);
-      def upper = __nextafter(v, v + 1);
-
-      def lo_ov = __overflowed(lower);
-      if (lo_ov == "normal") {
-        def hi_ov = __overflowed(upper);
-        if (hi_ov == "normal") { return __intervall_from_bounds(lower, upper); }
-        return __intervall_with_error(hi_ov);
-      }
-      return __intervall_with_error(lo_ov);
-    }
-    return __intervall_with_error(ov);
-  }
-
-  return __intervall_with_error("any_number");
+  return __interval_neighbors(v);
 }
 
 fn __is_error(iv, code) { return iv.error == code; }
 fn __is_normal(iv) { return iv.error == "normal"; }
-fn __is_upper_infinity(iv) { return iv.error == "upper_bound_is_plus_infinity"; }
-fn __is_lower_infinity(iv) { return iv.error == "lower_bound_is_minus_infinity"; }
-fn __is_wrapped(iv) { return iv.lower > iv.upper; }
-fn __contains_zero(iv) {
-  if (__is_normal(iv)) {
-    if (iv.lower <= 0) {
-      if (iv.upper >= 0) { return 1; }
-    }
-  }
-
-  return 0;
-}
-
-fn __overflowed(v) {
-  if (v > 1.7976931348623157 * 10 ^ 308) { return "plus_infinity"; }
-  if (v < -1.7976931348623157 * 10 ^ 308) { return "minus_infinity"; }
-  return "normal";
-}
-
-fn __check_products(p1, p2, p3, p4) {
-  def plus = 0;
-  def minus = 0;
-
-  def ov1 = __overflowed(p1);
-  if (ov1 == "plus_infinity") { plus = 1; }
-  if (ov1 == "minus_infinity") { minus = 1; }
-
-  def ov2 = __overflowed(p2);
-  if (ov2 == "plus_infinity") { plus = 1; }
-  if (ov2 == "minus_infinity") { minus = 1; }
-
-  def ov3 = __overflowed(p3);
-  if (ov3 == "plus_infinity") { plus = 1; }
-  if (ov3 == "minus_infinity") { minus = 1; }
-
-  def ov4 = __overflowed(p4);
-  if (ov4 == "plus_infinity") { plus = 1; }
-  if (ov4 == "minus_infinity") { minus = 1; }
-
-  if (plus > 0) {
-    if (minus > 0) { return "any_number"; }
-    return "plus_infinity";
-  }
-  if (minus > 0) { return "minus_infinity"; }
-  return "normal";
-}
+fn __is_wrapped(iv) { return iv.error == "wrapped_interval"; }
 
 operator + (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  def a_err = a.error;
-  def b_err = b.error;
-
-  if (a_err == "any_number") { return __intervall_with_error("any_number"); }
-  if (b_err == "any_number") { return __intervall_with_error("any_number"); }
-
-  if (a_err == "plus_infinity") {
-    if (b_err == "minus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("plus_infinity");
-  }
-
-  if (a_err == "minus_infinity") {
-    if (b_err == "plus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (b_err == "plus_infinity") { return __intervall_with_error("plus_infinity"); }
-  if (b_err == "minus_infinity") { return __intervall_with_error("minus_infinity"); }
-
-  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
-  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
-
-  def lo = a.lower + b.lower;
-  def hi = a.upper + b.upper;
-
-  def lo_ov = __overflowed(lo);
-  def hi_ov = __overflowed(hi);
-  if (lo_ov == "normal") {
-    if (hi_ov == "normal") {
-    } else {
-      return __intervall_with_error(hi_ov);
-    }
-  } else {
-    if (hi_ov == "normal") { return __intervall_with_error(lo_ov); }
-    if (lo_ov == hi_ov) { return __intervall_with_error(lo_ov); }
-    return __intervall_with_error("any_number");
-  }
-
-  return __intervall_from_bounds(lo, hi);
+  return __interval_binary("+", a, b);
 }
 
 operator - (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  def a_err = a.error;
-  def b_err = b.error;
-
-  if (a_err == "any_number") { return __intervall_with_error("any_number"); }
-  if (b_err == "any_number") { return __intervall_with_error("any_number"); }
-
-  if (a_err == "plus_infinity") {
-    if (b_err == "plus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("plus_infinity");
-  }
-
-  if (a_err == "minus_infinity") {
-    if (b_err == "minus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (b_err == "plus_infinity") { return __intervall_with_error("minus_infinity"); }
-  if (b_err == "minus_infinity") { return __intervall_with_error("plus_infinity"); }
-
-  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
-  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
-
-  def lo = a.lower - b.upper;
-  def hi = a.upper - b.lower;
-
-  def lo_ov = __overflowed(lo);
-  def hi_ov = __overflowed(hi);
-  if (lo_ov == "normal") {
-    if (hi_ov == "normal") {
-    } else {
-      return __intervall_with_error(hi_ov);
-    }
-  } else {
-    if (hi_ov == "normal") { return __intervall_with_error(lo_ov); }
-    if (lo_ov == hi_ov) { return __intervall_with_error(lo_ov); }
-    return __intervall_with_error("any_number");
-  }
-
-  return __intervall_from_bounds(lo, hi);
+  return __interval_binary("-", a, b);
 }
 
 operator * (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  if (a.error == "any_number") { return __intervall_with_error("any_number"); }
-  if (b.error == "any_number") { return __intervall_with_error("any_number"); }
-
-  if (a.error == "plus_infinity") {
-    if (__is_normal(b)) {
-      if (b.lower <= 0) {
-        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    def sign = 1;
-    if (__is_normal(b)) {
-      if (b.upper < 0) { sign = -sign; }
-    }
-    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (a.error == "minus_infinity") {
-    if (__is_normal(b)) {
-      if (b.lower <= 0) {
-        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    def sign = -1;
-    if (__is_normal(b)) {
-      if (b.upper < 0) { sign = -sign; }
-    }
-    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (b.error == "plus_infinity") {
-    if (__is_normal(a)) {
-      if (a.lower <= 0) {
-        if (a.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    def sign = 1;
-    if (__is_normal(a)) {
-      if (a.upper < 0) { sign = -sign; }
-    }
-    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (b.error == "minus_infinity") {
-    if (__is_normal(a)) {
-      if (a.lower <= 0) {
-        if (a.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    def sign = -1;
-    if (__is_normal(a)) {
-      if (a.upper < 0) { sign = -sign; }
-    }
-    if (sign > 0) { return __intervall_with_error("plus_infinity"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (a.lower > a.upper) { return __intervall_with_error("any_number"); }
-  if (b.lower > b.upper) { return __intervall_with_error("any_number"); }
-
-  def p1 = a.lower * b.lower;
-  def p2 = a.lower * b.upper;
-  def p3 = a.upper * b.lower;
-  def p4 = a.upper * b.upper;
-
-  def ov = __check_products(p1, p2, p3, p4);
-  if (ov == "normal") {
-  } else {
-    return __intervall_with_error(ov);
-  }
-
-  def lo = p1;
-  if (p2 < lo) { lo = p2; }
-  if (p3 < lo) { lo = p3; }
-  if (p4 < lo) { lo = p4; }
-
-  def hi = p1;
-  if (p2 > hi) { hi = p2; }
-  if (p3 > hi) { hi = p3; }
-  if (p4 > hi) { hi = p4; }
-
-  return __intervall_from_bounds(lo, hi);
+  return __interval_binary("*", a, b);
 }
 
 operator / (a: NumberIntervall, b: NumberIntervall) -> NumberIntervall {
-  if (a.error == "any_number") { return __intervall_with_error("any_number"); }
-  if (b.error == "any_number") { return __intervall_with_error("any_number"); }
-
-  if (b.error == "plus_infinity") { return __intervall_from_bounds(0, 0); }
-  if (b.error == "minus_infinity") { return __intervall_from_bounds(0, 0); }
-
-  if (__is_upper_infinity(b)) {
-    if (b.lower == 0) { return __intervall_with_error("any_number"); }
-
-    def lower = a.lower / b.lower;
-    def upper = a.upper / b.lower;
-
-    if (lower > upper) {
-      def tmp = lower;
-      lower = upper;
-      upper = tmp;
-    }
-
-    if (upper < 0) { return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval"); }
-    if (lower > 0) { return __intervall_with_bounds_and_error(0, upper, "wrapped_interval"); }
-    return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval");
-  }
-
-  if (__is_lower_infinity(b)) {
-    if (b.upper == 0) { return __intervall_with_error("any_number"); }
-
-    def lower = a.lower / b.upper;
-    def upper = a.upper / b.upper;
-
-    if (lower > upper) {
-      def tmp = lower;
-      lower = upper;
-      upper = tmp;
-    }
-
-    if (upper < 0) { return __intervall_with_bounds_and_error(lower, 0, "wrapped_interval"); }
-    if (lower > 0) { return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval"); }
-    return __intervall_with_bounds_and_error(lower, upper, "wrapped_interval");
-  }
-
-  if (a.error == "plus_infinity") {
-    if (__is_normal(b)) {
-      if (b.lower <= 0) {
-        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
-    if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("plus_infinity");
-  }
-
-  if (a.error == "minus_infinity") {
-    if (__is_normal(b)) {
-      if (b.lower <= 0) {
-        if (b.upper >= 0) { return __intervall_with_error("any_number"); }
-      }
-    }
-    if (b.error == "plus_infinity") { return __intervall_with_error("any_number"); }
-    if (b.error == "minus_infinity") { return __intervall_with_error("any_number"); }
-    return __intervall_with_error("minus_infinity");
-  }
-
-  if (__is_wrapped(a)) { return __intervall_with_error("any_number"); }
-
-  if (__is_wrapped(b)) {
-    def r1 = a.lower / b.lower;
-    def r2 = a.upper / b.lower;
-    def r3 = a.lower / b.upper;
-    def r4 = a.upper / b.upper;
-
-    def lo_wrap = r1;
-    if (r2 < lo_wrap) { lo_wrap = r2; }
-    if (r3 < lo_wrap) { lo_wrap = r3; }
-    if (r4 < lo_wrap) { lo_wrap = r4; }
-
-    def hi_wrap = r1;
-    if (r2 > hi_wrap) { hi_wrap = r2; }
-    if (r3 > hi_wrap) { hi_wrap = r3; }
-    if (r4 > hi_wrap) { hi_wrap = r4; }
-
-    return __intervall_with_bounds_and_error(lo_wrap, hi_wrap, "wrapped_interval");
-  }
-
-  if (b.lower == 0) {
-    if (b.upper == 0) { return __intervall_with_error("any_number"); }
-
-    if (b.upper > 0) {
-      def q1 = a.lower / b.upper;
-      def q2 = a.upper / b.upper;
-
-      def lo = q1;
-      if (q2 < lo) { lo = q2; }
-
-      return __intervall_with_bounds_and_error(lo, q2, "upper_bound_is_plus_infinity");
-    }
-  }
-
-  if (b.upper == 0) {
-    if (b.lower < 0) {
-      def q1 = a.lower / b.lower;
-      def q2 = a.upper / b.lower;
-
-      def hi = q1;
-      if (q2 > hi) { hi = q2; }
-
-      return __intervall_with_bounds_and_error(q1, hi, "lower_bound_is_minus_infinity");
-    }
-  }
-
-  if (b.lower < 0) {
-    if (b.upper > 0) {
-      def r1 = a.lower / b.lower;
-      def r2 = a.lower / b.upper;
-      def r3 = a.upper / b.lower;
-      def r4 = a.upper / b.upper;
-
-      def lo_gap = r1;
-      if (r2 < lo_gap) { lo_gap = r2; }
-      if (r3 < lo_gap) { lo_gap = r3; }
-      if (r4 < lo_gap) { lo_gap = r4; }
-
-      def hi_gap = r1;
-      if (r2 > hi_gap) { hi_gap = r2; }
-      if (r3 > hi_gap) { hi_gap = r3; }
-      if (r4 > hi_gap) { hi_gap = r4; }
-
-      return __intervall_with_bounds_and_error(hi_gap, lo_gap, "wrapped_interval");
-    }
-  }
-
-  def q1 = a.lower / b.lower;
-  def q2 = a.lower / b.upper;
-  def q3 = a.upper / b.lower;
-  def q4 = a.upper / b.upper;
-
-  def ov = __check_products(q1, q2, q3, q4);
-  if (ov == "normal") {
-  } else {
-    return __intervall_with_error(ov);
-  }
-
-  def lo = q1;
-  if (q2 < lo) { lo = q2; }
-  if (q3 < lo) { lo = q3; }
-  if (q4 < lo) { lo = q4; }
-
-  def hi = q1;
-  if (q2 > hi) { hi = q2; }
-  if (q3 > hi) { hi = q3; }
-  if (q4 > hi) { hi = q4; }
-
-  return __expand_bounds_outwards(lo, hi);
+  return __interval_binary("/", a, b);
 }

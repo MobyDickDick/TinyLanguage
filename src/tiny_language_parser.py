@@ -8,67 +8,60 @@ source text.
 
 # ----- Parser -----
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
-if "Lexer" not in globals():
-    from tiny_language_lexer import Lexer, Token
+from tiny_language_lexer import Lexer, Token
 
-if "IR" not in globals():
-    from tiny_language_ast import (
-        Assign,
-        Await,
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        ClassDef,
-        ClassNew,
-        DestructAssign,
-        Dict,
-        Field,
-        FieldAssign,
-        Flush,
-        Fn,
-        If,
-        Import,
-        IR,
-        Let,
-        Match,
-        MatchCase,
-        MethodCall,
-        MethodDef,
-        Namespace,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        OpDef,
-        Param,
-        Pattern,
-        Print,
-        Return,
-        Set,
-        Spawn,
-        Str,
-        Switch,
-        SwitchCase,
-        TaskBlock,
-        TryCatch,
-        Tuple,
-        TypeDef,
-        TypeVariant,
-        Var,
-        VariantCtor,
-        VariantPattern,
-        While,
-        WildcardPattern,
-    )
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    IR,
+    Let,
+    Match,
+    MatchCase,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Param,
+    Pattern,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    SwitchCase,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    TypeVariant,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
 
-if "SourcePos" not in globals():
-    from tiny_errors import SourcePos, SourceSpan
+from tiny_errors import SourcePos, SourceSpan
 
-if "TinyLangError" not in globals():
-    from tiny_language_preamble import TinyLangError, _classify_error, format_error
+from tiny_language_preamble import TinyLangError, _classify_error, format_error
 
 
 class Parser:
@@ -328,13 +321,11 @@ class Parser:
                 self._eat("OP", ">")
                 return_type = self.parse_type_annotation()
             body = self.parse_block()
-            return_params = self._collect_return_param_usage(body, {p.name for p in params})
             return self._attach_span(
                 Fn(
                     name_tok.text,
                     params,
                     body,
-                    return_param_names=return_params,
                     return_type=return_type,
                     is_async=is_async,
                     pos=fn_kw.pos,
@@ -449,14 +440,12 @@ class Parser:
                         self._eat("OP", ">")
                         return_type = self.parse_type_annotation()
                     body = self.parse_block()
-                    return_params = self._collect_return_param_usage(body, {p.name for p in params})
                     methods.append(
                         MethodDef(
                             cname_tok.text,
                             mname_tok.text,
                             params,
                             body,
-                            return_param_names=return_params,
                             return_type=return_type,
                             namespace=cname_tok.text,
                             is_async=is_async,
@@ -552,97 +541,6 @@ class Parser:
                 params.append(self.parse_param())
         self._eat("SYM", ")")
         return params
-
-    def _collect_return_param_usage(self, stmts: List[IR], param_names: Set[str]) -> Set[str]:
-        used: Set[str] = set()
-
-        def visit_expr(expr: IR) -> None:
-            if isinstance(expr, Var):
-                if expr.name in param_names:
-                    used.add(expr.name)
-                return
-            if isinstance(expr, Field):
-                visit_expr(expr.obj)
-                return
-            if isinstance(expr, MethodCall):
-                visit_expr(expr.obj)
-                for arg in expr.args:
-                    visit_expr(arg)
-                return
-            if isinstance(expr, Call):
-                if expr.name in param_names:
-                    used.add(expr.name)
-                for arg in expr.args:
-                    visit_expr(arg)
-                return
-            if isinstance(expr, Spawn):
-                for arg in expr.args:
-                    visit_expr(arg)
-                return
-            if isinstance(expr, Await):
-                visit_expr(expr.expr)
-                return
-            if isinstance(expr, Bin):
-                visit_expr(expr.a)
-                visit_expr(expr.b)
-                return
-            if isinstance(expr, ObjLit):
-                for _, val in expr.fields:
-                    visit_expr(val)
-                return
-            if isinstance(expr, VariantCtor):
-                for _, val in expr.fields:
-                    visit_expr(val)
-                return
-            if isinstance(expr, ClassNew):
-                for _, val in expr.init:
-                    visit_expr(val)
-                return
-            if isinstance(expr, NewLit):
-                for val in expr.items:
-                    visit_expr(val)
-                return
-            if isinstance(expr, Match):
-                visit_expr(expr.expr)
-                for case in expr.cases:
-                    visit_expr(case.body)
-                return
-
-        def visit_stmt(stmt: IR) -> None:
-            if isinstance(stmt, Return):
-                visit_expr(stmt.expr)
-            elif isinstance(stmt, If):
-                for child in stmt.then:
-                    visit_stmt(child)
-                for child in stmt.els:
-                    visit_stmt(child)
-            elif isinstance(stmt, While):
-                for child in stmt.body:
-                    visit_stmt(child)
-            elif isinstance(stmt, Switch):
-                visit_expr(stmt.expr)
-                for case in stmt.cases:
-                    if case.value is not None:
-                        visit_expr(case.value)
-                    for child in case.body:
-                        visit_stmt(child)
-            elif isinstance(stmt, TryCatch):
-                for child in stmt.body:
-                    visit_stmt(child)
-                for child in stmt.handler:
-                    visit_stmt(child)
-            elif isinstance(stmt, TaskBlock):
-                for child in stmt.body:
-                    visit_stmt(child)
-            elif isinstance(stmt, Namespace):
-                for child in stmt.body:
-                    visit_stmt(child)
-            elif isinstance(stmt, Fn) or isinstance(stmt, MethodDef):
-                return
-
-        for st in stmts:
-            visit_stmt(st)
-        return used
 
     def parse_type_annotation(self) -> str:
         base = self._eat_name_or_kw().text

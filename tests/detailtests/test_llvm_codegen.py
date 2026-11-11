@@ -671,12 +671,12 @@ def test_llvm_codegen_reports_missing_lowering_with_context() -> None:
         LLVMCodeGenerator().compile_program(program)
 
 
-def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
-    """Mixed-type arithmetic should raise with type details."""
+def test_llvm_codegen_reports_incompatible_type_arithmetic_with_context() -> None:
+    """Nonnumeric mixed arithmetic should still raise with type details."""
     program = ProgramIR(
         entry=[
             Instruction(Opcode.PUSH_CONST, 1),
-            Instruction(Opcode.PUSH_CONST, 1.5),
+            Instruction(Opcode.PUSH_CONST, "Tiny"),
             Instruction(Opcode.BINARY, "+"),
             Instruction(Opcode.PRINT, 1),
         ],
@@ -686,7 +686,7 @@ def test_llvm_codegen_reports_mixed_type_arithmetic_with_context() -> None:
     with pytest.raises(
         NotImplementedError,
         match=r"LLVM prototype missing lowering: mixed-type arithmetic not supported "
-        r"\(i64 vs double\) \(instruction: BINARY '\+'\)",
+        r"\(i64 vs i8\*\) \(instruction: BINARY '\+'\)",
     ):
         LLVMCodeGenerator().compile_program(program)
 

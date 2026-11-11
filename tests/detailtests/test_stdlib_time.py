@@ -4,11 +4,37 @@ from __future__ import annotations
 
 from pathlib import Path
 import time
+from types import SimpleNamespace
+
+import pytest
+import stdlib
 
 from tests.detailtests.stdlib_helpers import stdlib_program
 
 
 REPOSITORY_ROOT = Path(__file__).parents[2]
+
+
+def test_short_sleep_uses_high_resolution_clock_and_retries_early_wakeup(run_tiny_source, monkeypatch):
+    """A coarse Windows clock must not turn a successful short sleep into zero."""
+    readings = iter([100.0, 100.004, 100.0105])
+    sleeps = []
+    monkeypatch.setattr(stdlib, "time", SimpleNamespace(
+        monotonic=lambda: 100.0, perf_counter=lambda: next(readings), sleep=sleeps.append,
+    ))
+    output = run_tiny_source(stdlib_program("time", "print(time.sleep_ms(10));"))
+    assert float(output.strip()) == pytest.approx(10.5)
+    assert sleeps == pytest.approx([0.010, 0.006])
+
+
+@pytest.mark.parametrize("duration", [0, -5])
+def test_sleep_nonpositive_duration_still_yields_once(duration, run_tiny_source, monkeypatch):
+    """Clamping negative durations must preserve the zero-duration yield."""
+    sleeps = []
+    monkeypatch.setattr(stdlib, "time", SimpleNamespace(perf_counter=lambda: 100.0, sleep=sleeps.append))
+    output = run_tiny_source(stdlib_program("time", f"print(time.sleep_ms({duration}));"))
+    assert float(output.strip()) == 0
+    assert sleeps == [0]
 
 
 def test_stdlib_time_contract_stays_aligned_with_runtime_surface():

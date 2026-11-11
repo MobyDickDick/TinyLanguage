@@ -5,6 +5,11 @@ It is based on the roadmap areas (Frontend/Language, Type discipline, Runtime,
 Tooling, Native backends) as well as the validation goals from the
 self-hosting port plan.
 
+This is a historical implementation list. Its completion symbols do not
+qualify the current candidate. The 2026-11 review reconciles scope and evidence
+in [release_scope_v1.md](release_scope_v1.md); active work remains in
+[open_tasks.md](open_tasks.md), especially packages 1, 3 and 5–9.
+
 ## A. Release fundamentals (Scope & DoD)
 
 1. **Document v1.0 DoD (release criteria)** ✅
@@ -70,9 +75,10 @@ self-hosting port plan.
     - **Description:** Interpreter parity as a hard requirement for v1.0.
     - **DoD:** Parity tests enforced in CI (covered by the full pytest run in `.github/workflows/ci.yml`).
 
-13. **Stabilize C backend (feature subset)** ✅
-    - **Description:** Document the supported feature subset.
-    - **DoD:** Documentation + feature matrix updated.
+13. **Document experimental C backend (feature subset)** ✅
+    - **Description:** Document implementation coverage without a stability claim.
+    - **DoD:** Documentation + feature matrix updated; compiled candidate
+      acceptance remains part of platform qualification.
 
 14. **Mark LLVM backend as experimental** ✅
     - **Description:** Explicit documentation + known limitations.
@@ -84,7 +90,9 @@ self-hosting port plan.
     - **Description:** Summarize final API/syntax changes.
     - **DoD:** Release notes include breaking changes + known limitations.
 
-16. **Final regression run (RC)** ✅
+16. **Final regression run (RC)** — reopened
     - **Description:** Full test run (interpreter + native + LSP).
-    - **DoD:** All gates green; v1.0 release approved.
-    - **Run:** `python -m pytest` (556 passed, 1 skipped) on 2026-01-23.
+    - **DoD:** Source-bound candidate evidence and delivery packages 1–3 pass
+      before release approval.
+    - **Historical run:** `python -m pytest` (556 passed, 1 skipped) on
+      2026-01-23. This is not evidence for the current candidate.

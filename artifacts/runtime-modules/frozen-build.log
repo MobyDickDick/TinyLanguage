@@ -1,0 +1,105 @@
+1112 INFO: PyInstaller: 6.16.0, contrib hooks: 2026.9
+1112 INFO: Python: 3.12.14
+1469 INFO: Platform: Windows-11-10.0.26300-SP0
+1469 INFO: Python environment: C:\Users\marku\.cache\codex-runtimes\codex-primary-runtime\dependencies\python
+1498 INFO: Removing temporary files and cleaning cache in C:\Users\marku\AppData\Local\Packages\openai.codex_2p2nqsd0c76g0\AC\#!sandbox.{7618d634-305a-43a1-a95f-3559f9eb3a4f}\pyinstaller
+1503 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\marku\\myCloud\\TinyLanguage',
+ 'C:\\Users\\marku\\myCloud\\TinyLanguage\\.venv\\Lib\\python3.14\\site-packages',
+ 'C:\\Users\\marku\\myCloud\\TinyLanguage\\src',
+ 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools',
+ 'C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python312.zip',
+ 'C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\DLLs',
+ 'C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib',
+ 'C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python',
+ 'C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\site-packages',
+ 'C:\\Users\\marku\\myCloud\\TinyLanguage\\tools\\release',
+ 'C:\\Users\\marku\\myCloud\\TinyLanguage\\src']
+4319 INFO: Appending 'datas' from .spec
+4362 INFO: checking Analysis
+4362 INFO: Building Analysis because Analysis-00.toc is non existent
+4362 INFO: Looking for Python shared library...
+4362 INFO: Using Python shared library: C:\Users\marku\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python312.dll
+4362 INFO: Running Analysis Analysis-00.toc
+4362 INFO: Target bytecode optimization level: 0
+4362 INFO: Initializing module dependency graph...
+4365 INFO: Initializing module graph hook caches...
+4414 INFO: Analyzing modules for base_library.zip ...
+7416 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+8176 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+11505 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+14611 INFO: Caching module dependency graph...
+14692 INFO: Analyzing C:\Users\marku\myCloud\TinyLanguage\tools\release\standalone_entry.py
+14764 INFO: Processing standard module hook 'hook-_ctypes.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+15086 INFO: Processing standard module hook 'hook-difflib.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+15710 INFO: Processing standard module hook 'hook-pygments.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+19581 INFO: Processing pre-safe-import-module hook 'hook-tomli.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\pre_safe_import_module'
+19593 INFO: SetuptoolsInfo: initializing cached setuptools info...
+21486 INFO: Setuptools: 'tomli' appears to be a setuptools-vendored copy - creating alias to 'setuptools._vendor.tomli'!
+22130 INFO: Analyzing hidden import 'language_server'
+22161 INFO: Analyzing hidden import 'language_server_cli'
+22174 INFO: Analyzing hidden import 'rosetta_python_downloader'
+22189 INFO: Analyzing hidden import 'run_all'
+22200 INFO: Analyzing hidden import 'stdlib_csv'
+22208 INFO: Analyzing hidden import 'stdlib_datetime'
+22211 INFO: Analyzing hidden import 'stdlib_gui'
+22216 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\pre_find_module_path'
+22221 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+23110 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+23122 INFO: Analyzing hidden import 'tiny_lang_cli'
+23124 INFO: Analyzing hidden import 'tiny_language_transpilers'
+23175 INFO: Analyzing hidden import 'tiny_program_daemon'
+23214 INFO: Processing standard module hook 'hook-sqlite3.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+24233 INFO: Analyzing hidden import 'tiny_program_gui_wrapper'
+24239 INFO: Analyzing hidden import 'tiny_program_source_import'
+24247 INFO: Analyzing hidden import 'tiny_program_source_port'
+24255 INFO: Analyzing hidden import 'tiny_program_source_sandbox'
+24266 INFO: Analyzing hidden import 'tiny_program_source_scan'
+24276 INFO: Analyzing hidden import 'transpile_rosetta'
+24279 INFO: Processing module hooks (post-graph stage)...
+24379 INFO: Processing standard module hook 'hook-PIL.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+24533 INFO: Processing standard module hook 'hook-PIL.Image.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+25541 INFO: Processing standard module hook 'hook-numpy.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+27185 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+27335 INFO: Processing standard module hook 'hook-xml.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+29043 INFO: Processing standard module hook 'hook-sysconfig.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+29178 INFO: Processing standard module hook 'hook-platform.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+30820 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\pre_safe_import_module'
+31892 INFO: Processing standard module hook 'hook-charset_normalizer.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\_pyinstaller_hooks_contrib\\stdhooks'
+32554 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+32888 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+38481 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+39329 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks'
+39619 INFO: Performing binary vs. data reclassification (1028 entries)
+40795 INFO: Looking for ctypes DLLs
+40850 INFO: Analyzing run-time hooks ...
+40859 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\rthooks'
+40871 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\rthooks'
+40880 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\rthooks'
+40887 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\Users\\marku\\myCloud\\TinyLanguage\\dist\\release-tools\\PyInstaller\\hooks\\rthooks'
+40938 INFO: Creating base_library.zip...
+40968 INFO: Looking for dynamic libraries
+43651 INFO: Extra DLL search directories (AddDllDirectory): ['C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\site-packages\\numpy.libs']
+43651 INFO: Extra DLL search directories (PATH): []
+46393 INFO: Warnings written to C:\Users\marku\myCloud\TinyLanguage\build\module-frozen\tinylanguage\warn-tinylanguage.txt
+46501 INFO: Graph cross-reference written to C:\Users\marku\myCloud\TinyLanguage\build\module-frozen\tinylanguage\xref-tinylanguage.html
+46615 INFO: checking PYZ
+46616 INFO: Building PYZ because PYZ-00.toc is non existent
+46616 INFO: Building PYZ (ZlibArchive) C:\Users\marku\myCloud\TinyLanguage\build\module-frozen\tinylanguage\PYZ-00.pyz
+47866 INFO: Building PYZ (ZlibArchive) C:\Users\marku\myCloud\TinyLanguage\build\module-frozen\tinylanguage\PYZ-00.pyz completed successfully.
+47923 INFO: checking PKG
+47924 INFO: Building PKG because PKG-00.toc is non existent
+47924 INFO: Building PKG (CArchive) tiny-language.pkg
+76128 INFO: Building PKG (CArchive) tiny-language.pkg completed successfully.
+76159 INFO: Bootloader C:\Users\marku\myCloud\TinyLanguage\dist\release-tools\PyInstaller\bootloader\Windows-64bit-intel\run.exe
+76160 INFO: checking EXE
+76160 INFO: Building EXE because EXE-00.toc is non existent
+76160 INFO: Building EXE from EXE-00.toc
+76161 INFO: Copying bootloader EXE to C:\Users\marku\myCloud\TinyLanguage\dist\module-frozen\tiny-language.exe
+76314 INFO: Copying icon to EXE
+76373 INFO: Copying 0 resources to EXE
+76373 INFO: Embedding manifest in EXE
+76437 INFO: Appending PKG archive to EXE
+76581 INFO: Fixing EXE headers
+77369 INFO: Building EXE from EXE-00.toc completed successfully.
+77401 INFO: Build complete! The results are available in: C:\Users\marku\myCloud\TinyLanguage\dist\module-frozen

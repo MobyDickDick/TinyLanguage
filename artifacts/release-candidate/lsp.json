@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "check": "lsp",
+  "source": {
+    "commit": "34ed85aa53ede0c2466833a5ae94691465a6da51",
+    "files_sha256": "dec8859b28f8c234ecbb5cf39b37c76e31efd6fd158d4c796f85a127f724d386",
+    "clean": false
+  },
+  "source_unchanged": true,
+  "command": [
+    "-m",
+    "pytest",
+    "tests/detailtests/test_language_server.py",
+    "tests/detailtests/test_language_server_cli.py",
+    "tests/detailtests/test_tiny_language_server_cli_self_host.py",
+    "--junitxml=artifacts/release-candidate/lsp.xml"
+  ],
+  "returncode": 0,
+  "environment": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Users\\marku\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "files": {
+    "evidence/lsp.log": "a6aa82bbe8d4d83a3e62695decd5a9a0fb5234478b5657b7076a3c69d5442d6a",
+    "evidence/lsp.xml": "bee7a3b1e4c59652f93f90bc4517b935cb6274eac4d25d61dad7cb91af84c202"
+  }
+}

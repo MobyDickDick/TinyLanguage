@@ -1,0 +1,19 @@
+Validated tiny_copy, size=16
+Validated tiny_shared, size=16
+Validated python_deepcopy, size=16
+Validated python_shallow, size=16
+Validated python_rebuild, size=16
+Validated python_shared, size=16
+Validated tiny_shared, size=256
+Validated python_deepcopy, size=256
+Validated python_shallow, size=256
+Validated python_rebuild, size=256
+Validated python_shared, size=256
+Validated tiny_copy, size=256
+Validated python_deepcopy, size=1024
+Validated python_shallow, size=1024
+Validated python_rebuild, size=1024
+Validated python_shared, size=1024
+Validated tiny_copy, size=1024
+Validated tiny_shared, size=1024
+Wrote 18 validated application measurements to C:\Users\marku\myCloud\TinyLanguage\artifacts\argument-isolation\experiment.json

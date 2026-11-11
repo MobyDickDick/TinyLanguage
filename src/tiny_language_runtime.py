@@ -1,12 +1,14 @@
 """Runtime helpers: module resolution, heap management, and async utilities.
 
-This segment contains the import mechanics, concurrency primitives, and the core
+This module contains the import mechanics, concurrency primitives, and the core
 runtime container used by the evaluator. Docstrings focus on public-facing
-behaviors so integrators can navigate the stitched module without reading the
+behaviors so integrators can navigate the runtime module without reading the
 entire implementation.
 """
 
 import logging
+import math
+import sys
 import os
 import threading
 import time
@@ -18,6 +20,7 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple, Un
 
 from tiny_errors import SourcePos, SourceSpan, StackFrame, TinyLangError, _line_info, format_error
 from tiny_language_error_codes import classify_error
+from tiny_language_eval import Evaluator, ReturnSignal, _SpawnCancelled
 from tiny_language_ast import Fn, IR, Match, MethodDef, OpDef, Param, TypeVariant, VariantPattern, WildcardPattern
 from tiny_language_runtime_debugger import DebugSnapshot, Debugger, ScopeSnapshot, StepRequest
 from tiny_language_runtime_environment import Environment
@@ -27,15 +30,6 @@ from tiny_language_runtime_modules import ModuleResolver, NamespaceRef, _import_
 
 LOGGER = logging.getLogger(__name__)
 
-
-class ReturnSignal(Exception):
-    def __init__(self, value: Any):
-        super().__init__()
-        self.value = value
-
-
-class _SpawnCancelled(Exception):
-    """Stop a worker after its spawn handle has been cancelled."""
 
 
 @dataclass
@@ -120,7 +114,7 @@ class _ParsedType:
     optional: bool = False
 
 
-class Runtime:
+class Runtime(Evaluator):
     """Interpreter runtime state and helpers for executing TinyLanguage code."""
 
     def __init__(self, source: str):
@@ -247,8 +241,12 @@ class Runtime:
         ptr_memo: Optional[Dict[int, Any]] = None,
         protected_keys: Optional[Set[ParamKey]] = None,
     ) -> Any:
-        memo = memo or {}
-        ptr_memo = ptr_memo or {}
+        # Empty caller-owned memos must survive the first recursive visit and
+        # subsequent arguments: one call copies one graph, including its aliases.
+        if memo is None:
+            memo = {}
+        if ptr_memo is None:
+            ptr_memo = {}
         if protected_keys is not None:
             key = self._binding_key(value)
             if key:
@@ -288,18 +286,9 @@ class Runtime:
             copied: Dict[str, Any] = {}
             memo[obj_id] = copied
             for key, val in value.items():
-                if key == "__fields__" and isinstance(val, dict):
-                    copied_fields: Dict[str, Dict[str, Any]] = {}
-                    copied[key] = copied_fields
-                    for cls, fmap in val.items():
-                        copied_fields[cls] = {
-                            fname: self._deep_copy_value(fval, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys)
-                            for fname, fval in fmap.items()
-                        }
-                else:
-                    copied[key] = self._deep_copy_value(
-                        val, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
-                    )
+                copied[key] = self._deep_copy_value(
+                    val, memo=memo, ptr_memo=ptr_memo, protected_keys=protected_keys
+                )
             return copied
 
         if isinstance(value, list):
@@ -341,7 +330,7 @@ class Runtime:
         raise self._error(
             f"mutation of protected parameter {binding.name} is not allowed while copy-on-call is enabled",
             pos or SourcePos.origin(),
-            hint="Return the argument or disable --copy-on-call to mutate caller-owned data.",
+            hint="Mutate the local copy and assign its return value in the caller, or disable --copy-on-call.",
         )
 
     def _bind_parameters_to_env(
@@ -350,19 +339,19 @@ class Runtime:
         args: List[Any],
         env: "Environment",
         *,
-        escaped_params: Set[str],
         pos: SourcePos,
         type_label: str,
-        force_escaped: Optional[Set[str]] = None,
+        receiver_name: Optional[str] = None,
     ) -> Dict[ParamKey, ParameterBinding]:
         bindings: Dict[ParamKey, ParameterBinding] = {}
         memo: Dict[int, Any] = {}
         ptr_memo: Dict[int, Any] = {}
-        forced = force_escaped or set()
         for param, arg in zip(params, args):
             if param.type:
                 self._enforce_annotation(param.type, arg, label=f"parameter {param.name} in {type_label}", pos=pos)
-            should_escape = param.name in escaped_params or param.name in forced
+            # Only method-call syntax grants a shared receiver. Return syntax
+            # never changes argument identity or caller mutation permission.
+            should_escape = param.name == receiver_name
             is_mutable = self._is_mutable_argument(arg)
             protected_keys: Set[ParamKey] = set()
             bound_val = arg
@@ -758,6 +747,7 @@ class Runtime:
         if ip is None:
             return {"__tag__": "Record", "e": {"__tag__": "Error", "code": 1, "msg": self.error_message or ""}}
 
+        self._guard_protected_mutation(ip, pos)
         with self._lock:
             self.heap.pop(ip, None)
             self.heap_cell_types.pop(ip, None)
@@ -844,6 +834,7 @@ class Runtime:
             }
 
     def tag(self, p: Any, typ: Any, *, pos: Optional[Any] = None) -> Dict[str, Any]:
+        self._guard_protected_mutation(p, pos)
         try:
             with self._lock:
                 self.ptr_tags[int(p)] = str(typ)
@@ -1142,15 +1133,14 @@ class Runtime:
         }
 
     def _number_to_intervall(self, value: Any) -> Optional[Dict[str, Any]]:
+        import tiny_intervals
+
         fields = self._number_fields(value)
         if fields is None:
             return None
         err = fields.get("error", "normal") or "normal"
-        if err in {"plus_infinity", "minus_infinity", "any_number"}:
-            return self._make_intervall(0, 0, err)
-        lower = fields.get("value", 0)
-        upper = fields.get("value", 0)
-        return self._make_intervall(lower, upper, "normal")
+        stored = fields.get("value", 0)
+        return self._make_intervall(*tiny_intervals.scalar(stored, err))
 
     def _coerce_to_number(self, val: Any) -> Any:
         if val is None:
@@ -1174,7 +1164,9 @@ class Runtime:
         if isinstance(val, bool):
             return val
         if isinstance(val, (int, float)):
-            return self._make_intervall(val, val, "normal")
+            import tiny_intervals
+
+            return self._make_intervall(*tiny_intervals.scalar(val))
         return val
 
     def _coerce_numeric_operands(
@@ -1731,7 +1723,6 @@ class Runtime:
             fn.params,
             args,
             call_env,
-            escaped_params=getattr(fn, "return_param_names", set()),
             pos=fn.pos,
             type_label=f"function {fn.name}",
         )
@@ -1945,15 +1936,13 @@ class Runtime:
         if md.class_name != cname:
             self_value = BaseView(target_obj, md.class_name)
         method_args = [self_value] + args
-        forced_escape = {md.params[0].name} if md.params else set()
         param_bindings = self._bind_parameters_to_env(
             md.params,
             method_args,
             env,
-            escaped_params=getattr(md, "return_param_names", set()),
             pos=md.pos,
             type_label=f"method {md.class_name}.{md.name}",
-            force_escaped=forced_escape,
+            receiver_name=md.params[0].name if md.params else None,
         )
         for base in self.class_mro(cname)[1:]:
             env.define(base, BaseView(target_obj, base), md.pos)
@@ -2033,6 +2022,10 @@ class Runtime:
         if isinstance(val, dict) and val.get("__tag__") == "NumberIntervall":
             fields = val.get("__fields__", {}).get("NumberIntervall", {})
             err = fields.get("error")
+            if err in {"empty_interval", "invalid_number"}:
+                return str(err)
+            if err == "approximate":
+                return f"[{fields.get('lower')}, {fields.get('upper')}] (approximate)"
             if err in {"plus_infinity", "minus_infinity", "any_number"}:
                 return str(err)
             if err == "upper_bound_is_plus_infinity":
@@ -2048,8 +2041,15 @@ class Runtime:
             if "lower" in fields and "upper" in fields:
                 lower = fields.get("lower")
                 upper = fields.get("upper")
-                center = (lower + upper) / 2
-                radius = (upper - lower) / 2
+                center = lower / 2 + upper / 2
+                radius = upper / 2 - lower / 2
+                # Center/radius is only a display estimate. At extreme magnitudes
+                # show the authoritative endpoints instead of overflowing or
+                # losing subnormal bounds during presentation.
+                if (not math.isfinite(radius) or
+                        (lower != upper and radius == 0) or
+                        (0 < max(abs(lower), abs(upper)) < sys.float_info.min)):
+                    return f"[{lower}, {upper}]"
 
                 def _format_float(val: float) -> str:
                     abs_val = abs(val)
@@ -2085,9 +2085,7 @@ class Runtime:
 def compile_and_run(*args: Any, **kwargs: Any) -> str:
     """Proxy to the public API compile helper to preserve legacy imports."""
 
-    # The public loader owns the shared evaluator namespace. A generated source
-    # file is neither present in wheels nor a reliable second runtime instance.
-    from tiny_language import compile_and_run as api_compile_and_run
+    # Resolve the orchestration layer at call time to keep imports acyclic.
+    from tiny_language_api import compile_and_run as api_compile_and_run
 
     return api_compile_and_run(*args, **kwargs)
-    

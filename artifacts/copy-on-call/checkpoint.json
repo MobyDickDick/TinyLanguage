@@ -1,0 +1,152 @@
+{
+  "date": "2026-11-05",
+  "scope": "Work package 7 working-tree acceptance; not release qualification",
+  "source_identity": {
+    "commit": "973cebfa6a40d06e0dfbfc0775573a87cfccecf8",
+    "files_sha256": "fdc5764b0e59fca04afdafc996004cc70d2016620a182a458595c0eba5e4dcdc",
+    "clean": false
+  },
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "runner": "Native Windows CPython with pure pytest from .venv/Lib/python3.14/site-packages and build tools from dist/release-tools; subprocess receives a valid stdin pipe",
+  "commands": {
+    "focused": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/detailtests/test_copy_on_call.py",
+      "tests/test_release_scope_contract.py",
+      "tests/test_tiny_parser_self_host.py",
+      "tests/test_language_spec_grammar.py",
+      "--tb=short",
+      "--basetemp=.pytest_cache/copy-on-call-focus6",
+      "--junitxml=artifacts/copy-on-call/focused.xml"
+    ],
+    "full": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-ra",
+      "--tb=short",
+      "--basetemp=.pytest_cache/copy-on-call-full",
+      "--junitxml=artifacts/copy-on-call/full.xml"
+    ],
+    "rerun": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-ra",
+      "--lf",
+      "--lfnf=none",
+      "tests/detailtests/test_pkg_sources.py",
+      "tests/detailtests/test_stdlib_time.py",
+      "--tb=short",
+      "--basetemp=.pytest_cache/copy-on-call-rerun",
+      "--junitxml=artifacts/copy-on-call/rerun.xml"
+    ],
+    "benchmark": [
+      "python",
+      "benchmarks/copy_on_call.py"
+    ]
+  },
+  "focused": {
+    "passed": 61,
+    "failures": 0,
+    "skips": 0
+  },
+  "full_run": {
+    "collected": 969,
+    "passed": 953,
+    "failed": 9,
+    "skipped": 7
+  },
+  "rerun": {
+    "passed": 9,
+    "reason": "Eight loopback tests repeated outside the network sandbox; existing timing-sensitive sleep check repeated and passed",
+    "tests": [
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[checksum]",
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[interrupted]",
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[length]",
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[stall]",
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[stream]",
+      "tests.detailtests.test_pkg_sources::test_failed_transfer_keeps_cache_and_installation[trickle]",
+      "tests.detailtests.test_pkg_sources::test_registry_digest_is_locked_and_metadata_changes_are_rejected",
+      "tests.detailtests.test_pkg_sources::test_verified_download_and_offline_cache",
+      "tests.detailtests.test_stdlib_time::test_stdlib_time_now_and_sleep"
+    ]
+  },
+  "effective_results": {
+    "collected": 969,
+    "passed": 962,
+    "failed": 0,
+    "skipped": 7
+  },
+  "skips": [
+    {
+      "test": "tests.detailtests.test_pkg_sources::test_links_in_source_or_destination_are_rejected",
+      "reason": "Host does not grant symlink creation privileges"
+    },
+    {
+      "test": "tests.test_llvm_jit::test_llvm_jit_executes_program",
+      "reason": "llvmlite not available"
+    },
+    {
+      "test": "tests.test_release_packaging::test_release_preserves_executable_permissions[built]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_release_packaging::test_release_preserves_executable_permissions[included]",
+      "reason": "Executable permission bits require POSIX"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox::test_runs_approved_port_and_records_passing_assessment",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_sandbox::test_records_runtime_failure_without_promoting_program",
+      "reason": "source-port execution requires Linux resource limits"
+    },
+    {
+      "test": "tests.test_tiny_program_source_scan::test_symlinked_source_is_not_scanned",
+      "reason": "Windows symlink creation requires Developer Mode or symlink privilege"
+    }
+  ],
+  "other_checks": {
+    "format_lint": "passed",
+    "git_diff_check": "passed",
+    "benchmark_identity_checks": "16 passed"
+  },
+  "source_sha256": {
+    "CHANGELOG.md": "ad40258755ff84fd2cce4775bef0d9276f2a9fa876e8d76c83352002850abaa2",
+    "benchmarks/copy_on_call.py": "428c48d0915fc2bf561d7e3424d8d42eb55c72c3284ed577ceb9200db59e8c61",
+    "docs/copy_on_call_contract.md": "b4d01af7a644996764489c6b40c71f50b0db82ac8c57811e51c94c9ae1dd66e7",
+    "docs/full_language_readiness.md": "075dcbccfa59825c46faff3810b198566e8de00682fc1f0b72e9a22accfe0c6c",
+    "docs/language_spec.md": "fe4a292477062f969aa8350899f269e58e3e83d7d4aad6945b38deac6a086d29",
+    "docs/open_tasks.md": "a20a0a5e0851a3246ebf996d699b5271f65de57d7d3e1423e389de4250d6aeb4",
+    "docs/release_notes_v1.md": "6cca1bf7142c94cc4ddb10777eb2b4008ea53dce8fabc6aa0e040df8e32ce286",
+    "docs/release_plan_v1.md": "ce0555f73df5576a5d5ba05f90d6000ae53b5cdef15e3d944d3861c11a6b3461",
+    "docs/release_scope_v1.md": "9b966403871e6db497d9583b7d604dc6225257c9b0db3274a77831b276abfa5f",
+    "src/tiny_language_api.py": "4f39138307c0d2b15c0a7230919cf2203d21763e22d2c1432b47a75efe488180",
+    "src/tiny_language_ast.py": "9d54597be99f6b7688774c4cd5d1e92751d4ff6f997677e24ef001500f77db0f",
+    "src/tiny_language_cli.py": "fbe2437612b23fc4409510bc6be91fa6c12d720b821463c9a56cb5fcf3b7cdb6",
+    "src/tiny_language_parser.py": "fc5370c20222c1c4bda6a07939d62751078bd9a04423fd02549eac88a0290282",
+    "src/tiny_language_runtime.py": "ed4862562559d0baa9df8c9ed8044642914a3f8b88c12859fb7f2779356bb77d",
+    "src_tiny/tiny_language_parser.tiny": "1235d28faaf6c2696ee706d2fe0544867025587c9aa14a44055c72091bf5caf2",
+    "tests/detailtests/test_copy_on_call.py": "aadff3901cacfe098d783d4b6ea7b8df076069de720cc17e5b297bff08a292ce"
+  },
+  "evidence_sha256": {
+    "focused.xml": "8e020f9e8675530ee9abf58b9a400a5f221e14891276398fa697ceb1a4ed866b",
+    "full.xml": "0ba55357aef61cfe7816d0a4d10c2206d60c7bbe6eedc3e56fe6644ff797208b",
+    "rerun.xml": "653864c305bfa866046c39937c0e3c0bae01c4c89e2519aea6cd1dac390c00d6",
+    "benchmark.json": "9d10946907497cffaa4a8f6c89dd56d14da84d1fd2094be400fce9381817e2e1"
+  },
+  "notes": [
+    "Test and benchmark implementation hashes were checked against retained benchmark inputs.",
+    "Acceptance prose was completed after execution. The first complete run and all nine replacement results are retained separately.",
+    "Four preexisting pytest JUnit warnings concern record_property under xunit2.",
+    "Retained JSON/XML line endings normalized to LF for repository storage; test results and measurements are unchanged."
+  ]
+}

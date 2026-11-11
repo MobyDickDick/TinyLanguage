@@ -8,6 +8,7 @@ to keep a small, ergonomic surface area.
 
 # ----- Public API -----
 
+import argparse
 import ast
 import ctypes
 import importlib
@@ -37,94 +38,86 @@ from tiny_language_highlighting import PYGMENTS_AVAILABLE, highlight_source
 from tiny_language_module_resolution import ModuleResolutionConfig, candidate_module_paths, resolve_module_name
 from tiny_pkg_cli import main as pkg_main
 
-if "IR" not in globals():
-    from tiny_language_ast import (
-        Await,
-        Bin,
-        Bool,
-        Call,
-        CallStmt,
-        ClassDef,
-        ClassNew,
-        DestructAssign,
-        Field,
-        FieldAssign,
-        Flush,
-        Fn,
-        If,
-        Import,
-        IR,
-        Let,
-        Match,
-        MatchCase,
-        MethodCall,
-        MethodDef,
-        Namespace,
-        New,
-        NewLit,
-        Null,
-        Num,
-        ObjLit,
-        OpDef,
-        Param,
-        Print,
-        Return,
-        Spawn,
-        Str,
-        Switch,
-        SwitchCase,
-        TaskBlock,
-        TryCatch,
-        TypeDef,
-        TypeVariant,
-        Var,
-        VariantCtor,
-        VariantPattern,
-        While,
-        WildcardPattern,
-    )
+from tiny_language_ast import (
+    Assign,
+    Await,
+    Bin,
+    Bool,
+    Call,
+    CallStmt,
+    ClassDef,
+    ClassNew,
+    DestructAssign,
+    Field,
+    FieldAssign,
+    Flush,
+    Fn,
+    If,
+    Import,
+    IR,
+    Let,
+    Match,
+    MatchCase,
+    MethodCall,
+    MethodDef,
+    Namespace,
+    New,
+    NewLit,
+    Null,
+    Num,
+    ObjLit,
+    OpDef,
+    Param,
+    Print,
+    Return,
+    Spawn,
+    Str,
+    Switch,
+    SwitchCase,
+    TaskBlock,
+    TryCatch,
+    TypeDef,
+    TypeVariant,
+    Var,
+    VariantCtor,
+    VariantPattern,
+    While,
+    WildcardPattern,
+)
 
-if "Environment" not in globals():
-    from tiny_language_eval import Environment
+from tiny_language_runtime_environment import Environment
 
-if "Lexer" not in globals():
-    from tiny_language_lexer import Lexer
+from tiny_language_lexer import Lexer
 
-if "Parser" not in globals():
-    from tiny_language_parser import Parser
+from tiny_language_parser import Parser
 
-if "Runtime" not in globals():
-    from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
+from tiny_language_runtime import Debugger, ModuleResolver, NamespaceRef, Runtime
 
-if "TinyLangError" not in globals():
-    from tiny_language_preamble import TinyLangError, format_error
-    from tiny_language_lexer import BUILTINS, KEYWORDS
+from tiny_language_preamble import TinyLangError, format_error, readline, _FallbackReadline
+from tiny_language_lexer import BUILTINS, KEYWORDS
 
-if "lint_import_style" not in globals():
-    from tiny_language_linter import (
-        _collect_function_signatures,
-        build_module_summary,
-        lint_annotation_enforcement,
-        lint_assignment_types,
-        lint_bare_call_results,
-        lint_call_validation,
-        lint_destruct_call_outputs,
-        lint_fn_params_used,
-        lint_heap_lifetimes,
-        lint_import_style,
-        lint_locals_used,
-        lint_method_params_used,
-        lint_no_consecutive_definitions,
-        lint_no_underscore_bindings,
-        lint_return_validation,
-        lint_unreachable_code,
-    )
+from tiny_language_linter import (
+    _collect_function_signatures,
+    build_module_summary,
+    lint_annotation_enforcement,
+    lint_assignment_types,
+    lint_bare_call_results,
+    lint_call_validation,
+    lint_destruct_call_outputs,
+    lint_fn_params_used,
+    lint_heap_lifetimes,
+    lint_import_style,
+    lint_locals_used,
+    lint_method_params_used,
+    lint_no_consecutive_definitions,
+    lint_no_underscore_bindings,
+    lint_return_validation,
+    lint_unreachable_code,
+)
 
-if "PythonCodeGenerator" not in globals():
-    from tiny_language_codegen_py import PythonCodeGenerator
+from tiny_language_codegen_py import PythonCodeGenerator
 
-if "NativeCodeGenerator" not in globals():
-    from tiny_language_codegen_native import NativeCodeGenerator
+from tiny_language_codegen_native import NativeCodeGenerator
 
 
 def _copy_on_call_default() -> bool:
@@ -697,7 +690,10 @@ def _parse_and_lint(
     summary = build_module_summary(stmts, module_name or "")
     if summary and module_path is not None:
         summary_path = module_path.with_suffix(module_path.suffix + ".summary")
-        summary_path.write_text(summary, encoding="utf-8")
+        # Preserve an unchanged summary byte-for-byte (including legacy CRLF).
+        # Imports must not dirty tracked sources solely because the host changes.
+        if not summary_path.exists() or summary_path.read_text(encoding="utf-8") != summary:
+            summary_path.write_text(summary, encoding="utf-8", newline="\n")
     return stmts
 
 
@@ -1235,7 +1231,15 @@ def compile_to_executable(
     with tempfile.TemporaryDirectory() as tmpdir:
         ll_path = Path(tmpdir) / "tiny_program.ll"
         ll_path.write_text(llvm_ir, encoding="utf-8")
-        cmd = [compiler_path, str(ll_path), "-o", str(output_path)]
+        # LLVM modules export tiny_main for embedding/JIT use. Executables also
+        # need the platform's ordinary C entry point; keep it out of emitted IR.
+        runner_path = Path(tmpdir) / "runner.c"
+        runner_path.write_text(
+            "extern int tiny_main(void);\n"
+            "int main(void) { return tiny_main(); }\n",
+            encoding="utf-8",
+        )
+        cmd = [compiler_path, str(ll_path), str(runner_path), "-o", str(output_path)]
         cmd.extend(_compiler_opt_args(opt_level))
         if extra_args:
             cmd.extend(extra_args)
@@ -1881,7 +1885,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--copy-on-call",
         action=argparse.BooleanOptionalAction,
         default=_copy_on_call_default(),
-        help="Deep-copy non-escaping mutable arguments before calls (env: TINYLANG_COPY_ON_CALL)",
+        help="Deep-copy mutable arguments before Tiny calls (method receivers stay shared) (env: TINYLANG_COPY_ON_CALL)",
     )
     parser.add_argument(
         "--v1-only",

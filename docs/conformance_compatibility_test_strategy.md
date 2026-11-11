@@ -6,6 +6,11 @@ LLVM backend, and native VM.
 
 ## Goals
 
+The [independent correctness audit](independent_correctness_audit.md) supplies
+contract-derived oracles and separate compilation/execution evidence. Its known
+failures are explicit gaps, not passing parity checks. See the corrected
+[backend matrix](backend_feature_matrix.md) before selecting shared subsets.
+
 - Prove that the language spec is executable via automated tests.
 - Detect behavioral drift between backends early.
 - Provide clear, actionable diagnostics when a backend diverges.

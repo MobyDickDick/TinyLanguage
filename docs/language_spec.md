@@ -60,7 +60,7 @@ program stays within the v1 feature set.
 
 ## Expressions and operators
 
-- **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed); tagged `Number`/`NumberIntervall` values use runtime error states like `plus_infinity` instead of raising overflow errors.
+- **Arithmetic:** `+`, `-`, `*`, `/`, `%`, and exponentiation `^` (the exponent must be an integer, or a float that is an integer value; fractional exponents require a non-negative base). Division follows Python semantics (integers become floats when needed). Tagged `Number` values use runtime states like `plus_infinity`. The experimental `NumberIntervall` class supports outward-rounded `+`, `-`, `*`, `/` with explicit set/status semantics; see its [interval arithmetic contract](interval_arithmetic_contract.md), including zero-only division, unbounded results and approximation exclusions.
 - **Comparisons:** `==`, `!=`, `<`, `>`, `<=`, `>=` work on numbers, strings, booleans, and user types with operator overloads.
 - **Booleans:** Short-circuit logic with `&&`/`||` or keyword `and`/`or`; negation via `!expr` or `not expr`.
 - **Experimental math tuples (opt-in):** With `--experimental-math-tuples`, a single tuple-like form `(name: expr)` desugars to `Math.name(expr)` for quick formula-style calls.
@@ -217,19 +217,22 @@ caught
 ## Argument encapsulation
 
 - **Opt-in flag:** `--copy-on-call` (or `TINYLANG_COPY_ON_CALL=1`) enables defensive copy semantics for function and method calls.
-- **When copying happens:** Non-escaped, mutable arguments (heap pointers, struct/variant maps, class instances) are deep-copied before binding. Parameters that appear on a `return` path are treated as escaped and keep their identity.
-- **Write protection:** Attempts to write to a protected parameter through other aliases fail with a runtime error to avoid side effects.
-- **Performance:** Copying is cycle-safe but can cost noticeably more time and memory for large object graphs.
+- **When copying happens:** Mutable arguments (live heap pointers, lists, struct/variant maps and class instances) are deep-copied before binding. All arguments in one call share copy memos, preserving shared subgraphs and cycles.
+- **Return expressions:** Returning an argument, a local alias or a container containing an argument returns the copied data. Scalar calculations such as `return len(buf)` never grant permission to modify the original. Conditional and unreachable returns cannot change this rule; unreachable statements after a guaranteed exit still fail linting with `E013`.
+- **Methods and nested calls:** A method's receiver (`self`) retains its identity; explicit method arguments are copied. A method invoked on a copied object changes that copy. Every nested Tiny function call creates another copy boundary.
+- **Write protection:** During the call, writes through other aliases to the original argument graph fail with a runtime error. This includes field/heap writes, deletion and retagging; a method receiver cannot bypass an enclosing call's protection.
+- **Adopting updates:** The caller explicitly adopts a returned copy. For a heap buffer, receive the replacement first, delete the old allocation, then rebind; the existing single-owner checks reject directly overwriting a live buffer.
+- **Scope and cost:** This is an opt-in interpreter contract for Tiny function and method calls, not isolation for host/native functions, interop or other backends. Copying consumes time and memory; heap copies use the existing manual allocation lifecycle. Numeric heap handles and recursion-depth limits still apply. See the [contract, migration and measured costs](copy_on_call_contract.md).
 - **Example:**
 
   ```tiny
   fn bump(buf) {
-      def _unused2 = heap_set(buf, 0, 99);
+      def ignored2 = heap_set(buf, 0, 99);
   }
 
   def data = new(1);
-  def _unused3 = heap_set(data, 0, 1);
-  def _unused4 = bump(data); // with --copy-on-call, data[0] remains 1
+  def ignored3 = heap_set(data, 0, 1);
+  def ignored4 = bump(data); // with --copy-on-call, data[0] remains 1
   ```
 
 ## Algebraic data types and pattern matching
@@ -277,8 +280,13 @@ caught
   Added/Changed/Fixed entries plus known issues. The canonical policy is
   documented in [`docs/versioning_deprecation_policy.md`](versioning_deprecation_policy.md).
 - **Stability guarantees:** the interpreter behavior documented in this spec is
-  considered stable for the current major line; breaking changes require a major
-  version bump and an explicit migration plan.
+  the candidate stability target for the current major line; qualification is
+  pending under the [candidate contract](release_scope_v1.md). Copy-on-call
+  remains opt-in and outside that target after the package 7 contract revision;
+  interval enclosure has its own [contract and migration notes](interval_arithmetic_contract.md)
+  from package 8 and remains outside this frozen target.
+  Breaking changes to the qualified contract require a major version bump and
+  an explicit migration plan.
 - **Deprecations:** breaking or removed features must be announced in the
   changelog and documentation before removal. When possible, tooling should emit
   deprecation warnings and maintain backwards-compatible shims through at least

@@ -1,0 +1,53 @@
+{
+  "binary_sha256": "f6e37db059786e782689f9d18294c536d7eebe02f61aa582f4846733d0f7178b",
+  "working_directory": "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance",
+  "outside_checkout": true,
+  "loose_python_sources": false,
+  "commands": [
+    {
+      "argv": [
+        "--version"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "stdout": "TinyLanguage 1.0.0\n"
+    },
+    {
+      "argv": [
+        "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance\\main.tiny"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "stdout": "9\n"
+    },
+    {
+      "argv": [
+        "--native-backend",
+        "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance\\main.tiny"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "stdout": "42\n"
+    },
+    {
+      "argv": [
+        "--backend",
+        "python",
+        "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance\\main.tiny"
+      ],
+      "environment": {},
+      "exit_code": 0,
+      "stdout": "42\n"
+    },
+    {
+      "argv": [
+        "C:\\Users\\marku\\.codex\\visualizations\\2026\\11\\08\\01a1ba44-4dd4-7393-b12f-df861396a142\\runtime-validation\\frozen-acceptance\\main.tiny"
+      ],
+      "environment": {
+        "TINYLANG_USE_TINY_PARSER": "1"
+      },
+      "exit_code": 0,
+      "stdout": "42\n"
+    }
+  ]
+}

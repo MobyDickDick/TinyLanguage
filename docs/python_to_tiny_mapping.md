@@ -52,12 +52,15 @@ This document tracks which Python sources have TinyLanguage equivalents and clar
 | `src/tiny_language_runtime_debugger.py` | `src_tiny/tiny_language_runtime_debugger.tiny` |
 | `src/tiny_language_runtime_environment.py` | `src_tiny/tiny_language_runtime_environment.tiny` |
 | `src/tiny_language_runtime_modules.py` | `src_tiny/tiny_language_runtime_modules.tiny` |
-| `src/tiny_language_stitched.py` | `src_tiny/tiny_language_stitched.tiny` |
 | `src/tiny_language_transpilers.py` | `src_tiny/tiny_language_transpilers.tiny` |
 | `src/tiny_project_cli.py` | `src_tiny/tiny_project_cli.tiny` |
 | `src/tinyc_cli.py` | `src_tiny/tinyc_cli.tiny` |
 | `src/transpile_rosetta.py` | `src_tiny/transpile_rosetta.tiny` |
 | `tiny_language.py` | `src_tiny/tiny_language.tiny` |
+
+The generated `src/tiny_language_stitched.py` was removed in work package 10.
+Its legacy Tiny entry point `src_tiny/tiny_language_stitched.tiny` remains as a
+wrapper around the canonical `tiny_language` facade.
 | `tools/generate_doc_reference.py` | `src_tiny/generate_doc_reference.tiny` |
 | `tools_unused_scan.py` | `src_tiny/tools_unused_scan.tiny` |
 | `vscode-extension/python/tiny_debug_adapter.py` | `src_tiny/tiny_debug_adapter.tiny` |
@@ -74,6 +77,7 @@ This document tracks which Python sources have TinyLanguage equivalents and clar
 | `src/stdlib_csv.py` | Python-backed stdlib helper |
 | `src/stdlib_datetime.py` | Python-backed stdlib helper |
 | `src/tiny_language_module_resolution.py` | Host integration for module/package resolution |
+| `src/tiny_intervals.py` | Exact rational and directed-binary64 host primitives for `src_tiny/number_intervall.tiny`; reference interpreter only |
 | `src/tiny_pkg_cli.py` | Host integration for module/package resolution |
 | `src/tiny_pkg_resolution.py` | Host integration for module/package resolution |
 | `tests/__init__.py` | Test suite (Python-only) |

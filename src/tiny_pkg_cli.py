@@ -2,18 +2,22 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import importlib
 import json
 import os
 from pathlib import Path
-import shutil
-import tarfile
+import re
 from typing import Any, Iterable
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 from tiny_pkg_resolution import manifest_hash_for_path, write_lockfile
+from tiny_pkg_sources import (
+    check_destination,
+    copy_tree as _copy_tree,
+    normalize_checksum as _normalize_checksum,
+    registry_cache_component as _registry_host,
+    vendor_from_dist as _vendor_from_dist,
+)
 
 if importlib.util.find_spec("tomllib"):
     tomllib = importlib.import_module("tomllib")
@@ -167,15 +171,6 @@ def _lockfile_entries(lock_data: dict[str, Any]) -> list[dict[str, Any]]:
     return entries
 
 
-def _registry_host(registry: str | None) -> str:
-    if not registry:
-        return "registry"
-    parsed = urlparse(registry)
-    host = parsed.netloc or parsed.path
-    host = host.strip("/").replace(":", "_")
-    return host or "registry"
-
-
 def _load_registry_index(registry_url: str, manifest_dir: Path) -> dict[str, Any]:
     env_path = manifest_dir / "tiny_registry.json"
     if env_path.is_file():
@@ -212,87 +207,15 @@ def _lookup_registry_dist(
     return None, None
 
 
-def _safe_extract(tar: tarfile.TarFile, dest: Path) -> None:
-    dest_path = dest.resolve()
-    for member in tar.getmembers():
-        target = dest_path / member.name
-        if not str(target.resolve()).startswith(str(dest_path)):
-            raise SystemExit(f"Refusing to extract unsafe archive member: {member.name}")
-    tar.extractall(dest_path)
-
-
-def _copy_tree(source: Path, dest: Path, *, force: bool) -> None:
-    ignore = shutil.ignore_patterns(".git", "__pycache__", ".tiny-cache", "build", ".venv")
-    if dest.exists():
-        if not force:
-            raise SystemExit(f"Destination already exists: {dest}")
-        shutil.rmtree(dest)
-    shutil.copytree(source, dest, ignore=ignore)
-
-
-def _normalize_checksum(value: str | None) -> str | None:
-    if not value:
-        return None
-    value = value.strip()
-    if value.startswith("sha256:"):
-        value = value.split(":", 1)[1]
-    return value or None
-
-
-def _checksum_matches(path: Path, checksum: str | None) -> bool:
-    normalized = _normalize_checksum(checksum)
-    if not normalized:
-        return True
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    return digest == normalized
-
-
-def _download_to_cache(url: str, cache_path: Path, *, checksum: str | None) -> Path:
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = cache_path.with_suffix(cache_path.suffix + ".tmp")
-    with urlopen(url) as response, tmp_path.open("wb") as handle:
-        shutil.copyfileobj(response, handle)
-    tmp_path.replace(cache_path)
-    if not _checksum_matches(cache_path, checksum):
-        cache_path.unlink(missing_ok=True)
-        raise SystemExit(f"Checksum mismatch for cached download: {cache_path}")
-    return cache_path
-
-
-def _vendor_from_dist(
-    dist: str,
-    dest: Path,
-    *,
-    force: bool,
-    cache_path: Path | None = None,
-    checksum: str | None = None,
-) -> None:
-    if dist.startswith(("http://", "https://")):
-        if cache_path is None:
-            raise SystemExit("Cache path required for remote registry fetches.")
-        if cache_path.is_file() and _checksum_matches(cache_path, checksum):
-            dist_path = cache_path
-        else:
-            dist_path = _download_to_cache(dist, cache_path, checksum=checksum)
-    elif dist.startswith("file://"):
-        dist_path = Path(dist[len("file://") :])
-    else:
-        dist_path = Path(dist)
-    if dist_path.is_dir():
-        _copy_tree(dist_path, dest, force=force)
-        return
-    if dist_path.suffixes[-2:] == [".tar", ".gz"] or dist_path.suffix == ".tgz":
-        if dest.exists():
-            if not force:
-                raise SystemExit(f"Destination already exists: {dest}")
-            shutil.rmtree(dest)
-        dest.mkdir(parents=True, exist_ok=True)
-        if not _checksum_matches(dist_path, checksum):
-            raise SystemExit(f"Checksum mismatch for archive: {dist_path}")
-        with tarfile.open(dist_path) as tar:
-            _safe_extract(tar, dest)
-        return
-    raise SystemExit(f"Unsupported registry dist: {dist}")
+def _package_component(value: Any) -> str:
+    """Keep lockfile-controlled names inside one portable path component."""
+    if (not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value)
+            or value.endswith(".") or value.split(".")[0].upper() in {
+                "CON", "PRN", "AUX", "NUL",
+                *(f"COM{i}" for i in range(1, 10)), *(f"LPT{i}" for i in range(1, 10)),
+            }):
+        raise SystemExit("Invalid package name, version, or registry cache component.")
+    return value
 
 
 def _vendor_dependency(
@@ -307,24 +230,37 @@ def _vendor_dependency(
     version = entry.get("version", "0.0.0")
     source = entry.get("source")
     if not name:
-        return
+        raise SystemExit("Lockfile dependency is missing its name.")
+    name = _package_component(name)
+    version = _package_component(version)
     if source == "path":
         path_value = entry.get("path")
         if not path_value:
             raise SystemExit(f"Missing path for dependency {name}")
-        source_path = (project_root / str(path_value)).resolve()
+        source_path = project_root / str(path_value)
         dest = vendor_root / "local" / name / version
         _copy_tree(source_path, dest, force=force)
         return
     if source == "registry":
         registry = entry.get("registry")
-        host = _registry_host(registry)
+        host = _package_component(_registry_host(registry))
         index = _load_registry_index(registry or "", project_root)
-        dist, checksum = _lookup_registry_dist(index, name, version)
+        dist, metadata_checksum = _lookup_registry_dist(index, name, version)
         if not dist:
             raise SystemExit(f"Registry entry missing dist for {name}@{version}")
+        if not urlparse(dist).scheme and not Path(dist).is_absolute():
+            dist = str(project_root / dist)
+        remote = urlparse(dist).scheme.lower() in {"http", "https"}
+        checksum = _normalize_checksum(entry.get("registry_checksum"), required=remote)
+        if checksum is not None and metadata_checksum is not None:
+            if checksum != _normalize_checksum(metadata_checksum):
+                raise SystemExit("Registry checksum differs from tiny.lock; refusing changed package content.")
+        # Local registry fixtures may use metadata-only checksums. Remote
+        # distributions always require the independently persisted lock digest.
+        if not remote and checksum is None:
+            checksum = _normalize_checksum(metadata_checksum)
         dest = vendor_root / host / name / version
-        cache_filename = Path(urlparse(dist).path).name or f"{name}-{version}.tar.gz"
+        cache_filename = "package.tar.gz"
         cache_path = cache_root / "registry" / host / name / version / cache_filename
         _vendor_from_dist(dist, dest, force=force, cache_path=cache_path, checksum=checksum)
         return
@@ -332,12 +268,14 @@ def _vendor_dependency(
         url = entry.get("url")
         if not url:
             raise SystemExit(f"Git dependency {name} missing url")
+        if urlparse(url).scheme.lower() in {"http", "https", "ssh", "git"}:
+            raise SystemExit("Remote Git dependencies are not implemented; use a local source.")
         if url.startswith("file://"):
             source_path = Path(url[len("file://") :])
         else:
             source_path = Path(url)
         if not source_path.exists():
-            raise SystemExit(f"Git dependency {name} source not found: {url}")
+            raise SystemExit(f"Git dependency {name} local source not found.")
         dest = vendor_root / "git" / name / version
         _copy_tree(source_path, dest, force=force)
         return
@@ -350,6 +288,7 @@ def _write_vendor_readme(
     entries: list[dict[str, Any]],
 ) -> None:
     readme_path = vendor_root / "README.md"
+    check_destination(readme_path)
     manifest_hash = lock_data.get("manifest_hash", "unknown")
     registry = lock_data.get("registry")
     lines = [
@@ -460,7 +399,7 @@ def _cmd_update(args: argparse.Namespace) -> int:
 def _resolve_cache_root(project_root: Path) -> Path:
     env_root = os.environ.get("TINY_PKG_CACHE", "").strip()
     if env_root:
-        return Path(env_root).expanduser().resolve()
+        return Path(env_root).expanduser().absolute()
     return project_root / ".tiny-cache"
 
 
@@ -480,6 +419,7 @@ def _cmd_vendor(args: argparse.Namespace) -> int:
         )
     entries = _lockfile_entries(lock_data)
     vendor_root = project_root / "vendor"
+    check_destination(vendor_root)
     vendor_root.mkdir(parents=True, exist_ok=True)
     cache_root = _resolve_cache_root(project_root)
     for entry in entries:

@@ -1,0 +1,158 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\marku\myCloud\TinyLanguage
+configfile: pytest.ini
+testpaths: tests
+collected 871 items
+
+tests\detailtests\test_async_structured.py ..                            [  0%]
+tests\detailtests\test_async_tokens.py ...                               [  0%]
+tests\detailtests\test_benchmark_and_fuzz.py ....                        [  1%]
+tests\detailtests\test_c_codegen.py .                                    [  1%]
+tests\detailtests\test_cli_smoke.py ....                                 [  1%]
+tests\detailtests\test_concurrency.py ............                       [  2%]
+tests\detailtests\test_copy_on_call.py .....                             [  3%]
+tests\detailtests\test_copy_rosetta_samples.py ...                       [  3%]
+tests\detailtests\test_debug_adapter_flow.py ............                [  5%]
+tests\detailtests\test_debugger_hooks.py ....                            [  5%]
+tests\detailtests\test_error_formatting.py .....                         [  6%]
+tests\detailtests\test_error_messages.py ........                        [  7%]
+tests\detailtests\test_errors.py ...                                     [  7%]
+tests\detailtests\test_experimental_math_formula.py ..                   [  7%]
+tests\detailtests\test_experimental_math_tuples.py ..                    [  8%]
+tests\detailtests\test_formatter.py ..                                   [  8%]
+tests\detailtests\test_heap_api_diagnostics_messages.py ...              [  8%]
+tests\detailtests\test_heap_api_errors.py .........                      [  9%]
+tests\detailtests\test_heap_lints.py ..                                  [  9%]
+tests\detailtests\test_heap_pointer_demo.py .                            [  9%]
+tests\detailtests\test_hello_world.py .                                  [ 10%]
+tests\detailtests\test_inheritance.py .                                  [ 10%]
+tests\detailtests\test_language_server.py ......................         [ 12%]
+tests\detailtests\test_language_server_cli.py .............              [ 14%]
+tests\detailtests\test_llvm_codegen.py ................................. [ 18%]
+..........                                                               [ 19%]
+tests\detailtests\test_llvm_conformance_smoke.py ..........              [ 20%]
+tests\detailtests\test_module_resolution_algorithm.py ......             [ 21%]
+tests\detailtests\test_modules.py ..                                     [ 21%]
+tests\detailtests\test_namespaces.py .                                   [ 21%]
+tests\detailtests\test_native_backend_error_parity.py .............      [ 22%]
+tests\detailtests\test_native_backend_errors.py ...............          [ 24%]
+tests\detailtests\test_native_codegen.py .................               [ 26%]
+tests\detailtests\test_native_ir.py .                                    [ 26%]
+tests\detailtests\test_native_python_bytecode_backend.py ...             [ 26%]
+tests\detailtests\test_native_vm.py ....                                 [ 27%]
+tests\detailtests\test_null.py ...                                       [ 27%]
+tests\detailtests\test_number_class.py ....                              [ 28%]
+tests\detailtests\test_number_intervall.py .......                       [ 29%]
+tests\detailtests\test_number_overflow.py ..                             [ 29%]
+tests\detailtests\test_objects.py .                                      [ 29%]
+tests\detailtests\test_operator_overloading.py .                         [ 29%]
+tests\detailtests\test_pattern_matching.py ......                        [ 30%]
+tests\detailtests\test_pkg_lockfile_reproducibility.py ........          [ 31%]
+tests\detailtests\test_pkg_vendor.py ..                                  [ 31%]
+tests\detailtests\test_python_codegen.py ......                          [ 32%]
+tests\detailtests\test_python_interop_demos.py ........                  [ 32%]
+tests\detailtests\test_readme_concurrency_demo_cli.py .                  [ 33%]
+tests\detailtests\test_readme_hello_world_cli.py .                       [ 33%]
+tests\detailtests\test_repl.py ...                                       [ 33%]
+tests\detailtests\test_repl_highlighting.py ...                          [ 33%]
+tests\detailtests\test_result_type.py ..                                 [ 34%]
+tests\detailtests\test_rosetta_transpile.py ......                       [ 34%]
+tests\detailtests\test_runtime_expansion.py ...........                  [ 36%]
+tests\detailtests\test_semantics_suite.py .....                          [ 36%]
+tests\detailtests\test_span_consistency.py .....                         [ 37%]
+tests\detailtests\test_spans.py ...                                      [ 37%]
+tests\detailtests\test_src_tiny_regressions.py ......................... [ 40%]
+........                                                                 [ 41%]
+tests\detailtests\test_stdlib.py ..............                          [ 42%]
+tests\detailtests\test_stdlib_argparse.py ....                           [ 43%]
+tests\detailtests\test_stdlib_csv.py .....                               [ 43%]
+tests\detailtests\test_stdlib_doc_examples.py ....................       [ 46%]
+tests\detailtests\test_stdlib_fs.py ..                                   [ 46%]
+tests\detailtests\test_stdlib_fswatch.py ...                             [ 46%]
+tests\detailtests\test_stdlib_gui.py .                                   [ 46%]
+tests\detailtests\test_stdlib_http.py ...                                [ 47%]
+tests\detailtests\test_stdlib_json.py ....                               [ 47%]
+tests\detailtests\test_stdlib_logging.py ..                              [ 47%]
+tests\detailtests\test_stdlib_os.py ...                                  [ 48%]
+tests\detailtests\test_stdlib_parity.py .                                [ 48%]
+tests\detailtests\test_stdlib_path.py ....                               [ 48%]
+tests\detailtests\test_stdlib_process.py ..                              [ 49%]
+tests\detailtests\test_stdlib_regex.py ...                               [ 49%]
+tests\detailtests\test_stdlib_sources.py .....................           [ 51%]
+tests\detailtests\test_stdlib_time.py ...                                [ 52%]
+tests\detailtests\test_stdlib_toml.py ....                               [ 52%]
+tests\detailtests\test_stdlib_yaml.py ...........                        [ 53%]
+tests\detailtests\test_style_lints.py ..........                         [ 55%]
+tests\detailtests\test_tiny_language_cli_self_host.py ............       [ 56%]
+tests\detailtests\test_tiny_language_compiler_cli_self_host.py .         [ 56%]
+tests\detailtests\test_tiny_language_server_cli_self_host.py ...         [ 56%]
+tests\detailtests\test_tiny_native_backend.py .                          [ 57%]
+tests\detailtests\test_tiny_pkg_publish.py ..                            [ 57%]
+tests\detailtests\test_tiny_project_cli.py .                             [ 57%]
+tests\detailtests\test_tiny_transpilers.py .                             [ 57%]
+tests\detailtests\test_transpilers.py .............                      [ 59%]
+tests\detailtests\test_try_catch.py ...                                  [ 59%]
+tests\detailtests\test_typing.py ..............                          [ 60%]
+tests\detailtests\test_v1_only_mode.py ..                                [ 61%]
+tests\test_c_backend.py .......                                          [ 61%]
+tests\test_import_output_workflow.py .                                   [ 62%]
+tests\test_language_spec_grammar.py .................                    [ 64%]
+tests\test_linter_parity.py .....................                        [ 66%]
+tests\test_llvm_jit.py s                                                 [ 66%]
+tests\test_output_normalization.py ......                                [ 67%]
+tests\test_parity_runner.py ...                                          [ 67%]
+tests\test_performance_budget_checker.py ....                            [ 68%]
+tests\test_release_candidate_gate.py .................                   [ 70%]
+tests\test_release_packaging.py ..ss....                                 [ 70%]
+tests\test_release_scope_contract.py .......                             [ 71%]
+tests\test_run_all.py ....                                               [ 72%]
+tests\test_smoke.py ...                                                  [ 72%]
+tests\test_spec_conformance.py .                                         [ 72%]
+tests\test_src_tiny_regressions.py ..................................... [ 76%]
+.............                                                            [ 78%]
+tests\test_standalone_tiny_regressions.py ................               [ 80%]
+tests\test_stdlib_compatibility.py ...............                       [ 81%]
+tests\test_tiny_language.py ............................................ [ 87%]
+................................                                         [ 90%]
+tests\test_tiny_language_cli.py ...........                              [ 91%]
+tests\test_tiny_language_compiler_cli.py ..                              [ 92%]
+tests\test_tiny_language_preamble.py ......                              [ 92%]
+tests\test_tiny_lexer_self_host.py ....                                  [ 93%]
+tests\test_tiny_parser_self_host.py ..                                   [ 93%]
+tests\test_tiny_program_daemon.py .....................                  [ 95%]
+tests\test_tiny_program_gui_wrapper.py ...                               [ 96%]
+tests\test_tiny_program_repository_db_adapter.py .....                   [ 96%]
+tests\test_tiny_program_source_import.py .......                         [ 97%]
+tests\test_tiny_program_source_port.py ....                              [ 98%]
+tests\test_tiny_program_source_sandbox.py ss...                          [ 98%]
+tests\test_tiny_program_source_scan.py .......s                          [ 99%]
+tests\test_tiny_wrapper_imports.py .                                     [ 99%]
+tests\test_typecheck_ci_gate.py ..                                       [100%]
+
+============================== warnings summary ===============================
+tests/detailtests/test_benchmark_and_fuzz.py::test_recursive_fibonacci_benchmark
+  tests\detailtests\test_benchmark_and_fuzz.py:122: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_recursive_fibonacci_benchmark(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_randomized_programs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:252: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_randomized_programs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_lexer_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:282: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_lexer_random_inputs_do_not_crash(record_property) -> None:
+
+tests/detailtests/test_benchmark_and_fuzz.py::test_parser_random_inputs_do_not_crash
+  tests\detailtests\test_benchmark_and_fuzz.py:303: PytestWarning: record_property is incompatible with junit_family 'xunit2' (use 'legacy' or 'xunit1')
+    def test_parser_random_inputs_do_not_crash(record_property) -> None:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: C:\Users\marku\myCloud\TinyLanguage\artifacts\release-candidate\regression.xml -
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_llvm_jit.py:20: llvmlite not available
+SKIPPED [2] tests\test_release_packaging.py:53: Executable permission bits require POSIX
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:25: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_sandbox.py:37: source-port execution requires Linux resource limits
+SKIPPED [1] tests\test_tiny_program_source_scan.py:73: Windows symlink creation requires Developer Mode or symlink privilege
+=========== 865 passed, 6 skipped, 4 warnings in 172.10s (0:02:52) ============
